@@ -9,8 +9,10 @@ Typescript tests for the ts sdk.
 Before running the tests, make sure the `ts/sdk` rust crate has been rebuilt:
 
 ```sh
-cd ../sdk
+pushd ../sdk
 make
+popd
+pnpm install
 ```
 
 Then, start the local test validator with:
@@ -30,3 +32,5 @@ After tests complete, teardown the local test validator with:
 ```sh
 docker compose -f ../../docker-compose-local-validator.yml down
 ```
+
+We do not use package.json's `pretest` and `posttest` scripts for this because `posttest` does not run if tests fail and cause the `test` command to exit with a nonzero code.
