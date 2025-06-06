@@ -1,0 +1,38 @@
+[package]
+name = "sanctum-router" # npm package name without @sanctumso/ scope
+version = "0.0.1-dev-1" # npm package version
+edition = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+
+[dependencies]
+borsh = { workspace = true }
+ed25519-compact = { workspace = true }
+hmac-sha256 = { workspace = true }
+wasm-bindgen = { workspace = true }
+sanctum-router-core = { workspace = true , features = ["wasm"] }
+tsify-next = { workspace = true, features = ["js"] }
+serde = { workspace = true }
+serde_bytes = { workspace = true, features = ["std"] }
+bs58-fixed = { workspace = true }
+bs58-fixed-wasm = { workspace = true, features = ["js"]}
+
+sanctum-marinade-liquid-staking-core = { workspace = true, features = ["serde"] }
+sanctum-spl-stake-pool-core = { workspace = true, features = ["wasm"] }
+spl-stake-pool = { workspace = true }
+sanctum-reserve-core = { workspace = true, features = ["wasm"] }
+
+# The `console_error_panic_hook` crate provides better debugging of panics by
+# logging them with `console.error`. This is great for development, but requires
+# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
+# code size when deploying.
+console_error_panic_hook = { workspace = true, optional = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+solana-pubkey = { workspace = true, features = ["curve25519"] }
+wasm-bindgen-test = { workspace = true }

@@ -1,0 +1,20 @@
+{
+  "name": "tests",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sanctumso/spl-stake-pool": "^0.0.1-dev-3",
+    "@sanctumso/sanctum-router": "file:../sdk/pkg",
+    "@solana/kit": "^2.1.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "@types/node": "^22",
+    "vitest": "^2"
+  }
+}
