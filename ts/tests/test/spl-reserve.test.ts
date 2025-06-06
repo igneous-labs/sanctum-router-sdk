@@ -2,11 +2,10 @@ import { describe, it, assert } from "vitest";
 import {
   fetchAccountMap,
   mapTup,
-  MSOL_MINT,
   NATIVE_MINT,
   readTestFixturesJsonFile,
   readTestFixturesKeypair,
-} from "./utils";
+} from "../utils";
 import {
   deserStakePool,
   fromFetchedAccounts,
@@ -93,7 +92,7 @@ describe("Deposit SOL Test", async () => {
         [
           signerWsolToken.pubkey,
           signerPicoToken.pubkey,
-          stakePool.managerFeeAccount,
+          address(stakePool.managerFeeAccount),
         ],
         async (a) =>
           BigInt(
@@ -147,7 +146,7 @@ describe("Deposit SOL Test", async () => {
         [
           signerWsolToken.pubkey,
           signerPicoToken.pubkey,
-          stakePool.managerFeeAccount,
+          address(stakePool.managerFeeAccount),
         ],
         async (a) =>
           BigInt(
@@ -357,7 +356,11 @@ describe("Deposit SOL Test", async () => {
       managerTokenBalanceBefore,
     ] = await Promise.all(
       mapTup(
-        [signerPicoToken.pubkey, picoVault.pubkey, stakePool.managerFeeAccount],
+        [
+          signerPicoToken.pubkey,
+          picoVault.pubkey,
+          address(stakePool.managerFeeAccount),
+        ],
         async (a) =>
           BigInt(
             (
@@ -432,7 +435,11 @@ describe("Deposit SOL Test", async () => {
       managerTokenBalanceAfter,
     ] = await Promise.all(
       mapTup(
-        [signerPicoToken.pubkey, picoVault.pubkey, stakePool.managerFeeAccount],
+        [
+          signerPicoToken.pubkey,
+          picoVault.pubkey,
+          address(stakePool.managerFeeAccount),
+        ],
         async (a) =>
           BigInt(
             (

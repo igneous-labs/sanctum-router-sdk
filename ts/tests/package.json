@@ -6,15 +6,13 @@
   "scripts": {
     "test": "vitest run"
   },
-  "dependencies": {
-    "@sanctumso/spl-stake-pool": "^0.0.1-dev-3",
-    "@sanctumso/sanctum-router": "file:../sdk/pkg",
-    "@solana/kit": "^2.1.0"
-  },
   "devDependencies": {
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
+    "@sanctumso/sanctum-router": "file:../sdk/pkg",
+    "@solana/kit": "^2.1.0",
     "@types/node": "^22",
+    "lossless-json": "^4.1.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.3.3",
     "vitest": "^2"
   }
 }

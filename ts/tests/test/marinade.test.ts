@@ -6,9 +6,8 @@ import {
   NATIVE_MINT,
   readTestFixturesJsonFile,
   readTestFixturesKeypair,
-} from "./utils";
+} from "../utils";
 import {
-  deserStakePool,
   fromFetchedAccounts,
   getAccountsToUpdate,
   getDepositSolIx,
@@ -16,25 +15,18 @@ import {
   getDepositStakeIx,
   getDepositStakeQuote,
   getInitAccounts,
-  getStakePool,
-  getWithdrawSolIx,
-  getWithdrawSolQuote,
   update,
-  type SplPoolAccounts,
 } from "@sanctumso/sanctum-router";
 import {
-  address,
   appendTransactionMessageInstructions,
   createSolanaRpc,
   createSolanaRpcSubscriptions,
   createTransactionMessage,
-  getBase64Encoder,
   pipe,
   sendAndConfirmTransactionFactory,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   signTransactionMessageWithSigners,
-  type Address,
   type IInstruction,
 } from "@solana/kit";
 
