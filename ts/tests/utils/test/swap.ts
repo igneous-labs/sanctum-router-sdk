@@ -1,9 +1,12 @@
-import {
-  getDepositSolIx,
-  getDepositSolQuote,
-  type Instruction,
-  type SwapParams,
-  type TokenQuote,
+/**
+ * Common test utils for token -> token swaps
+ * (StakeWrappedSol, PrefundSwapViaStake, WithdrawWrappedSol)
+ */
+
+import type {
+  Instruction,
+  SwapParams,
+  TokenQuote,
 } from "@sanctumso/sanctum-router";
 import {
   address,
@@ -12,44 +15,13 @@ import {
   type SolanaRpcApi,
 } from "@solana/kit";
 import { expect } from "vitest";
-import { mapTup } from "./ops";
-import { ixToSimTx } from "./tx";
-import { NATIVE_MINT, testFixturesTokenAcc, tokenAccBalance } from "./token";
-import { fetchAccountMap, localRpc } from "./rpc";
-import { routerForMints } from "./router";
+import { mapTup } from "../ops";
+import { fetchAccountMap } from "../rpc";
+import { tokenAccBalance } from "../token";
+import { ixToSimTx } from "../tx";
+import { txSimParams } from "./common";
 
-export async function depositSolFixturesTest(
-  amount: bigint,
-  mint: string,
-  tokenAccFixtures: { inp: string; out: string }
-) {
-  const { inp: inpTokenAccName, out: outTokenAccName } = tokenAccFixtures;
-  const [
-    { addr: inpTokenAcc, owner: inpTokenAccOwner },
-    { addr: outTokenAcc },
-  ] = mapTup([inpTokenAccName, outTokenAccName], testFixturesTokenAcc);
-  const rpc = localRpc();
-  const router = await routerForMints(rpc, [mint]);
-
-  const quote = getDepositSolQuote(router, {
-    amount,
-    inputMint: NATIVE_MINT,
-    outputMint: mint,
-  })!;
-  const params = {
-    amount,
-    sourceTokenAccount: inpTokenAcc,
-    destinationTokenAccount: outTokenAcc,
-    tokenTransferAuthority: inpTokenAccOwner,
-    source: NATIVE_MINT,
-    destinationMint: mint,
-  };
-  const ix = getDepositSolIx(router, params);
-
-  await simTokenSwapAssertQuoteMatches(rpc, quote, params, ix);
-}
-
-async function simTokenSwapAssertQuoteMatches(
+export async function simTokenSwapAssertQuoteMatches(
   rpc: Rpc<SolanaRpcApi>,
   {
     inAmount,
@@ -84,17 +56,7 @@ async function simTokenSwapAssertQuoteMatches(
   const tx = ixToSimTx(address(tokenTransferAuthority), ix);
   const {
     value: { err, accounts: aftSwap, logs },
-  } = await rpc
-    .simulateTransaction(tx, {
-      accounts: {
-        addresses,
-        encoding: "base64",
-      },
-      encoding: "base64",
-      sigVerify: false,
-      replaceRecentBlockhash: true,
-    })
-    .send();
+  } = await rpc.simulateTransaction(tx, txSimParams(addresses)).send();
 
   const debugMsg = `tx: ${tx}\nlogs:\n` + (logs ?? []).join("\n") + "\n";
   expect(err, debugMsg).toBeNull();

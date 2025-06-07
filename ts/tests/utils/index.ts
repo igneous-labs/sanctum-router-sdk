@@ -3,6 +3,7 @@ export * from "./ops";
 export * from "./router";
 export * from "./rpc";
 export * from "./spl";
+export * from "./stake";
 export * from "./test";
 export * from "./token";
 export * from "./tx";
