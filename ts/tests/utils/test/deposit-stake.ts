@@ -3,6 +3,7 @@ import {
   getDepositStakeQuote,
   type DepositStakeQuote,
   type Instruction,
+  type StakeAccountLamports,
   type SwapParams,
 } from "@sanctumso/sanctum-router";
 import { routerForMints } from "../router";
@@ -22,7 +23,8 @@ import { expect } from "vitest";
 
 export async function depositStakeFixturesTest(
   mint: string,
-  { inp: inpStakeAccName, out: outTokenAccName }: { inp: string; out: string }
+  { inp: inpStakeAccName, out: outTokenAccName }: { inp: string; out: string },
+  stakeAccQuoteParamsOverride?: StakeAccountLamports
 ) {
   const { addr: outTokenAcc } = testFixturesTokenAcc(outTokenAccName);
   const {
@@ -35,13 +37,14 @@ export async function depositStakeFixturesTest(
   const rpc = localRpc();
   const router = await routerForMints(rpc, [mint]);
 
+  const stakeAccountLamports = stakeAccQuoteParamsOverride ?? {
+    staked: stakedLamports,
+    unstaked: unstakedLamports,
+  };
   const quote = getDepositStakeQuote(router, {
     validatorVote: vote,
     outputMint: mint,
-    stakeAccountLamports: {
-      staked: stakedLamports,
-      unstaked: unstakedLamports,
-    },
+    stakeAccountLamports,
   })!;
   const params = {
     destinationMint: mint,

@@ -3,6 +3,7 @@ import {
   depositSolFixturesTest,
   depositStakeFixturesTest,
   PICOSOL_MINT,
+  testFixturesStakeAcc,
   withdrawSolFixturesTest,
 } from "../utils";
 
@@ -22,9 +23,26 @@ describe("SPL Test", async () => {
   });
 
   it("spl-stake-pool-deposit-stake", async () => {
-    await depositStakeFixturesTest(PICOSOL_MINT, {
-      inp: "deposit-stake",
-      out: "signer-pico-token",
-    });
+    const stakeAccName = "deposit-stake";
+    const { unstakedLamports, stakedLamports } =
+      testFixturesStakeAcc(stakeAccName);
+    // Need to quote as if the stake account to be deposited has
+    // 0 staked sol because we are currently in epoch 0 so this
+    // stake account and the pool's vsa are actually activating,
+    // not active, so only sol deposit fees are applied to the
+    // full stake account's balance
+    const override = {
+      staked: 0n,
+      unstaked: unstakedLamports + stakedLamports,
+    };
+
+    await depositStakeFixturesTest(
+      PICOSOL_MINT,
+      {
+        inp: stakeAccName,
+        out: "signer-pico-token",
+      },
+      override
+    );
   });
 });

@@ -6,6 +6,11 @@ services:
         "-r", # Reset
         "-q", # Quiet
 
+        # TODO: we want to be able to warp to epoch 1
+        # so that we can test with fully active stake accounts
+        # But 432k slots seem too high and the test validator
+        # always just hangs and crashes
+
         # Load test fixtures accounts
         "--account-dir",
         "/test-fixtures",
