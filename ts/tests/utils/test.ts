@@ -17,7 +17,6 @@ import { ixToSimTx } from "./tx";
 import { NATIVE_MINT, testFixturesTokenAcc, tokenAccBalance } from "./token";
 import { fetchAccountMap, localRpc } from "./rpc";
 import { routerForMints } from "./router";
-import { PICOSOL_ACCS } from "./spl";
 
 export async function depositSolFixturesTest(
   amount: bigint,
@@ -30,10 +29,7 @@ export async function depositSolFixturesTest(
     { addr: outTokenAcc },
   ] = mapTup([inpTokenAccName, outTokenAccName], testFixturesTokenAcc);
   const rpc = localRpc();
-  // TODO: picosol is currently the only SPL being tested, may need
-  // to add to this list in the future.
-  const spls = [PICOSOL_ACCS];
-  const router = await routerForMints(rpc, spls, [mint]);
+  const router = await routerForMints(rpc, [mint]);
 
   const quote = getDepositSolQuote(router, {
     amount,
