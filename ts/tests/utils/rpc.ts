@@ -4,7 +4,12 @@ import {
   type Address,
   type Rpc,
   type SolanaRpcApi,
+  createSolanaRpc,
 } from "@solana/kit";
+
+export function localRpc(): Rpc<SolanaRpcApi> {
+  return createSolanaRpc("http://localhost:8899");
+}
 
 export async function fetchAccountMap(
   rpc: Rpc<SolanaRpcApi>,

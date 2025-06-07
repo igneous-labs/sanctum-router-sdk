@@ -21,8 +21,7 @@ pub struct AccountMap(pub HashMap<B58PK, OwnedAccount>);
 #[serde(rename_all = "camelCase")]
 pub struct OwnedAccount {
     pub owner: B58PK,
-    // Instead of number[]
-    #[tsify(type = "UInt8Array")]
+    #[tsify(type = "Uint8Array")] // Instead of number[]
     pub data: Box<[u8]>,
     pub lamports: u64,
 }

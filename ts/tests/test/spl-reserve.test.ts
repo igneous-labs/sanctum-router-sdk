@@ -1,8 +1,10 @@
 import { describe, it, assert } from "vitest";
 import {
+  depositSolFixturesTest,
   fetchAccountMap,
   mapTup,
   NATIVE_MINT,
+  PICOSOL_MINT,
   readTestFixturesJsonFile,
   readTestFixturesKeypair,
 } from "../utils";
@@ -10,8 +12,6 @@ import {
   deserStakePool,
   fromFetchedAccounts,
   getAccountsToUpdate,
-  getDepositSolIx,
-  getDepositSolQuote,
   getDepositStakeIx,
   getDepositStakeQuote,
   getInitAccounts,
@@ -44,131 +44,11 @@ describe("Deposit SOL Test", async () => {
   );
   const keypair = await readTestFixturesKeypair("signer");
 
-  it.sequential("spl-stake-pool-deposit-sol", async () => {
-    const validatorListJson = readTestFixturesJsonFile(
-      "pico-sol-validator-list"
-    );
-    const stakePoolJson = readTestFixturesJsonFile("pico-sol-stake-pool");
-    const stakePoolInfo = await rpcClient
-      .getAccountInfo(stakePoolJson.pubkey as Address, {
-        encoding: "base64",
-      })
-      .send();
-    const stakePoolData = Buffer.from(stakePoolInfo.value!.data[0], "base64");
-    const stakePoolBytes = new Uint8Array(stakePoolData);
-    const stakePoolHandle = deserStakePool(stakePoolBytes);
-    const stakePool = getStakePool(stakePoolHandle);
-
-    let signerWsolToken = readTestFixturesJsonFile("spl-signer-wsol-token");
-    let signerPicoToken = readTestFixturesJsonFile("signer-pico-token");
-
-    const splLsts: SplPoolAccounts[] = [
-      {
-        pool: stakePoolJson.pubkey,
-        validatorList: validatorListJson.pubkey,
-      },
-    ];
-
-    let initAccounts = getInitAccounts(splLsts);
-    let accounts = await fetchAccountMap(rpcClient, initAccounts);
-
-    let sanctumRouter = fromFetchedAccounts(splLsts, accounts, BigInt(1));
-
-    let accountsToUpdate = getAccountsToUpdate(sanctumRouter, [
-      stakePool.poolMint,
-    ]);
-    let accountsToUpdateMap = await fetchAccountMap(
-      rpcClient,
-      accountsToUpdate
-    );
-    update(sanctumRouter, [stakePool.poolMint], accountsToUpdateMap);
-
-    const [
-      signerTokenBalanceBefore,
-      signerPicoTokenBalanceBefore,
-      managerFeeTokenBalanceBefore,
-    ] = await Promise.all(
-      mapTup(
-        [
-          signerWsolToken.pubkey,
-          signerPicoToken.pubkey,
-          address(stakePool.managerFeeAccount),
-        ],
-        async (a) =>
-          BigInt(
-            (
-              await rpcClient.getTokenAccountBalance(a).send()
-            ).value.amount
-          )
-      )
-    );
-
-    let quote = getDepositSolQuote(sanctumRouter, {
-      amount: BigInt(1000000),
-      outputMint: stakePool.poolMint,
-      inputMint: NATIVE_MINT,
+  it("spl-stake-pool-deposit-sol", async () => {
+    await depositSolFixturesTest(1000000n, PICOSOL_MINT, {
+      inp: "spl-signer-wsol-token",
+      out: "signer-pico-token",
     });
-
-    let ix = getDepositSolIx(sanctumRouter, {
-      amount: BigInt(1000000),
-      source: NATIVE_MINT,
-      destinationMint: stakePool.poolMint,
-      sourceTokenAccount: signerWsolToken.pubkey,
-      destinationTokenAccount: signerPicoToken.pubkey,
-      tokenTransferAuthority: keypair.address,
-    }) as unknown as IInstruction;
-
-    const { value: blockhash } = await rpcClient.getLatestBlockhash().send();
-
-    const tx = pipe(
-      createTransactionMessage({
-        version: 0,
-      }),
-      (txm) => appendTransactionMessageInstructions([ix], txm),
-      (txm) => setTransactionMessageFeePayerSigner(keypair, txm),
-      (txm) => setTransactionMessageLifetimeUsingBlockhash(blockhash, txm)
-    );
-    const signedTx = await signTransactionMessageWithSigners(tx);
-    const sendAndConfirmTx = sendAndConfirmTransactionFactory({
-      rpc: rpcClient,
-      rpcSubscriptions: rpcClientSubscriptions,
-    });
-    await sendAndConfirmTx(signedTx, {
-      commitment: "confirmed",
-    });
-
-    const [
-      signerTokenBalanceAfter,
-      signerPicoTokenBalanceAfter,
-      managerFeeTokenBalanceAfter,
-    ] = await Promise.all(
-      mapTup(
-        [
-          signerWsolToken.pubkey,
-          signerPicoToken.pubkey,
-          address(stakePool.managerFeeAccount),
-        ],
-        async (a) =>
-          BigInt(
-            (
-              await rpcClient.getTokenAccountBalance(a).send()
-            ).value.amount
-          )
-      )
-    );
-
-    assert.strictEqual(
-      signerTokenBalanceBefore - signerTokenBalanceAfter,
-      quote?.inAmount
-    );
-    assert.strictEqual(
-      signerPicoTokenBalanceAfter - signerPicoTokenBalanceBefore,
-      quote?.outAmount
-    );
-    assert.strictEqual(
-      managerFeeTokenBalanceAfter - managerFeeTokenBalanceBefore,
-      quote?.feeAmount
-    );
   });
 
   it.sequential("spl-stake-pool-withdraw-sol", async () => {
