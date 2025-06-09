@@ -4,12 +4,16 @@ services:
     command: [
         "solana-test-validator",
         "-r", # Reset
-        "-q", # Quiet
+        #"-q", # disable quiet so that we know when the validator is ready when it starts producing blocks
 
-        # TODO: we want to be able to warp to epoch 1
-        # so that we can test with fully active stake accounts
-        # But 432k slots seem too high and the test validator
-        # always just hangs and crashes
+        # Warp to epoch 1 so that we can test with fully active stake accounts
+        #
+        # Set a low slot per epoch so that init doesnt take too long,
+        # but long enough for all tests to run in the same epoch
+        "--slots-per-epoch",
+        "3600",
+        "--warp-slot",
+        "4000",
 
         # Load test fixtures accounts
         "--account-dir",
