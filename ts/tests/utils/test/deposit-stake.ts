@@ -1,9 +1,9 @@
 import {
+  findFeeTokenAccountPda,
   getDepositStakeIx,
   getDepositStakeQuote,
-  type DepositStakeQuote,
+  type DepositStakeQuoteWithRouterFee,
   type Instruction,
-  type StakeAccountLamports,
   type SwapParams,
 } from "@sanctumso/sanctum-router";
 import { routerForMints } from "../router";
@@ -62,23 +62,26 @@ export async function depositStakeFixturesTest(
 
 async function simDepositStakeAssertQuoteMatches(
   rpc: Rpc<SolanaRpcApi>,
+  { quote: { tokensOut }, routerFee }: DepositStakeQuoteWithRouterFee,
   {
-    tokensOut,
-    // TODO: need to also assert that the router fee accounts received the correct amount of
-    // fees but that would mean modifying the TokenQuote struct def to have fine-grained fee breakdowns
-    // of stake pool fees + router fees
-    feeAmount: _,
-  }: DepositStakeQuote,
-  { destinationTokenAccount, tokenTransferAuthority }: SwapParams,
+    destinationTokenAccount,
+    tokenTransferAuthority,
+    destinationMint,
+  }: SwapParams,
   ix: Instruction
 ) {
   // `addresses` layout:
   // - destinationTokenAccount
-  const addresses = [address(destinationTokenAccount)];
+  // - router fee token account
+  const addresses = [
+    address(destinationTokenAccount),
+    address(findFeeTokenAccountPda(destinationMint)[0]),
+  ];
 
   const befSwap = await fetchAccountMap(rpc, addresses);
-  const [destinationTokenAccountBalanceBef] = mapTup(addresses, (addr) =>
-    tokenAccBalance(befSwap.get(addr)!.data)
+  const [destinationTokenAccountBalanceBef, feeTokenAccountBalanceBef] = mapTup(
+    addresses,
+    (addr) => tokenAccBalance(befSwap.get(addr)!.data)
   );
 
   const tx = ixToSimTx(address(tokenTransferAuthority), ix);
@@ -89,13 +92,18 @@ async function simDepositStakeAssertQuoteMatches(
   const debugMsg = `tx: ${tx}\nlogs:\n` + (logs ?? []).join("\n") + "\n";
   expect(err, debugMsg).toBeNull();
 
-  const [destinationTokenAccountBalanceAft] = mapTup([0], (i) =>
-    tokenAccBalance(
-      new Uint8Array(getBase64Encoder().encode(aftSwap[i]!.data[0]))
-    )
+  const [destinationTokenAccountBalanceAft, feeTokenAccountBalanceAft] = mapTup(
+    [0, 1],
+    (i) =>
+      tokenAccBalance(
+        new Uint8Array(getBase64Encoder().encode(aftSwap[i]!.data[0]))
+      )
   );
 
   expect(
     destinationTokenAccountBalanceAft - destinationTokenAccountBalanceBef
   ).toEqual(tokensOut);
+  expect(feeTokenAccountBalanceAft - feeTokenAccountBalanceBef).toEqual(
+    routerFee
+  );
 }

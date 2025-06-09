@@ -3,10 +3,12 @@
  * (StakeWrappedSol, PrefundSwapViaStake, WithdrawWrappedSol)
  */
 
-import type {
-  Instruction,
-  SwapParams,
-  TokenQuote,
+import {
+  findFeeTokenAccountPda,
+  type Instruction,
+  type SwapParams,
+  type TokenQuote,
+  type TokenQuoteWithRouterFee,
 } from "@sanctumso/sanctum-router";
 import {
   address,
@@ -21,37 +23,49 @@ import { tokenAccBalance } from "../token";
 import { ixToSimTx } from "../tx";
 import { txSimParams } from "./common";
 
+function discmQuote(
+  quote: TokenQuote | TokenQuoteWithRouterFee
+): quote is TokenQuote {
+  return (quote as any).routerFee == null;
+}
+
 export async function simTokenSwapAssertQuoteMatches(
   rpc: Rpc<SolanaRpcApi>,
-  {
-    inAmount,
-    outAmount,
-    // TODO: need to also assert that the router fee accounts received the correct amount of
-    // fees but that would mean modifying the TokenQuote struct def to have fine-grained fee breakdowns
-    // of stake pool fees + router fees
-    feeAmount: _,
-  }: TokenQuote,
+  quote: TokenQuote | TokenQuoteWithRouterFee,
   {
     amount,
     sourceTokenAccount,
     destinationTokenAccount,
     tokenTransferAuthority,
+    destinationMint,
   }: SwapParams,
   ix: Instruction
 ) {
+  const [{ inAmount, outAmount }, routerFee] = discmQuote(quote)
+    ? [quote, 0n]
+    : [quote.quote, quote.routerFee];
+
   expect(inAmount).toStrictEqual(amount);
 
   // `addresses` layout:
   // - sourceTokenAccount
   // - destinationTokenAccount
+  // - router fee token account
   const addresses = mapTup(
-    [sourceTokenAccount, destinationTokenAccount],
+    [
+      sourceTokenAccount,
+      destinationTokenAccount,
+      findFeeTokenAccountPda(destinationMint)[0],
+    ],
     address
   );
 
   const befSwap = await fetchAccountMap(rpc, addresses);
-  const [sourceTokenAccountBalanceBef, destinationTokenAccountBalanceBef] =
-    mapTup(addresses, (addr) => tokenAccBalance(befSwap.get(addr)!.data));
+  const [
+    sourceTokenAccountBalanceBef,
+    destinationTokenAccountBalanceBef,
+    feeTokenAccountBalanceBef,
+  ] = mapTup(addresses, (addr) => tokenAccBalance(befSwap.get(addr)!.data));
 
   const tx = ixToSimTx(address(tokenTransferAuthority), ix);
   const {
@@ -61,12 +75,15 @@ export async function simTokenSwapAssertQuoteMatches(
   const debugMsg = `tx: ${tx}\nlogs:\n` + (logs ?? []).join("\n") + "\n";
   expect(err, debugMsg).toBeNull();
 
-  const [sourceTokenAccountBalanceAft, destinationTokenAccountBalanceAft] =
-    mapTup([0, 1], (i) =>
-      tokenAccBalance(
-        new Uint8Array(getBase64Encoder().encode(aftSwap[i]!.data[0]))
-      )
-    );
+  const [
+    sourceTokenAccountBalanceAft,
+    destinationTokenAccountBalanceAft,
+    feeTokenAccountBalanceAft,
+  ] = mapTup([0, 1, 2], (i) =>
+    tokenAccBalance(
+      new Uint8Array(getBase64Encoder().encode(aftSwap[i]!.data[0]))
+    )
+  );
 
   expect(sourceTokenAccountBalanceBef - sourceTokenAccountBalanceAft).toEqual(
     inAmount
@@ -74,4 +91,7 @@ export async function simTokenSwapAssertQuoteMatches(
   expect(
     destinationTokenAccountBalanceAft - destinationTokenAccountBalanceBef
   ).toEqual(outAmount);
+  expect(feeTokenAccountBalanceAft - feeTokenAccountBalanceBef).toEqual(
+    routerFee
+  );
 }

@@ -1,9 +1,12 @@
 use sanctum_marinade_liquid_staking_core::State as MarinadeState;
 use sanctum_reserve_core::{Fee, Pool, ProtocolFee};
 use sanctum_router_core::{
-    DepositSol, DepositStake, DepositStakeQuote, TokenQuote, WithdrawSol, SANCTUM_ROUTER_PROGRAM,
+    DepositSol, DepositStake, DepositStakeQuote, TokenQuote, WithRouterFee, WithdrawSol,
+    SANCTUM_ROUTER_PROGRAM,
 };
 use sanctum_spl_stake_pool_core::StakePool;
+use serde::{Deserialize, Serialize};
+use tsify_next::Tsify;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
 use crate::{
@@ -289,19 +292,26 @@ pub fn get_deposit_sol_ix(
     Ok(ix)
 }
 
+// need to use a simple newtype here instead of type alias
+// otherwise wasm_bindgen shits itself with missing generics
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenQuoteWithRouterFee(WithRouterFee<TokenQuote>);
+
 /// Requires `update()` to be called before calling this function
 #[wasm_bindgen(js_name = getWithdrawSolQuote)]
 pub fn get_withdraw_sol_quote(
     this: &SanctumRouterHandle,
     params: QuoteParams,
-) -> Option<TokenQuote> {
+) -> Option<TokenQuoteWithRouterFee> {
     this.0
         .spl_routers
         .iter()
         .find(|r| r.stake_pool.pool_mint == params.input_mint.0)?
         .to_withdraw_sol_router()
         .get_withdraw_sol_quote(params.amount)
-        .map(|q| q.with_global_fee())
+        .map(|q| TokenQuoteWithRouterFee(q.withdraw_sol_with_router_fee()))
 }
 
 /// Requires `update()` to be called before calling this function
@@ -335,12 +345,19 @@ pub fn get_withdraw_sol_ix(
     })
 }
 
+// need to use a simple newtype here instead of type alias
+// otherwise wasm_bindgen shits itself with missing generics
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeQuoteWithRouterFee(WithRouterFee<DepositStakeQuote>);
+
 /// Requires `update()` to be called before calling this function
 #[wasm_bindgen(js_name = getDepositStakeQuote)]
 pub fn get_deposit_stake_quote(
     this: &mut SanctumRouterHandle,
     params: DepositStakeParams,
-) -> Option<DepositStakeQuote> {
+) -> Option<DepositStakeQuoteWithRouterFee> {
     match params.output_mint.0 {
         sanctum_router_core::NATIVE_MINT => this
             .0
@@ -366,11 +383,13 @@ pub fn get_deposit_stake_quote(
         }
     }
     .map(|q| {
-        if params.output_mint.0 != sanctum_router_core::NATIVE_MINT {
-            q.with_global_fee()
-        } else {
-            q
-        }
+        DepositStakeQuoteWithRouterFee(
+            if params.output_mint.0 != sanctum_router_core::NATIVE_MINT {
+                q.with_router_fee()
+            } else {
+                WithRouterFee::zero(q)
+            },
+        )
     })
 }
 

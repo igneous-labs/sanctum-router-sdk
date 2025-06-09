@@ -1,4 +1,4 @@
-use super::TokenQuote;
+use crate::quote::TokenQuote;
 
 pub trait DepositSol {
     type Accs: AsRef<[[u8; 32]]>;

@@ -10,7 +10,6 @@ std = ["borsh/std", "serde?/std"]
 wasm = ["std", "serde", "dep:tsify-next", "dep:wasm-bindgen"]
 
 [dependencies]
-borsh = { workspace = true, default-features = false, features = ["derive"] }
 const-crypto = { workspace = true }
 generic-array-struct = { workspace = true }
 sanctum-fee-ratio = { workspace = true }
@@ -18,6 +17,11 @@ sanctum-marinade-liquid-staking-core = { workspace = true }
 sanctum-reserve-core = { workspace = true }
 sanctum-spl-stake-pool-core = { workspace = true }
 sanctum-u64-ratio = { workspace = true }
+
+# The only reason why we have this dep is so that we can activate borsh's
+# `std` feature flag for borsh io errors to implement `std::error::Error`.
+# We do not use borsh for anything in this crate
+borsh = { workspace = true }
 
 # optional
 serde = { workspace = true, default-features = false, features = ["derive"], optional = true }
