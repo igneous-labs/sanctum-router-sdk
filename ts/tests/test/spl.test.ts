@@ -23,7 +23,7 @@ describe("SPL Test", async () => {
   });
 
   it("spl-stake-pool-deposit-stake", async () => {
-    const stakeAccName = "deposit-stake";
+    const stakeAccName = "picosol-deposit-stake";
     const { unstakedLamports, stakedLamports } =
       testFixturesStakeAcc(stakeAccName);
     // Need to quote as if the stake account to be deposited has
