@@ -1,22 +1,9 @@
-mod marinade;
-mod reserve;
-mod spl;
-
-pub use marinade::*;
-pub use reserve::*;
-use sanctum_reserve_core::{Fee, Pool, ProtocolFee};
-pub use spl::*;
-
 use sanctum_marinade_liquid_staking_core::State as MarinadeState;
+use sanctum_reserve_core::{Fee, Pool, ProtocolFee};
 use sanctum_router_core::{
     DepositSol, DepositStake, DepositStakeQuote, TokenQuote, WithdrawSol, SANCTUM_ROUTER_PROGRAM,
 };
 use sanctum_spl_stake_pool_core::StakePool;
-
-use spl_stake_pool::{
-    find_deposit_auth_pda_internal, find_withdraw_auth_pda_internal,
-    keys_signer_writer_to_account_metas, AccountMeta, Instruction,
-};
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
 use crate::{
@@ -25,12 +12,21 @@ use crate::{
         get_deposit_sol_prefix_metas_and_data, get_deposit_stake_prefix_metas_and_data,
         get_withdraw_wrapped_sol_prefix_metas_and_data,
     },
-    router::Update,
-    utils::{
-        get_account_data, AccountMap, DepositStakeParams, QuoteParams, SplPoolAccounts, SwapParams,
-        B58PK,
+    interface::{
+        get_account_data, keys_signer_writer_to_account_metas, AccountMap, AccountMeta,
+        DepositStakeParams, Instruction, QuoteParams, SplPoolAccounts, SwapParams, B58PK,
     },
+    pda::spl::{find_deposit_auth_pda_internal, find_withdraw_auth_pda_internal},
+    router::Update,
 };
+
+mod marinade;
+mod reserve;
+mod spl;
+
+pub use marinade::*;
+pub use reserve::*;
+pub use spl::*;
 
 #[wasm_bindgen]
 pub struct SanctumRouterHandle(pub(crate) SanctumRouter);

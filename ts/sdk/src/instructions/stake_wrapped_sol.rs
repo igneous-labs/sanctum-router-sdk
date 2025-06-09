@@ -2,10 +2,13 @@ use sanctum_router_core::{
     StakeWrappedSolIxData, StakeWrappedSolPrefixKeysOwned, STAKE_WRAPPED_SOL_PREFIX_ACCS_LEN,
     STAKE_WRAPPED_SOL_PREFIX_IS_SIGNER, STAKE_WRAPPED_SOL_PREFIX_IS_WRITER, TOKEN_PROGRAM,
 };
-use spl_stake_pool::{keys_signer_writer_to_account_metas, AccountMeta};
 use wasm_bindgen::JsError;
 
-use crate::{err::invalid_pda_err, pda::find_fee_token_account_pda_internal, utils::SwapParams};
+use crate::{
+    err::invalid_pda_err,
+    interface::{keys_signer_writer_to_account_metas, AccountMeta, SwapParams},
+    pda::router::find_fee_token_account_pda_internal,
+};
 
 pub(crate) fn get_deposit_sol_prefix_metas_and_data(
     swap_params: SwapParams,

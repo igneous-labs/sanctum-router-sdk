@@ -1,21 +1,18 @@
 use sanctum_router_core::{
     SplStakePoolDepositSolRouter, SplStakePoolDepositStakeRouter, SplStakePoolWithdrawSolRouter,
 };
-use serde::{Deserialize, Serialize};
-use spl_stake_pool::find_validator_stake_account_pda_internal;
-use tsify_next::Tsify;
-use wasm_bindgen::{prelude::wasm_bindgen, JsError};
-
 use sanctum_spl_stake_pool_core::{
     StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo,
 };
+use wasm_bindgen::JsError;
 
 use crate::{
+    interface::{get_account, get_account_data, AccountMap},
+    pda::spl::find_validator_stake_account_pda_internal,
     router::Update,
-    utils::{get_account, get_account_data, AccountMap},
 };
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct SplStakePoolRouterOwned {
     pub stake_pool_addr: [u8; 32],
     pub stake_pool_program: [u8; 32],
@@ -120,19 +117,8 @@ impl Update for SplStakePoolRouterOwned {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi)]
-#[derive(Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct ValidatorListOwned {
     pub header: ValidatorListHeader,
     pub validators: Vec<ValidatorStakeInfo>,
-}
-
-impl ValidatorListOwned {
-    pub fn to_validator_list(&self) -> ValidatorList {
-        ValidatorList {
-            header: self.header,
-            validators: self.validators.as_slice(),
-        }
-    }
 }

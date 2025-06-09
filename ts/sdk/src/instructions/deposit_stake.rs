@@ -2,10 +2,13 @@ use sanctum_router_core::{
     DepositStakeIxAccsBuilder, DepositStakeIxData, DEPOSIT_STAKE_IX_ACCS_LEN,
     DEPOSIT_STAKE_IX_IS_SIGNER, DEPOSIT_STAKE_IX_IS_WRITER,
 };
-use spl_stake_pool::{keys_signer_writer_to_account_metas, AccountMeta};
 use wasm_bindgen::JsError;
 
-use crate::{err::invalid_pda_err, pda::find_fee_token_account_pda_internal, utils::SwapParams};
+use crate::{
+    err::invalid_pda_err,
+    interface::{keys_signer_writer_to_account_metas, AccountMeta, SwapParams},
+    pda::router::find_fee_token_account_pda_internal,
+};
 
 pub(crate) fn get_deposit_stake_prefix_metas_and_data(
     swap_params: SwapParams,

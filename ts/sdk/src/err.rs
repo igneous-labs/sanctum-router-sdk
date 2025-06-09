@@ -1,10 +1,11 @@
-use bs58_fixed::Bs58String;
 use wasm_bindgen::{intern, JsError};
+
+use crate::interface::Bs58PkString;
 
 pub fn account_missing_err(pubkey: &[u8; 32]) -> JsError {
     JsError::new(intern(&format!(
         "Account {:?} missing from AccountMap",
-        Bs58String::<44>::encode(pubkey).to_string()
+        Bs58PkString::encode(pubkey).to_string()
     )))
 }
 

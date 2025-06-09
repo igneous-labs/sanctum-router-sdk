@@ -3,9 +3,9 @@ use sanctum_router_core::ReserveRouter;
 use wasm_bindgen::JsError;
 
 use crate::{
-    pda::find_reserve_stake_account_record_pda_internal,
+    interface::{get_account, get_account_data, AccountMap},
+    pda::reserve::find_reserve_stake_account_record_pda_internal,
     router::Update,
-    utils::{get_account, get_account_data, AccountMap},
 };
 
 #[derive(Clone, Debug, PartialEq)]

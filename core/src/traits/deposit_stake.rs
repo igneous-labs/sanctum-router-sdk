@@ -1,6 +1,28 @@
-use sanctum_spl_stake_pool_core::StakeAccountLamports;
+use borsh::{BorshDeserialize, BorshSerialize};
 
 use super::DepositStakeQuote;
+
+#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
+#[cfg_attr(
+    feature = "wasm",
+    derive(tsify_next::Tsify),
+    tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)
+)]
+pub struct StakeAccountLamports {
+    pub staked: u64,
+    pub unstaked: u64,
+}
+
+impl StakeAccountLamports {
+    pub const fn total(&self) -> u64 {
+        self.staked + self.unstaked
+    }
+}
 
 pub trait DepositStake {
     type Accs: AsRef<[[u8; 32]]>;

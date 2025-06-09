@@ -11,12 +11,12 @@ impl DepositStake for SplStakePoolDepositStakeRouter<'_> {
 
     fn get_deposit_stake_quote(
         &self,
-        stake_account_lamports: StakeAccountLamports,
+        crate::traits::StakeAccountLamports { staked, unstaked }: crate::traits::StakeAccountLamports,
     ) -> Option<crate::DepositStakeQuote> {
         let quote = self
             .stake_pool
             .quote_deposit_stake(
-                stake_account_lamports,
+                StakeAccountLamports { staked, unstaked },
                 DepositStakeQuoteArgs {
                     validator_stake_info: *self.validator_stake_info,
                     validator: *self.validator_stake_info.vote_account_address(),
