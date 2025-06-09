@@ -1,7 +1,7 @@
 use generic_array_struct::generic_array_struct;
 use sanctum_spl_stake_pool_core::DepositSolQuoteArgs;
 
-use crate::traits::{DepositSol, TokenQuote};
+use crate::{traits::DepositSol, TokenQuote};
 
 use super::SplStakePoolDepositSolRouter;
 
