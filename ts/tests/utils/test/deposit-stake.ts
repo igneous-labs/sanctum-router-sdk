@@ -23,8 +23,7 @@ import { expect } from "vitest";
 
 export async function depositStakeFixturesTest(
   mint: string,
-  { inp: inpStakeAccName, out: outTokenAccName }: { inp: string; out: string },
-  stakeAccQuoteParamsOverride?: StakeAccountLamports
+  { inp: inpStakeAccName, out: outTokenAccName }: { inp: string; out: string }
 ) {
   const { addr: outTokenAcc } = testFixturesTokenAcc(outTokenAccName);
   const {
@@ -37,7 +36,7 @@ export async function depositStakeFixturesTest(
   const rpc = localRpc();
   const router = await routerForMints(rpc, [mint]);
 
-  const stakeAccountLamports = stakeAccQuoteParamsOverride ?? {
+  const stakeAccountLamports = {
     staked: stakedLamports,
     unstaked: unstakedLamports,
   };

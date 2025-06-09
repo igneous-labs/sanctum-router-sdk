@@ -6,10 +6,14 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import { readTestFixturesJsonFile } from "./file";
+import { mapTup } from "./ops";
+import { CURR_EPOCH } from "./consts";
 
 const STAKE_ACC_WITHDRAWER_OFFSET = 44;
 const STAKE_ACC_VOTE_OFFSET = 124;
-const STAKE_ACC_STAKE_OFFSET = 156;
+export const STAKE_ACC_STAKE_OFFSET = 156;
+export const STAKE_ACC_ACTIVATION_EPOCH_OFFSET = 164;
+const STAKE_ACC_DEACTIVATION_EPOCH_OFFSET = 172;
 
 export function stakeAccWithdrawer(accData: ReadonlyUint8Array): Address {
   return getAddressDecoder().decode(accData, STAKE_ACC_WITHDRAWER_OFFSET);
@@ -40,8 +44,23 @@ export function testFixturesStakeAcc(stakeAccFname: string): {
   const accData = getBase64Encoder().encode(data);
   const withdrawer = stakeAccWithdrawer(accData);
   const vote = stakeAccVote(accData);
-  const stakedLamports = stakeAccStake(accData);
-  const unstakedLamports = BigInt(lamports) - stakedLamports;
+
+  const stake = stakeAccStake(accData);
+  const biLamports = BigInt(lamports);
+  const [activationEpoch, deactivationEpoch] = mapTup(
+    [STAKE_ACC_ACTIVATION_EPOCH_OFFSET, STAKE_ACC_DEACTIVATION_EPOCH_OFFSET],
+    (offset) => getU64Decoder().decode(accData, offset)
+  );
+
+  let stakedLamports: bigint;
+  let unstakedLamports: bigint;
+  if (activationEpoch >= CURR_EPOCH || deactivationEpoch < CURR_EPOCH) {
+    stakedLamports = 0n;
+    unstakedLamports = biLamports;
+  } else {
+    stakedLamports = stake;
+    unstakedLamports = biLamports - stakedLamports;
+  }
 
   if (unstakedLamports < 0) {
     throw new Error(

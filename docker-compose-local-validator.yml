@@ -9,7 +9,7 @@ services:
         # Warp to epoch 1 so that we can test with fully active stake accounts
         #
         # Set a low slot per epoch so that init doesnt take too long,
-        # but long enough for all tests to run in the same epoch
+        # but long enough for all tests to run in the same epoch.
         "--slots-per-epoch",
         "3600",
         "--warp-slot",
