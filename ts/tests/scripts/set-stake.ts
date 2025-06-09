@@ -19,7 +19,7 @@ function main() {
 
   if (!name || !stakeStr) {
     console.log(
-      "Usage: set-activation-epoch.ts <test-fixtures-filename-without-json-ext> <stake-lamports>"
+      "Usage: set-stake.ts <test-fixtures-filename-without-json-ext> <stake-lamports>"
     );
     return;
   }
