@@ -10,7 +10,7 @@ impl DepositStake for ReserveRouter<'_> {
 
     fn get_deposit_stake_quote(
         &self,
-        stake_account_lamports: sanctum_spl_stake_pool_core::StakeAccountLamports,
+        stake_account_lamports: crate::traits::StakeAccountLamports,
     ) -> Option<crate::DepositStakeQuote> {
         let quote = self.pool.quote_unstake(
             self.fee_account,

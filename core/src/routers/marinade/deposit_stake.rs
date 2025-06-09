@@ -16,15 +16,12 @@ impl DepositStake for MarinadeStakeRouter<'_> {
 
     fn get_deposit_stake_quote(
         &self,
-        stake_account_lamports: sanctum_spl_stake_pool_core::StakeAccountLamports,
+        crate::traits::StakeAccountLamports { staked, unstaked }: crate::traits::StakeAccountLamports,
     ) -> Option<crate::DepositStakeQuote> {
         let quote = self
             .state
             .quote_deposit_stake(
-                StakeAccountLamports {
-                    staked: stake_account_lamports.staked,
-                    unstaked: stake_account_lamports.unstaked,
-                },
+                StakeAccountLamports { staked, unstaked },
                 DepositStakeQuoteArgs {
                     msol_leg_balance: self.msol_leg_balance,
                 },
