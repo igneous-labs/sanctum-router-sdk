@@ -15,7 +15,7 @@ describe("Marinade Test", async () => {
 
   it("marinade-deposit-stake", async () => {
     await depositStakeFixturesTest(MSOL_MINT, {
-      inp: "marinade_stake_account",
+      inp: "marinade-deposit-stake",
       out: "signer-msol-token",
     });
   });

@@ -34,7 +34,7 @@ export function readTestFixturesJsonFile(name: string): TestFixtureAcc {
   ) as TestFixtureAcc;
 }
 
-export function writeTestFixturesAcc(name: string, data: TestFixtureAcc) {
+export function writeTestFixturesJsonFile(name: string, data: TestFixtureAcc) {
   writeFileSync(testFixturesAccPath(name), stringify(data, undefined, 2)!);
 }
 
