@@ -1,6 +1,8 @@
 use generic_array_struct::generic_array_struct;
 
-use crate::{DepositStake, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM};
+use crate::{
+    conv_unstake_quote, DepositStake, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM,
+};
 
 use super::ReserveRouter;
 
@@ -20,7 +22,7 @@ impl DepositStake for ReserveRouter<'_> {
             false,
         )?;
 
-        Some(quote.into())
+        Some(conv_unstake_quote(quote, stake_account_lamports))
     }
 
     fn suffix_accounts(&self) -> Self::Accs {

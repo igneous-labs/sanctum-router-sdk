@@ -12,7 +12,10 @@ use crate::quote::DepositStakeQuote;
     tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)
 )]
 pub struct StakeAccountLamports {
+    /// Actively staked lamports of this stake account
     pub staked: u64,
+
+    /// Unstaked lamports of this stake account. Can be rent-exemption, MEV tips etc
     pub unstaked: u64,
 }
 

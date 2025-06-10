@@ -116,33 +116,61 @@ pub struct OwnedAccount {
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
-pub struct QuoteParams {
-    pub amount: u64,
-    pub input_mint: B58PK,
-    pub output_mint: B58PK,
+pub struct TokenQuoteParams {
+    pub amt: u64,
+    pub inp_mint: B58PK,
+    pub out_mint: B58PK,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
-pub struct DepositStakeParams {
+pub struct DepositStakeQuoteParams {
     pub validator_vote: B58PK,
-    pub output_mint: B58PK,
-    pub stake_account_lamports: StakeAccountLamports,
+    pub out_mint: B58PK,
+    pub inp_stake: StakeAccountLamports,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
-pub struct SwapParams {
-    pub amount: u64,
-    /// Can either be a mint or a vote account
-    pub source: B58PK,
-    pub destination_mint: B58PK,
-    pub source_token_account: B58PK,
-    pub destination_token_account: B58PK,
-    /// This can be the user or the program authority over the source_token_account.
-    pub token_transfer_authority: B58PK,
+pub struct TokenSwapParams {
+    pub amt: u64,
+
+    /// Input mint
+    pub inp: B58PK,
+
+    /// Output mint
+    pub out: B58PK,
+
+    /// Input token account to transfer `amt` tokens from
+    pub signer_inp: B58PK,
+
+    /// Output token account to receive tokens to
+    pub signer_out: B58PK,
+
+    /// Signing authority of `self.signer_inp`; user making the swap.
+    pub signer: B58PK,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeSwapParams {
+    /// Vote account `self.signer_inp` stake account is delegated to
+    pub inp: B58PK,
+
+    /// Output mint
+    pub out: B58PK,
+
+    /// Stake account to deposit
+    pub signer_inp: B58PK,
+
+    /// Output token account to receive tokens to
+    pub signer_out: B58PK,
+
+    /// Signing authority of `self.signer_inp`; user making the swap.
+    pub signer: B58PK,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]

@@ -60,11 +60,11 @@ impl WithdrawWrappedSolPrefixKeys<'_> {
 pub struct WithdrawWrappedSolIxData([u8; 9]);
 
 impl WithdrawWrappedSolIxData {
-    pub fn new(amount: u64) -> Self {
+    pub fn new(amt: u64) -> Self {
         let mut buf = [0u8; 9];
 
         buf[0] = INSTRUCTION_IDX_WITHDRAW_WRAPPED_SOL;
-        buf[1..9].copy_from_slice(&amount.to_le_bytes());
+        buf[1..9].copy_from_slice(&amt.to_le_bytes());
 
         Self(buf)
     }

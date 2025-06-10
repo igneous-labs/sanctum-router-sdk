@@ -81,11 +81,11 @@ pub struct StakeWrappedSolIxData([u8; 9]);
 
 impl StakeWrappedSolIxData {
     #[inline]
-    pub fn new(amount: u64) -> Self {
+    pub fn new(amt: u64) -> Self {
         let mut buf = [0u8; 9];
 
         buf[0] = INSTRUCTION_IDX_STAKE_WRAPPED_SOL;
-        buf[1..9].copy_from_slice(&amount.to_le_bytes());
+        buf[1..9].copy_from_slice(&amt.to_le_bytes());
 
         Self(buf)
     }

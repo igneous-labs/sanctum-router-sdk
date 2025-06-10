@@ -3,8 +3,8 @@ import {
   getDepositStakeIx,
   getDepositStakeQuote,
   type DepositStakeQuoteWithRouterFee,
+  type DepositStakeSwapParams,
   type Instruction,
-  type SwapParams,
 } from "@sanctumso/sanctum-router";
 import { routerForMints } from "../router";
 import { fetchAccountMap, localRpc } from "../rpc";
@@ -17,8 +17,7 @@ import {
   type SolanaRpcApi,
 } from "@solana/kit";
 import { mapTup } from "../ops";
-import { ixToSimTx } from "../tx";
-import { txSimParams } from "./common";
+import { ixToSimTx, txSimParams } from "../tx";
 import { expect } from "vitest";
 
 export async function depositStakeFixturesTest(
@@ -36,23 +35,21 @@ export async function depositStakeFixturesTest(
   const rpc = localRpc();
   const router = await routerForMints(rpc, [mint]);
 
-  const stakeAccountLamports = {
+  const inpStake = {
     staked: stakedLamports,
     unstaked: unstakedLamports,
   };
   const quote = getDepositStakeQuote(router, {
     validatorVote: vote,
-    outputMint: mint,
-    stakeAccountLamports,
+    outMint: mint,
+    inpStake,
   })!;
-  const params = {
-    destinationMint: mint,
-    sourceTokenAccount: inpStakeAcc,
-    destinationTokenAccount: outTokenAcc,
-    tokenTransferAuthority: withdrawer,
-    source: vote,
-    // dont cares
-    amount: 0n,
+  const params: DepositStakeSwapParams = {
+    inp: vote,
+    out: mint,
+    signerInp: inpStakeAcc,
+    signerOut: outTokenAcc,
+    signer: withdrawer,
   };
 
   const ix = getDepositStakeIx(router, params);
@@ -62,29 +59,24 @@ export async function depositStakeFixturesTest(
 
 async function simDepositStakeAssertQuoteMatches(
   rpc: Rpc<SolanaRpcApi>,
-  { quote: { tokensOut }, routerFee }: DepositStakeQuoteWithRouterFee,
-  {
-    destinationTokenAccount,
-    tokenTransferAuthority,
-    destinationMint,
-  }: SwapParams,
+  { quote: { out }, routerFee }: DepositStakeQuoteWithRouterFee,
+  { out: outMint, signerOut, signer }: DepositStakeSwapParams,
   ix: Instruction
 ) {
   // `addresses` layout:
-  // - destinationTokenAccount
+  // - signerOut
   // - router fee token account
   const addresses = [
-    address(destinationTokenAccount),
-    address(findFeeTokenAccountPda(destinationMint)[0]),
+    address(signerOut),
+    address(findFeeTokenAccountPda(outMint)[0]),
   ];
 
   const befSwap = await fetchAccountMap(rpc, addresses);
-  const [destinationTokenAccountBalanceBef, feeTokenAccountBalanceBef] = mapTup(
-    addresses,
-    (addr) => tokenAccBalance(befSwap.get(addr)!.data)
+  const [outTokenAccBalBef, feeTokenAccBalBef] = mapTup(addresses, (addr) =>
+    tokenAccBalance(befSwap.get(addr)!.data)
   );
 
-  const tx = ixToSimTx(address(tokenTransferAuthority), ix);
+  const tx = ixToSimTx(address(signer), ix);
   const {
     value: { err, accounts: aftSwap, logs },
   } = await rpc.simulateTransaction(tx, txSimParams(addresses)).send();
@@ -92,18 +84,12 @@ async function simDepositStakeAssertQuoteMatches(
   const debugMsg = `tx: ${tx}\nlogs:\n` + (logs ?? []).join("\n") + "\n";
   expect(err, debugMsg).toBeNull();
 
-  const [destinationTokenAccountBalanceAft, feeTokenAccountBalanceAft] = mapTup(
-    [0, 1],
-    (i) =>
-      tokenAccBalance(
-        new Uint8Array(getBase64Encoder().encode(aftSwap[i]!.data[0]))
-      )
+  const [outTokenAccBalAft, feeTokenAccBalAft] = mapTup([0, 1], (i) =>
+    tokenAccBalance(
+      new Uint8Array(getBase64Encoder().encode(aftSwap[i]!.data[0]))
+    )
   );
 
-  expect(
-    destinationTokenAccountBalanceAft - destinationTokenAccountBalanceBef
-  ).toEqual(tokensOut);
-  expect(feeTokenAccountBalanceAft - feeTokenAccountBalanceBef).toEqual(
-    routerFee
-  );
+  expect(outTokenAccBalAft - outTokenAccBalBef).toEqual(out);
+  expect(feeTokenAccBalAft - feeTokenAccBalBef).toEqual(routerFee);
 }
