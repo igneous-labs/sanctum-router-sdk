@@ -254,10 +254,10 @@ pub fn get_deposit_sol_ix(
     this: &SanctumRouterHandle,
     params: TokenSwapParams,
 ) -> Result<Instruction, JsError> {
-    let destination_mint = params.out.0;
+    let out_mint = params.out.0;
     let (prefix_metas, data) = get_deposit_sol_prefix_metas_and_data(params)?;
 
-    let metas: Box<[AccountMeta]> = match destination_mint {
+    let metas: Box<[AccountMeta]> = match out_mint {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {
             let router = this.0.marinade_router.to_deposit_sol_router();
 
@@ -394,19 +394,19 @@ pub fn get_deposit_stake_quote(
 }
 
 /// Requires `update()` to be called before calling this function
-/// Stake account to deposit should be set on params.source_token_account
-/// Vote account in case of `SplStakePool` and `Marinade` should be set on params.source_mint
+/// Stake account to deposit should be set on `params.signerInp`
+/// Vote account of the stake account to deposit should be set on `params.inp`
 #[wasm_bindgen(js_name = getDepositStakeIx)]
 pub fn get_deposit_stake_ix(
     this: &mut SanctumRouterHandle,
     params: DepositStakeSwapParams,
 ) -> Result<Instruction, JsError> {
-    let destination_mint = params.out.0;
+    let out_mint = params.out.0;
     let vote_account = params.inp.0;
     let stake_account = params.signer_inp.0;
     let (prefix_metas, data) = get_deposit_stake_prefix_metas_and_data(params)?;
 
-    let metas: Box<[AccountMeta]> = match destination_mint {
+    let metas: Box<[AccountMeta]> = match out_mint {
         sanctum_router_core::NATIVE_MINT => {
             let router = this
                 .0

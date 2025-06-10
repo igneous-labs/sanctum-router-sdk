@@ -59,7 +59,7 @@ impl From<sanctum_spl_stake_pool_core::DepositStakeQuote> for DepositStakeQuote 
     ) -> Self {
         Self {
             inp: StakeAccountLamports { staked, unstaked },
-            // we set referral destination as output, so the user gets it
+            // we set referral destination = out token acc, so the user gets the referral fee
             out: tokens_out + referral_fee,
             fee: manager_fee,
         }
