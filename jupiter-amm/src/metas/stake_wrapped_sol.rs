@@ -14,10 +14,10 @@ pub fn stake_wrapped_sol_prefix_metas(
         .with_consts()
         .with_user(swap_params.token_transfer_authority.to_bytes())
         .with_wsol_mint(swap_params.source_mint.to_bytes())
-        .with_dest_token_mint(swap_params.destination_mint.to_bytes())
-        .with_wsol_from(swap_params.source_token_account.to_bytes())
-        .with_dest_token_to(swap_params.destination_token_account.to_bytes())
-        .with_dest_token_fee_token_account(find_fee_token_account(
+        .with_out_mint(swap_params.destination_mint.to_bytes())
+        .with_inp_wsol(swap_params.source_token_account.to_bytes())
+        .with_out_token(swap_params.destination_token_account.to_bytes())
+        .with_out_fee_token(find_fee_token_account(
             &swap_params.destination_mint.to_bytes(),
         ))
         .with_token_program(TOKEN_PROGRAM);

@@ -23,14 +23,14 @@ pub(crate) fn get_withdraw_wrapped_sol_prefix_metas_and_data(
     let metas = keys_signer_writer_to_account_metas(
         &WithdrawWrappedSolPrefixAccsBuilder::start()
             .with_user(&swap_params.token_transfer_authority.0)
-            .with_src_token_from(&swap_params.source_token_account.0)
-            .with_wsol_to(&swap_params.destination_token_account.0)
-            .with_wsol_fee_token_account(
+            .with_inp_token(&swap_params.source_token_account.0)
+            .with_out_wsol(&swap_params.destination_token_account.0)
+            .with_wsol_fee_token(
                 &find_fee_token_account_pda_internal(&swap_params.destination_mint.0)
                     .ok_or(invalid_pda_err())?
                     .0,
             )
-            .with_src_token_mint(&swap_params.source.0)
+            .with_inp_mint(&swap_params.source.0)
             .with_wsol_mint(&swap_params.destination_mint.0)
             .with_token_program(&TOKEN_PROGRAM)
             .build()

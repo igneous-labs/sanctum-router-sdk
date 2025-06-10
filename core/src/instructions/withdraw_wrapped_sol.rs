@@ -13,10 +13,10 @@ use super::INSTRUCTION_IDX_WITHDRAW_WRAPPED_SOL;
 )]
 pub struct WithdrawWrappedSolPrefixAccs<T> {
     pub user: T,
-    pub src_token_from: T,
-    pub wsol_to: T,
-    pub wsol_fee_token_account: T,
-    pub src_token_mint: T,
+    pub inp_token: T,
+    pub out_wsol: T,
+    pub wsol_fee_token: T,
+    pub inp_mint: T,
     pub wsol_mint: T,
     pub token_program: T,
 }
@@ -27,10 +27,10 @@ pub type WithdrawWrappedSolPrefixAccsFlag = WithdrawWrappedSolPrefixAccs<bool>;
 
 pub const WITHDRAW_WRAPPED_SOL_PREFIX_IS_WRITER: WithdrawWrappedSolPrefixAccsFlag =
     WithdrawWrappedSolPrefixAccs([false; WITHDRAW_WRAPPED_SOL_PREFIX_ACCS_LEN])
-        .const_with_src_token_from(true)
-        .const_with_src_token_mint(true)
-        .const_with_wsol_to(true)
-        .const_with_wsol_fee_token_account(true);
+        .const_with_inp_token(true)
+        .const_with_inp_mint(true)
+        .const_with_out_wsol(true)
+        .const_with_wsol_fee_token(true);
 
 pub const WITHDRAW_WRAPPED_SOL_PREFIX_IS_SIGNER: WithdrawWrappedSolPrefixAccsFlag =
     WithdrawWrappedSolPrefixAccs([false; WITHDRAW_WRAPPED_SOL_PREFIX_ACCS_LEN])

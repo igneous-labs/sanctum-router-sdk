@@ -24,11 +24,11 @@ pub(crate) fn get_deposit_sol_prefix_metas_and_data(
             .with_consts()
             .with_user(swap_params.token_transfer_authority.0)
             .with_wsol_mint(swap_params.source.0)
-            .with_dest_token_mint(swap_params.destination_mint.0)
-            .with_wsol_from(swap_params.source_token_account.0)
-            .with_dest_token_to(swap_params.destination_token_account.0)
+            .with_out_mint(swap_params.destination_mint.0)
+            .with_inp_wsol(swap_params.source_token_account.0)
+            .with_out_token(swap_params.destination_token_account.0)
             .with_token_program(TOKEN_PROGRAM)
-            .with_dest_token_fee_token_account(
+            .with_out_fee_token(
                 find_fee_token_account_pda_internal(&swap_params.destination_mint.0)
                     .ok_or(invalid_pda_err())?
                     .0,
