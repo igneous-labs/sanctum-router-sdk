@@ -26,14 +26,14 @@ impl WithdrawSol for SplStakePoolWithdrawSolRouter<'_> {
     fn suffix_accounts(&self) -> Self::Accs {
         SplWithdrawSolIxSuffixAccsBuilder::start()
             .with_spl_stake_pool_program(*self.stake_pool_program)
-            .with_withdraw_sol_spl_stake_pool(*self.stake_pool_addr)
-            .with_withdraw_sol_withdraw_authority(*self.withdraw_authority_program_address)
-            .with_withdraw_sol_reserve_stake(self.stake_pool.reserve_stake)
-            .with_withdraw_sol_manager_fee(self.stake_pool.manager_fee_account)
+            .with_spl_stake_pool(*self.stake_pool_addr)
+            .with_withdraw_authority(*self.withdraw_authority_program_address)
+            .with_reserve_stake(self.stake_pool.reserve_stake)
+            .with_manager_fee(self.stake_pool.manager_fee_account)
             .with_clock(SYSVAR_CLOCK)
             .with_stake_history(SYSVAR_STAKE_HISTORY)
             .with_stake_program(STAKE_PROGRAM)
-            .with_withdraw_sol_token_program(self.stake_pool.token_program_id)
+            .with_token_program(self.stake_pool.token_program_id)
             .build()
     }
 
@@ -57,15 +57,15 @@ impl WithdrawSol for SplStakePoolWithdrawSolRouter<'_> {
 )]
 pub struct SplWithdrawSolIxSuffixAccs<T> {
     pub spl_stake_pool_program: T,
-    pub withdraw_sol_spl_stake_pool: T,
-    pub withdraw_sol_withdraw_authority: T,
-    pub withdraw_sol_reserve_stake: T,
-    pub withdraw_sol_manager_fee: T,
+    pub spl_stake_pool: T,
+    pub withdraw_authority: T,
+    pub reserve_stake: T,
+    pub manager_fee: T,
     pub clock: T,
     pub stake_history: T,
     pub stake_program: T,
     /// possible duplicate to account for token-22 stake pools
-    pub withdraw_sol_token_program: T,
+    pub token_program: T,
 }
 pub type SplWithdrawSolIxSuffixKeysOwned = SplWithdrawSolIxSuffixAccs<[u8; 32]>;
 pub type SplWithdrawSolIxSuffixKeys<'a> = SplWithdrawSolIxSuffixAccs<&'a [u8; 32]>;
@@ -73,9 +73,9 @@ pub type SplWithdrawSolIxSuffixAccsFlag = SplWithdrawSolIxSuffixAccs<bool>;
 
 pub const SPL_WITHDRAW_SOL_IX_SUFFIX_IS_WRITER: SplWithdrawSolIxSuffixAccsFlag =
     SplWithdrawSolIxSuffixAccs([false; SPL_WITHDRAW_SOL_IX_SUFFIX_ACCS_LEN])
-        .const_with_withdraw_sol_spl_stake_pool(true)
-        .const_with_withdraw_sol_reserve_stake(true)
-        .const_with_withdraw_sol_manager_fee(true);
+        .const_with_spl_stake_pool(true)
+        .const_with_reserve_stake(true)
+        .const_with_manager_fee(true);
 
 pub const SPL_WITHDRAW_SOL_IX_SUFFIX_IS_SIGNER: SplWithdrawSolIxSuffixAccsFlag =
     SplWithdrawSolIxSuffixAccs([false; SPL_WITHDRAW_SOL_IX_SUFFIX_ACCS_LEN]);

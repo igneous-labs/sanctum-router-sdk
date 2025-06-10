@@ -13,10 +13,10 @@ use super::INSTRUCTION_IDX_DEPOSIT_STAKE;
 )]
 pub struct DepositStakeIxAccs<T> {
     pub user: T,
-    pub stake_account: T,
-    pub dest_token_to: T,
-    pub dest_token_fee_token_account: T,
-    pub dest_token_mint: T,
+    pub inp_stake: T,
+    pub out_token: T,
+    pub out_fee_token: T,
+    pub out_mint: T,
 }
 pub type DepositStakeIxKeysOwned = DepositStakeIxAccs<[u8; 32]>;
 pub type DepositStakeIxKeys<'a> = DepositStakeIxAccs<&'a [u8; 32]>;

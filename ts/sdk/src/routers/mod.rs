@@ -17,7 +17,8 @@ use crate::{
     },
     interface::{
         get_account_data, keys_signer_writer_to_account_metas, AccountMap, AccountMeta,
-        DepositStakeParams, Instruction, QuoteParams, SplPoolAccounts, SwapParams, B58PK,
+        DepositStakeQuoteParams, DepositStakeSwapParams, Instruction, SplPoolAccounts,
+        TokenQuoteParams, TokenSwapParams, B58PK,
     },
     pda::spl::{find_deposit_auth_pda_internal, find_withdraw_auth_pda_internal},
     router::Update,
@@ -228,21 +229,21 @@ pub struct TokenQuoteWithRouterFee(WithRouterFee<TokenQuote>);
 #[wasm_bindgen(js_name = getDepositSolQuote)]
 pub fn get_deposit_sol_quote(
     this: &SanctumRouterHandle,
-    params: QuoteParams,
+    params: TokenQuoteParams,
 ) -> Option<TokenQuoteWithRouterFee> {
-    match params.output_mint.0 {
+    match params.out_mint.0 {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
             .marinade_router
             .to_deposit_sol_router()
-            .get_deposit_sol_quote(params.amount),
+            .get_deposit_sol_quote(params.amt),
         mint => this
             .0
             .spl_routers
             .iter()
             .find(|r| r.stake_pool.pool_mint == mint)?
             .to_deposit_sol_router()
-            .get_deposit_sol_quote(params.amount),
+            .get_deposit_sol_quote(params.amt),
     }
     .map(|q| TokenQuoteWithRouterFee(WithRouterFee::zero(q)))
 }
@@ -251,12 +252,12 @@ pub fn get_deposit_sol_quote(
 #[wasm_bindgen(js_name = getDepositSolIx)]
 pub fn get_deposit_sol_ix(
     this: &SanctumRouterHandle,
-    params: SwapParams,
+    params: TokenSwapParams,
 ) -> Result<Instruction, JsError> {
-    let destination_mint = params.destination_mint.0;
+    let out_mint = params.out.0;
     let (prefix_metas, data) = get_deposit_sol_prefix_metas_and_data(params)?;
 
-    let metas: Box<[AccountMeta]> = match destination_mint {
+    let metas: Box<[AccountMeta]> = match out_mint {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {
             let router = this.0.marinade_router.to_deposit_sol_router();
 
@@ -304,14 +305,14 @@ pub fn get_deposit_sol_ix(
 #[wasm_bindgen(js_name = getWithdrawSolQuote)]
 pub fn get_withdraw_sol_quote(
     this: &SanctumRouterHandle,
-    params: QuoteParams,
+    params: TokenQuoteParams,
 ) -> Option<TokenQuoteWithRouterFee> {
     this.0
         .spl_routers
         .iter()
-        .find(|r| r.stake_pool.pool_mint == params.input_mint.0)?
+        .find(|r| r.stake_pool.pool_mint == params.inp_mint.0)?
         .to_withdraw_sol_router()
-        .get_withdraw_sol_quote(params.amount)
+        .get_withdraw_sol_quote(params.amt)
         .map(|q| TokenQuoteWithRouterFee(q.withdraw_sol_with_router_fee()))
 }
 
@@ -319,13 +320,13 @@ pub fn get_withdraw_sol_quote(
 #[wasm_bindgen(js_name = getWithdrawSolIx)]
 pub fn get_withdraw_sol_ix(
     this: &SanctumRouterHandle,
-    params: SwapParams,
+    params: TokenSwapParams,
 ) -> Result<Instruction, JsError> {
     let router = this
         .0
         .spl_routers
         .iter()
-        .find(|r| r.stake_pool.pool_mint == params.source.0)
+        .find(|r| r.stake_pool.pool_mint == params.inp.0)
         .ok_or(router_missing_err())?
         .to_withdraw_sol_router();
 
@@ -357,20 +358,20 @@ pub struct DepositStakeQuoteWithRouterFee(WithRouterFee<DepositStakeQuote>);
 #[wasm_bindgen(js_name = getDepositStakeQuote)]
 pub fn get_deposit_stake_quote(
     this: &mut SanctumRouterHandle,
-    params: DepositStakeParams,
+    params: DepositStakeQuoteParams,
 ) -> Option<DepositStakeQuoteWithRouterFee> {
-    match params.output_mint.0 {
+    match params.out_mint.0 {
         sanctum_router_core::NATIVE_MINT => this
             .0
             .reserve_router
             // StakeAccRecord not relevant for quoting
             .to_deposit_stake_router(&[0; 32])?
-            .get_deposit_stake_quote(params.stake_account_lamports),
+            .get_deposit_stake_quote(params.inp_stake),
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
             .marinade_router
             .to_deposit_stake_router(&params.validator_vote.0)?
-            .get_deposit_stake_quote(params.stake_account_lamports),
+            .get_deposit_stake_quote(params.inp_stake),
         mint => {
             let router = this
                 .0
@@ -380,34 +381,32 @@ pub fn get_deposit_stake_quote(
 
             router
                 .to_deposit_stake_router(&params.validator_vote.0)?
-                .get_deposit_stake_quote(params.stake_account_lamports)
+                .get_deposit_stake_quote(params.inp_stake)
         }
     }
     .map(|q| {
-        DepositStakeQuoteWithRouterFee(
-            if params.output_mint.0 != sanctum_router_core::NATIVE_MINT {
-                q.with_router_fee()
-            } else {
-                WithRouterFee::zero(q)
-            },
-        )
+        DepositStakeQuoteWithRouterFee(if params.out_mint.0 != sanctum_router_core::NATIVE_MINT {
+            q.with_router_fee()
+        } else {
+            WithRouterFee::zero(q)
+        })
     })
 }
 
 /// Requires `update()` to be called before calling this function
-/// Stake account to deposit should be set on params.source_token_account
-/// Vote account in case of `SplStakePool` and `Marinade` should be set on params.source_mint
+/// Stake account to deposit should be set on `params.signerInp`
+/// Vote account of the stake account to deposit should be set on `params.inp`
 #[wasm_bindgen(js_name = getDepositStakeIx)]
 pub fn get_deposit_stake_ix(
     this: &mut SanctumRouterHandle,
-    params: SwapParams,
+    params: DepositStakeSwapParams,
 ) -> Result<Instruction, JsError> {
-    let destination_mint = params.destination_mint.0;
-    let vote_account = params.source.0;
-    let stake_account = params.source_token_account.0;
+    let out_mint = params.out.0;
+    let vote_account = params.inp.0;
+    let stake_account = params.signer_inp.0;
     let (prefix_metas, data) = get_deposit_stake_prefix_metas_and_data(params)?;
 
-    let metas: Box<[AccountMeta]> = match destination_mint {
+    let metas: Box<[AccountMeta]> = match out_mint {
         sanctum_router_core::NATIVE_MINT => {
             let router = this
                 .0

@@ -15,12 +15,12 @@ use super::INSTRUCTION_IDX_STAKE_WRAPPED_SOL;
 )]
 pub struct StakeWrappedSolPrefixAccs<T> {
     pub user: T,
-    pub wsol_from: T,
-    pub dest_token_to: T,
+    pub inp_wsol: T,
+    pub out_token: T,
     pub wsol_bridge_in: T,
     pub sol_bridge_out: T,
-    pub dest_token_fee_token_account: T,
-    pub dest_token_mint: T,
+    pub out_fee_token: T,
+    pub out_mint: T,
     pub wsol_mint: T,
     pub token_program: T,
     pub system_program: T,
@@ -32,12 +32,12 @@ pub type StakeWrappedSolPrefixAccsFlag = StakeWrappedSolPrefixAccs<bool>;
 
 pub const STAKE_WRAPPED_SOL_PREFIX_IS_WRITER: StakeWrappedSolPrefixAccsFlag =
     StakeWrappedSolPrefixAccs([false; STAKE_WRAPPED_SOL_PREFIX_ACCS_LEN])
-        .const_with_dest_token_to(true)
-        .const_with_wsol_from(true)
+        .const_with_out_token(true)
+        .const_with_inp_wsol(true)
         .const_with_sol_bridge_out(true)
         .const_with_wsol_bridge_in(true)
-        .const_with_dest_token_mint(true)
-        .const_with_dest_token_fee_token_account(true);
+        .const_with_out_mint(true)
+        .const_with_out_fee_token(true);
 
 pub const STAKE_WRAPPED_SOL_PREFIX_IS_SIGNER: StakeWrappedSolPrefixAccsFlag =
     StakeWrappedSolPrefixAccs([false; STAKE_WRAPPED_SOL_PREFIX_ACCS_LEN]).const_with_user(true);
@@ -81,11 +81,11 @@ pub struct StakeWrappedSolIxData([u8; 9]);
 
 impl StakeWrappedSolIxData {
     #[inline]
-    pub fn new(amount: u64) -> Self {
+    pub fn new(amt: u64) -> Self {
         let mut buf = [0u8; 9];
 
         buf[0] = INSTRUCTION_IDX_STAKE_WRAPPED_SOL;
-        buf[1..9].copy_from_slice(&amount.to_le_bytes());
+        buf[1..9].copy_from_slice(&amt.to_le_bytes());
 
         Self(buf)
     }

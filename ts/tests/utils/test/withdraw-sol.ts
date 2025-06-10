@@ -1,6 +1,7 @@
 import {
   getWithdrawSolIx,
   getWithdrawSolQuote,
+  type TokenSwapParams,
 } from "@sanctumso/sanctum-router";
 import { mapTup } from "../ops";
 import { routerForMints } from "../router";
@@ -9,7 +10,7 @@ import { NATIVE_MINT, testFixturesTokenAcc } from "../token";
 import { simTokenSwapAssertQuoteMatches } from "./swap";
 
 export async function withdrawSolFixturesTest(
-  amount: bigint,
+  amt: bigint,
   mint: string,
   tokenAccFixtures: { inp: string; out: string }
 ) {
@@ -22,17 +23,17 @@ export async function withdrawSolFixturesTest(
   const router = await routerForMints(rpc, [mint]);
 
   const quote = getWithdrawSolQuote(router, {
-    amount,
-    inputMint: mint,
-    outputMint: NATIVE_MINT,
+    amt,
+    inpMint: mint,
+    outMint: NATIVE_MINT,
   })!;
-  const params = {
-    amount,
-    sourceTokenAccount: inpTokenAcc,
-    destinationTokenAccount: outTokenAcc,
-    tokenTransferAuthority: inpTokenAccOwner,
-    source: mint,
-    destinationMint: NATIVE_MINT,
+  const params: TokenSwapParams = {
+    amt,
+    signerInp: inpTokenAcc,
+    signerOut: outTokenAcc,
+    signer: inpTokenAccOwner,
+    inp: mint,
+    out: NATIVE_MINT,
   };
   const ix = getWithdrawSolIx(router, params);
 

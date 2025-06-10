@@ -61,14 +61,12 @@ impl Amm for MarinadeSolAmm {
                 .ok_or_else(|| anyhow::anyhow!("Failed to get quote for {}", self.label()))?;
 
             Ok(jupiter_amm_interface::Quote {
-                in_amount: quote.in_amount,
-                out_amount: quote.out_amount,
-                fee_amount: quote.fee_amount,
+                in_amount: quote.inp,
+                out_amount: quote.out,
+                fee_amount: quote.fee,
                 fee_mint: Pubkey::from(self.state.msol_mint),
-                fee_pct: Decimal::from_f64(
-                    (quote.fee_amount as f64) / (quote.fee_amount + quote.out_amount) as f64,
-                )
-                .unwrap_or_else(Decimal::zero),
+                fee_pct: Decimal::from_f64((quote.fee as f64) / (quote.fee + quote.out) as f64)
+                    .unwrap_or_else(Decimal::zero),
                 ..Default::default()
             })
         } else {
