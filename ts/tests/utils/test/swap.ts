@@ -23,15 +23,9 @@ import { tokenAccBalance } from "../token";
 import { ixToSimTx } from "../tx";
 import { txSimParams } from "./common";
 
-function discmQuote(
-  quote: TokenQuote | TokenQuoteWithRouterFee
-): quote is TokenQuote {
-  return (quote as any).routerFee == null;
-}
-
 export async function simTokenSwapAssertQuoteMatches(
   rpc: Rpc<SolanaRpcApi>,
-  quote: TokenQuote | TokenQuoteWithRouterFee,
+  { quote: { inAmount, outAmount }, routerFee }: TokenQuoteWithRouterFee,
   {
     amount,
     sourceTokenAccount,
@@ -41,10 +35,6 @@ export async function simTokenSwapAssertQuoteMatches(
   }: SwapParams,
   ix: Instruction
 ) {
-  const [{ inAmount, outAmount }, routerFee] = discmQuote(quote)
-    ? [quote, 0n]
-    : [quote.quote, quote.routerFee];
-
   expect(inAmount).toStrictEqual(amount);
 
   // `addresses` layout:

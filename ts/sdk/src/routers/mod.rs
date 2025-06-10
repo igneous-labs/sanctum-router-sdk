@@ -217,12 +217,19 @@ pub fn update(
     Ok(())
 }
 
+// need to use a simple newtype here instead of type alias
+// otherwise wasm_bindgen shits itself with missing generics
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenQuoteWithRouterFee(WithRouterFee<TokenQuote>);
+
 /// Requires `update()` to be called before calling this function
 #[wasm_bindgen(js_name = getDepositSolQuote)]
 pub fn get_deposit_sol_quote(
     this: &SanctumRouterHandle,
     params: QuoteParams,
-) -> Option<TokenQuote> {
+) -> Option<TokenQuoteWithRouterFee> {
     match params.output_mint.0 {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
@@ -237,6 +244,7 @@ pub fn get_deposit_sol_quote(
             .to_deposit_sol_router()
             .get_deposit_sol_quote(params.amount),
     }
+    .map(|q| TokenQuoteWithRouterFee(WithRouterFee::zero(q)))
 }
 
 /// Requires `update()` to be called before calling this function
@@ -291,13 +299,6 @@ pub fn get_deposit_sol_ix(
 
     Ok(ix)
 }
-
-// need to use a simple newtype here instead of type alias
-// otherwise wasm_bindgen shits itself with missing generics
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct TokenQuoteWithRouterFee(WithRouterFee<TokenQuote>);
 
 /// Requires `update()` to be called before calling this function
 #[wasm_bindgen(js_name = getWithdrawSolQuote)]
