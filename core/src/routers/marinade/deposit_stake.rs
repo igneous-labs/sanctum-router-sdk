@@ -5,7 +5,8 @@ use sanctum_marinade_liquid_staking_core::{
 };
 
 use crate::{
-    DepositStake, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, SYSVAR_RENT, TOKEN_PROGRAM,
+    DepositStake, DepositStakeQuote, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, SYSVAR_RENT,
+    TOKEN_PROGRAM,
 };
 
 use super::MarinadeStakeRouter;
@@ -16,8 +17,8 @@ impl DepositStake for MarinadeStakeRouter<'_> {
 
     fn get_deposit_stake_quote(
         &self,
-        crate::traits::StakeAccountLamports { staked, unstaked }: crate::traits::StakeAccountLamports,
-    ) -> Option<crate::DepositStakeQuote> {
+        crate::StakeAccountLamports { staked, unstaked }: crate::StakeAccountLamports,
+    ) -> Option<DepositStakeQuote> {
         let quote = self
             .state
             .quote_deposit_stake(

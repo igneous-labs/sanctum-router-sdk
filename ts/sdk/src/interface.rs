@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bs58_fixed::Bs58String;
 use bs58_fixed_wasm::Bs58Array;
-use sanctum_router_core::StakeAccountLamports;
+use sanctum_router_core::{DepositStakeQuote, StakeAccountLamports, TokenQuote, WithRouterFee};
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
@@ -122,14 +122,12 @@ pub struct TokenQuoteParams {
     pub out_mint: B58PK,
 }
 
+// need to use a simple newtype here instead of type alias
+// otherwise wasm_bindgen shits itself with missing generics
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
-pub struct DepositStakeQuoteParams {
-    pub validator_vote: B58PK,
-    pub out_mint: B58PK,
-    pub inp_stake: StakeAccountLamports,
-}
+pub struct TokenQuoteWithRouterFee(pub(crate) WithRouterFee<TokenQuote>);
 
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
@@ -152,6 +150,22 @@ pub struct TokenSwapParams {
     /// Signing authority of `self.signer_inp`; user making the swap.
     pub signer: B58PK,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeQuoteParams {
+    pub validator_vote: B58PK,
+    pub inp_stake: StakeAccountLamports,
+    pub out_mint: B58PK,
+}
+
+// need to use a simple newtype here instead of type alias
+// otherwise wasm_bindgen shits itself with missing generics
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeQuoteWithRouterFee(pub(crate) WithRouterFee<DepositStakeQuote>);
 
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]

@@ -1,12 +1,9 @@
 use sanctum_marinade_liquid_staking_core::State as MarinadeState;
 use sanctum_reserve_core::{Fee, Pool, ProtocolFee};
 use sanctum_router_core::{
-    DepositSol, DepositStake, DepositStakeQuote, TokenQuote, WithRouterFee, WithdrawSol,
-    SANCTUM_ROUTER_PROGRAM,
+    DepositSol, DepositStake, WithRouterFee, WithdrawSol, SANCTUM_ROUTER_PROGRAM,
 };
 use sanctum_spl_stake_pool_core::StakePool;
-use serde::{Deserialize, Serialize};
-use tsify_next::Tsify;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
 use crate::{
@@ -17,8 +14,9 @@ use crate::{
     },
     interface::{
         get_account_data, keys_signer_writer_to_account_metas, AccountMap, AccountMeta,
-        DepositStakeQuoteParams, DepositStakeSwapParams, Instruction, SplPoolAccounts,
-        TokenQuoteParams, TokenSwapParams, B58PK,
+        DepositStakeQuoteParams, DepositStakeQuoteWithRouterFee, DepositStakeSwapParams,
+        Instruction, SplPoolAccounts, TokenQuoteParams, TokenQuoteWithRouterFee, TokenSwapParams,
+        B58PK,
     },
     pda::spl::{find_deposit_auth_pda_internal, find_withdraw_auth_pda_internal},
     router::Update,
@@ -218,13 +216,6 @@ pub fn update(
     Ok(())
 }
 
-// need to use a simple newtype here instead of type alias
-// otherwise wasm_bindgen shits itself with missing generics
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct TokenQuoteWithRouterFee(WithRouterFee<TokenQuote>);
-
 /// Requires `update()` to be called before calling this function
 #[wasm_bindgen(js_name = getDepositSolQuote)]
 pub fn get_deposit_sol_quote(
@@ -346,13 +337,6 @@ pub fn get_withdraw_sol_ix(
         data: Box::new(data.to_buf()),
     })
 }
-
-// need to use a simple newtype here instead of type alias
-// otherwise wasm_bindgen shits itself with missing generics
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct DepositStakeQuoteWithRouterFee(WithRouterFee<DepositStakeQuote>);
 
 /// Requires `update()` to be called before calling this function
 #[wasm_bindgen(js_name = getDepositStakeQuote)]

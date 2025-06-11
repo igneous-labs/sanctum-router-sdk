@@ -1,7 +1,10 @@
 use generic_array_struct::generic_array_struct;
 use sanctum_spl_stake_pool_core::{DepositStakeQuoteArgs, StakeAccountLamports};
 
-use crate::{DepositStake, STAKE_PROGRAM, SYSVAR_CLOCK, SYSVAR_STAKE_HISTORY, TOKEN_PROGRAM};
+use crate::{
+    DepositStake, DepositStakeQuote, STAKE_PROGRAM, SYSVAR_CLOCK, SYSVAR_STAKE_HISTORY,
+    TOKEN_PROGRAM,
+};
 
 use super::SplStakePoolDepositStakeRouter;
 
@@ -11,8 +14,8 @@ impl DepositStake for SplStakePoolDepositStakeRouter<'_> {
 
     fn get_deposit_stake_quote(
         &self,
-        crate::traits::StakeAccountLamports { staked, unstaked }: crate::traits::StakeAccountLamports,
-    ) -> Option<crate::DepositStakeQuote> {
+        crate::StakeAccountLamports { staked, unstaked }: crate::StakeAccountLamports,
+    ) -> Option<DepositStakeQuote> {
         let quote = self
             .stake_pool
             .quote_deposit_stake(

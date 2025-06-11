@@ -12,6 +12,7 @@ mod internal_utils;
 mod pda;
 mod quote;
 mod routers;
+mod stake;
 mod traits;
 
 pub use consts::*;
@@ -19,4 +20,5 @@ pub use instructions::*;
 pub use pda::*;
 pub use quote::*;
 pub use routers::*;
+pub use stake::*;
 pub use traits::*;
