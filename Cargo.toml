@@ -37,6 +37,7 @@ solana-sdk = { version = "^2", default-features = false }
 sanctum-marinade-liquid-staking-core = { git = "https://github.com/igneous-labs/sanctum-marinade-liquid-staking-sdk.git", branch = "main", default-features = false }
 sanctum-reserve-core = { git = "https://github.com/igneous-labs/sanctum-reserve-sdk.git", branch = "master", default-features = false }
 sanctum-spl-stake-pool-core = { git = "https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git",  branch = "master", default-features = false }
+solido-legacy-core = { git = "https://github.com/igneous-labs/solido-legacy-sdk.git", branch = "master", default-features = false }
 
 # workspace members
 sanctum-router-core = { path = "core" }
