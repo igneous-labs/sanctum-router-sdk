@@ -1,4 +1,4 @@
-use sanctum_reserve_core::{Fee, Pool, ProtocolFee};
+use sanctum_reserve_core::{Fee, FeeEnum, Pool, PoolBalance, ProtocolFee};
 use sanctum_router_core::ReserveRouter;
 use wasm_bindgen::JsError;
 
@@ -43,6 +43,16 @@ impl ReserveRouterOwned {
     pub fn update_protocol_fee(&mut self, protocol_fee_account_data: &[u8]) -> Result<(), JsError> {
         self.protocol_fee_account = ProtocolFee::anchor_de(protocol_fee_account_data)?;
         Ok(())
+    }
+
+    pub const fn prefund_params(&self) -> (PoolBalance, &FeeEnum) {
+        (
+            PoolBalance {
+                pool_incoming_stake: self.pool.incoming_stake,
+                sol_reserves_lamports: self.pool_sol_reserves,
+            },
+            &self.fee_account.0,
+        )
     }
 }
 

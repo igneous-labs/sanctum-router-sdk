@@ -1,9 +1,10 @@
 use sanctum_marinade_liquid_staking_core::State as MarinadeState;
 use sanctum_reserve_core::{Fee, Pool, ProtocolFee};
 use sanctum_router_core::{
-    DepositSol, DepositStake, WithRouterFee, WithdrawSol, SANCTUM_ROUTER_PROGRAM,
+    DepositSol, DepositStake, WithRouterFee, WithdrawSol, WithdrawStake, SANCTUM_ROUTER_PROGRAM,
 };
 use sanctum_spl_stake_pool_core::StakePool;
+use solido_legacy_core::Lido;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
 use crate::{
@@ -15,17 +16,19 @@ use crate::{
     interface::{
         get_account_data, keys_signer_writer_to_account_metas, AccountMap, AccountMeta,
         DepositStakeQuoteParams, DepositStakeQuoteWithRouterFee, DepositStakeSwapParams,
-        Instruction, SplPoolAccounts, TokenQuoteParams, TokenQuoteWithRouterFee, TokenSwapParams,
-        B58PK,
+        Instruction, PrefundWithdrawStakeQuote, SplPoolAccounts, TokenQuoteParams,
+        TokenQuoteWithRouterFee, TokenSwapParams, WithdrawStakeQuoteParams, B58PK,
     },
     pda::spl::{find_deposit_auth_pda_internal, find_withdraw_auth_pda_internal},
     router::Update,
 };
 
+mod lido;
 mod marinade;
 mod reserve;
 mod spl;
 
+pub use lido::*;
 pub use marinade::*;
 pub use reserve::*;
 pub use spl::*;
@@ -39,7 +42,10 @@ pub fn get_init_accounts(spl_lsts: Vec<SplPoolAccounts>) -> Box<[B58PK]> {
     spl_lsts
         .iter()
         .flat_map(|accounts| [accounts.pool, accounts.validator_list])
-        // TODO: Add lido
+        .chain([
+            B58PK::new(solido_legacy_core::LIDO_STATE_ADDR),
+            B58PK::new(solido_legacy_core::VALIDATOR_LIST_ADDR),
+        ])
         .chain([
             B58PK::new(sanctum_reserve_core::POOL),
             B58PK::new(sanctum_reserve_core::FEE),
@@ -59,6 +65,23 @@ pub fn from_fetched_accounts(
     accounts: AccountMap,
     curr_epoch: u64,
 ) -> Result<SanctumRouterHandle, JsError> {
+    // Lido
+    let [Ok(state_data), Ok(validator_list_data)] = [
+        solido_legacy_core::LIDO_STATE_ADDR,
+        solido_legacy_core::VALIDATOR_LIST_ADDR,
+    ]
+    .map(|k| get_account_data(&accounts, k)) else {
+        return Err(JsError::new("Failed to fetch lido accounts"));
+    };
+
+    let mut lido_router = LidoRouterOwned {
+        state: Lido::borsh_de(state_data)?,
+        validator_list: LidoValidatorListOwned::default(),
+        curr_epoch,
+    };
+
+    lido_router.update_validator_list(validator_list_data)?;
+
     // Marinade
     let [Ok(state_data), Ok(validator_records_data)] = [
         sanctum_marinade_liquid_staking_core::STATE_PUBKEY,
@@ -141,6 +164,7 @@ pub fn from_fetched_accounts(
         spl_routers,
         marinade_router,
         reserve_router,
+        lido_router,
     }))
 }
 
@@ -170,6 +194,9 @@ pub fn get_accounts_to_update(
                         .get_accounts_to_update()
                         .map(B58PK::new),
                 );
+            }
+            solido_legacy_core::STSOL_MINT_ADDR => {
+                accounts.extend(this.0.lido_router.get_accounts_to_update().map(B58PK::new));
             }
             mint => accounts.extend(
                 this.0
@@ -201,6 +228,9 @@ pub fn update(
             }
             sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {
                 this.0.marinade_router.update(&accounts)?;
+            }
+            solido_legacy_core::STSOL_MINT_ADDR => {
+                this.0.lido_router.update(&accounts)?;
             }
             mint => {
                 this.0
@@ -341,7 +371,7 @@ pub fn get_withdraw_sol_ix(
 /// Requires `update()` to be called before calling this function
 #[wasm_bindgen(js_name = getDepositStakeQuote)]
 pub fn get_deposit_stake_quote(
-    this: &mut SanctumRouterHandle,
+    this: &SanctumRouterHandle,
     params: DepositStakeQuoteParams,
 ) -> Option<DepositStakeQuoteWithRouterFee> {
     match params.out_mint.0 {
@@ -354,7 +384,7 @@ pub fn get_deposit_stake_quote(
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
             .marinade_router
-            .to_deposit_stake_router(&params.validator_vote.0)?
+            .to_deposit_stake_router(&params.vote.0)?
             .get_deposit_stake_quote(params.inp_stake),
         mint => {
             let router = this
@@ -362,9 +392,8 @@ pub fn get_deposit_stake_quote(
                 .spl_routers
                 .iter()
                 .find(|r| r.stake_pool.pool_mint == mint)?;
-
             router
-                .to_deposit_stake_router(&params.validator_vote.0)?
+                .to_deposit_stake_router(&params.vote.0)?
                 .get_deposit_stake_quote(params.inp_stake)
         }
     }
@@ -378,11 +407,9 @@ pub fn get_deposit_stake_quote(
 }
 
 /// Requires `update()` to be called before calling this function
-/// Stake account to deposit should be set on `params.signerInp`
-/// Vote account of the stake account to deposit should be set on `params.inp`
 #[wasm_bindgen(js_name = getDepositStakeIx)]
 pub fn get_deposit_stake_ix(
-    this: &mut SanctumRouterHandle,
+    this: &SanctumRouterHandle,
     params: DepositStakeSwapParams,
 ) -> Result<Instruction, JsError> {
     let out_mint = params.out.0;
@@ -455,9 +482,39 @@ pub fn get_deposit_stake_ix(
 
     Ok(ix)
 }
+
+/// Requires `update()` to be called before calling this function
+#[wasm_bindgen(js_name = getPrefundWithdrawStakeQuote)]
+pub fn get_prefund_withdraw_stake_quote(
+    this: &SanctumRouterHandle,
+    params: WithdrawStakeQuoteParams,
+) -> Option<PrefundWithdrawStakeQuote> {
+    let out_vote = params.out_vote.map(|pk| pk.0);
+    let (reserves_balance, reserves_fee) = this.0.reserve_router.prefund_params();
+    let quote = match params.inp_mint.0 {
+        solido_legacy_core::STSOL_MINT_ADDR => this
+            .0
+            .lido_router
+            .to_withdraw_stake_router(out_vote.as_ref())?
+            .get_prefund_withdraw_stake_quote(params.amt, &reserves_balance, reserves_fee),
+        mint => {
+            let router = this
+                .0
+                .spl_routers
+                .iter()
+                .find(|r| r.stake_pool.pool_mint == mint)?;
+            router
+                .to_withdraw_stake_router(out_vote.as_ref())?
+                .get_prefund_withdraw_stake_quote(params.amt, &reserves_balance, reserves_fee)
+        }
+    }?;
+    Some(PrefundWithdrawStakeQuote(quote))
+}
+
 #[derive(Clone, Debug)]
 pub struct SanctumRouter {
     pub spl_routers: Vec<SplStakePoolRouterOwned>,
+    pub lido_router: LidoRouterOwned,
     pub marinade_router: MarinadeRouterOwned,
     pub reserve_router: ReserveRouterOwned,
 }
