@@ -1,9 +1,7 @@
 use generic_array_struct::generic_array_struct;
-use sanctum_spl_stake_pool_core::DepositSolQuoteArgs;
+use sanctum_spl_stake_pool_core::{DepositSolQuoteArgs, SplStakePoolError, StakePool};
 
-use crate::{traits::DepositSol, TokenQuote};
-
-use super::SplStakePoolDepositSolRouter;
+use crate::{traits::DepositSol, DepositSolQuoter, DepositSolSufAccs, SplSolSufAccs, TokenQuote};
 
 impl DepositSol for SplStakePoolDepositSolRouter<'_> {
     type Accs = SplDepositSolIxSuffixKeysOwned;
@@ -38,6 +36,67 @@ impl DepositSol for SplStakePoolDepositSolRouter<'_> {
         SPL_DEPOSIT_SOL_IX_SUFFIX_IS_SIGNER
     }
 
+    fn suffix_is_writable(&self) -> Self::AccFlags {
+        SPL_DEPOSIT_SOL_IX_SUFFIX_IS_WRITER
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SplStakePoolDepositSolRouter<'a> {
+    pub stake_pool_addr: &'a [u8; 32],
+    pub stake_pool_program: &'a [u8; 32],
+    pub stake_pool: &'a StakePool,
+    pub curr_epoch: u64,
+    pub withdraw_authority_program_address: &'a [u8; 32],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SplDepositSolQuoter<'a> {
+    pub stake_pool: &'a StakePool,
+    pub curr_epoch: u64,
+}
+
+impl DepositSolQuoter for SplDepositSolQuoter<'_> {
+    type Error = SplStakePoolError;
+
+    #[inline]
+    fn quote_deposit_sol(&self, lamports: u64) -> Result<TokenQuote, Self::Error> {
+        self.stake_pool
+            .quote_deposit_sol(
+                lamports,
+                DepositSolQuoteArgs {
+                    // This automatically filters out permissioned pools with SOL deposit auth,
+                    // since these pools will have Some(sol_deposit_auth) that
+                    // does not match system program
+                    depositor: [0; 32],
+                    current_epoch: self.curr_epoch,
+                },
+            )
+            .map(Into::into)
+    }
+}
+
+impl DepositSolSufAccs for SplSolSufAccs<'_> {
+    type Accs = SplDepositSolIxSuffixKeysOwned;
+    type AccFlags = SplDepositSolIxSuffixAccsFlag;
+
+    #[inline]
+    fn suffix_accounts(&self) -> Self::Accs {
+        SplDepositSolIxSuffixAccsBuilder::start()
+            .with_stake_pool_program(*self.stake_pool_program)
+            .with_stake_pool(*self.stake_pool_addr)
+            .with_withdraw_auth(*self.withdraw_authority_program_address)
+            .with_manager_fee(self.stake_pool.manager_fee_account)
+            .with_reserve(self.stake_pool.reserve_stake)
+            .build()
+    }
+
+    #[inline]
+    fn suffix_is_signer(&self) -> Self::AccFlags {
+        SPL_DEPOSIT_SOL_IX_SUFFIX_IS_SIGNER
+    }
+
+    #[inline]
     fn suffix_is_writable(&self) -> Self::AccFlags {
         SPL_DEPOSIT_SOL_IX_SUFFIX_IS_WRITER
     }

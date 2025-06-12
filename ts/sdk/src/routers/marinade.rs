@@ -1,7 +1,7 @@
 use sanctum_marinade_liquid_staking_core::{
     State as MarinadeState, ValidatorList, ValidatorRecord,
 };
-use sanctum_router_core::{MarinadeSolRouter, MarinadeStakeRouter};
+use sanctum_router_core::{MarinadeSolQuoter, MarinadeStakeRouter};
 use wasm_bindgen::JsError;
 
 use crate::{
@@ -19,8 +19,8 @@ pub struct MarinadeRouterOwned {
 }
 
 impl MarinadeRouterOwned {
-    pub fn to_deposit_sol_router(&self) -> MarinadeSolRouter {
-        MarinadeSolRouter {
+    pub fn to_deposit_sol_router(&self) -> MarinadeSolQuoter {
+        MarinadeSolQuoter {
             state: &self.state,
             msol_leg_balance: self.msol_leg_balance,
         }

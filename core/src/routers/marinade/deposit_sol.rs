@@ -1,11 +1,11 @@
 use generic_array_struct::generic_array_struct;
-use sanctum_marinade_liquid_staking_core::DepositSolQuoteArgs;
+use sanctum_marinade_liquid_staking_core::{
+    DepositSolQuoteArgs, MarinadeError, State as MarinadeState,
+};
 
-use crate::{DepositSol, TokenQuote};
+use crate::{DepositSol, DepositSolQuoter, DepositSolSufAccs, TokenQuote};
 
-use super::MarinadeSolRouter;
-
-impl DepositSol for MarinadeSolRouter<'_> {
+impl DepositSol for MarinadeSolQuoter<'_> {
     type Accs = MarinadeDepositSolIxSuffixKeysOwned;
     type AccFlags = MarinadeDepositSolIxSuffixAccsFlag;
 
@@ -42,6 +42,72 @@ impl DepositSol for MarinadeSolRouter<'_> {
 
     fn suffix_is_writable(&self) -> Self::AccFlags {
         MARINADE_DEPOSIT_SOL_IX_SUFFIX_IS_WRITER
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct MarinadeSolQuoter<'a> {
+    pub state: &'a MarinadeState,
+    pub msol_leg_balance: u64,
+}
+
+impl DepositSolQuoter for MarinadeSolQuoter<'_> {
+    type Error = MarinadeError;
+
+    #[inline]
+    fn quote_deposit_sol(&self, lamports: u64) -> Result<TokenQuote, Self::Error> {
+        self.state
+            .quote_deposit_sol(
+                lamports,
+                DepositSolQuoteArgs {
+                    msol_leg_balance: self.msol_leg_balance,
+                },
+            )
+            .map(Into::into)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct MarinadeSolSufAccs<'a> {
+    pub liq_pool_msol_leg: &'a [u8; 32],
+}
+
+impl DepositSolSufAccs for MarinadeSolSufAccs<'_> {
+    type Accs = MarinadeDepositSolIxSuffixKeysOwned;
+    type AccFlags = MarinadeDepositSolIxSuffixAccsFlag;
+
+    #[inline]
+    fn suffix_accounts(&self) -> Self::Accs {
+        NewMarinadeDepositSolIxSuffixAccsBuilder::start()
+            .with_marinade_program(sanctum_marinade_liquid_staking_core::MARINADE_STAKING_PROGRAM)
+            .with_state(sanctum_marinade_liquid_staking_core::STATE_PUBKEY)
+            .with_msol_mint_auth(sanctum_marinade_liquid_staking_core::MSOL_MINT_AUTHORITY_PUBKEY)
+            .with_reserve(sanctum_marinade_liquid_staking_core::RESERVE_PUBKEY)
+            .with_liq_pool_msol_leg(*self.liq_pool_msol_leg)
+            .with_liq_pool_msol_leg_auth(
+                sanctum_marinade_liquid_staking_core::LIQ_POOL_MSOL_LEG_AUTHORITY_PUBKEY,
+            )
+            .with_liq_pool_sol_leg(sanctum_marinade_liquid_staking_core::LIQ_POOL_SOL_LEG_PUBKEY)
+            .build()
+    }
+
+    #[inline]
+    fn suffix_is_signer(&self) -> Self::AccFlags {
+        MARINADE_DEPOSIT_SOL_IX_SUFFIX_IS_SIGNER
+    }
+
+    #[inline]
+    fn suffix_is_writable(&self) -> Self::AccFlags {
+        MARINADE_DEPOSIT_SOL_IX_SUFFIX_IS_WRITER
+    }
+}
+
+impl<'a> MarinadeSolSufAccs<'a> {
+    #[inline]
+    pub const fn from_state(state: &'a MarinadeState) -> Self {
+        Self {
+            liq_pool_msol_leg: &state.liq_pool.msol_leg,
+        }
     }
 }
 

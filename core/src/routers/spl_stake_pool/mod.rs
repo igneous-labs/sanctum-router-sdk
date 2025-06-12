@@ -9,15 +9,6 @@ pub use deposit_stake::*;
 pub use withdraw_sol::*;
 
 #[derive(Debug, Clone)]
-pub struct SplStakePoolDepositSolRouter<'a> {
-    pub stake_pool_addr: &'a [u8; 32],
-    pub stake_pool_program: &'a [u8; 32],
-    pub stake_pool: &'a StakePool,
-    pub curr_epoch: u64,
-    pub withdraw_authority_program_address: &'a [u8; 32],
-}
-
-#[derive(Debug, Clone)]
 pub struct SplStakePoolWithdrawSolRouter<'a> {
     pub stake_pool_addr: &'a [u8; 32],
     pub stake_pool_program: &'a [u8; 32],
@@ -39,4 +30,12 @@ pub struct SplStakePoolDepositStakeRouter<'a> {
     pub validator_stake: [u8; 32],
     /// For Quoting
     pub validator_stake_info: &'a ValidatorStakeInfo,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SplSolSufAccs<'a> {
+    pub stake_pool: &'a StakePool,
+    pub stake_pool_program: &'a [u8; 32],
+    pub stake_pool_addr: &'a [u8; 32],
+    pub withdraw_authority_program_address: &'a [u8; 32],
 }
