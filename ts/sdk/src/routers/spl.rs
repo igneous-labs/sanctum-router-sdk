@@ -9,7 +9,7 @@ use wasm_bindgen::JsError;
 use crate::{
     interface::{get_account, get_account_data, AccountMap},
     pda::spl::find_validator_stake_account_pda_internal,
-    router::Update,
+    update::Update,
 };
 
 #[derive(Clone, Debug, Default, PartialEq)]

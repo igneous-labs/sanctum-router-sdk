@@ -5,7 +5,7 @@ use wasm_bindgen::JsError;
 use crate::{
     interface::{get_account, get_account_data, AccountMap},
     pda::reserve::find_reserve_stake_account_record_pda_internal,
-    router::Update,
+    update::Update,
 };
 
 #[derive(Clone, Debug, PartialEq)]

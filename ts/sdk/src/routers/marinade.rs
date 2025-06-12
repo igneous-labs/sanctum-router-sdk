@@ -8,7 +8,7 @@ use crate::{
     err::invalid_data_err,
     interface::{get_account_data, AccountMap},
     pda::marinade::find_marinade_duplication_flag_pda_internal,
-    router::Update,
+    update::Update,
 };
 
 #[derive(Clone, Debug, PartialEq)]
