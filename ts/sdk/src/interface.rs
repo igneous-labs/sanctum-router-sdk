@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bs58_fixed::Bs58String;
 use bs58_fixed_wasm::Bs58Array;
 use sanctum_router_core::{
-    DepositStakeQuote, Prefund, StakeAccountLamports, TokenQuote, WithRouterFee, WithdrawStakeQuote,
+    DepositStakeQuote, Prefund, StakeAccountLamports, TokenQuote, WithRouterFee,
 };
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
@@ -198,10 +198,27 @@ pub struct WithdrawStakeQuoteParams {
     pub inp_mint: B58PK,
 
     /// Desired vote account of `out_stake`.
-    /// If null, then any vote account of any validator in the stake pool
+    /// If omitted, then any vote account of any validator in the stake pool
     /// may be used
     #[tsify(optional)]
     pub out_vote: Option<B58PK>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct WithdrawStakeQuote {
+    /// Input pool tokens
+    pub inp: u64,
+
+    /// The stake account that will be withdrawn
+    pub out: StakeAccountLamports,
+
+    /// In terms of input tokens, charged by the stake pool
+    pub fee: u64,
+
+    /// Validator vote account `out` stake account will be delegated to
+    pub vote: B58PK,
 }
 
 // need to use a simple newtype here instead of type alias
