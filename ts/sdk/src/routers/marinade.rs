@@ -1,7 +1,7 @@
 use sanctum_marinade_liquid_staking_core::{
     State as MarinadeState, ValidatorList, ValidatorRecord,
 };
-use sanctum_router_core::{MarinadeSolQuoter, MarinadeStakeRouter};
+use sanctum_router_core::{MarinadeSolQuoter, MarinadeSolSufAccs, MarinadeStakeRouter};
 use wasm_bindgen::JsError;
 
 use crate::{
@@ -18,14 +18,22 @@ pub struct MarinadeRouterOwned {
     pub msol_leg_balance: u64,
 }
 
+/// DepositSol
 impl MarinadeRouterOwned {
-    pub fn to_deposit_sol_router(&self) -> MarinadeSolQuoter {
+    pub fn deposit_sol_quoter(&self) -> MarinadeSolQuoter {
         MarinadeSolQuoter {
             state: &self.state,
             msol_leg_balance: self.msol_leg_balance,
         }
     }
 
+    pub fn deposit_sol_suf_accs(&self) -> MarinadeSolSufAccs {
+        MarinadeSolSufAccs::from_state(&self.state)
+    }
+}
+
+/// DepositStake
+impl MarinadeRouterOwned {
     pub fn to_deposit_stake_router(&self, vote_account: &[u8; 32]) -> Option<MarinadeStakeRouter> {
         Some(MarinadeStakeRouter {
             state: &self.state,
@@ -33,7 +41,10 @@ impl MarinadeRouterOwned {
             duplication_flag: find_marinade_duplication_flag_pda_internal(vote_account)?.0,
         })
     }
+}
 
+/// Update helpers
+impl MarinadeRouterOwned {
     pub fn update_state(&mut self, data: &[u8]) -> Result<(), JsError> {
         self.state = MarinadeState::borsh_de(data)?;
         Ok(())

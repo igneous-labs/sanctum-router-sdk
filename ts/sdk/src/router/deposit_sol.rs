@@ -1,8 +1,10 @@
-use sanctum_router_core::{DepositSol, WithRouterFee, SANCTUM_ROUTER_PROGRAM};
+use sanctum_router_core::{
+    DepositSolQuoter, DepositSolSufAccs, WithRouterFee, SANCTUM_ROUTER_PROGRAM,
+};
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::router_missing_err,
+    err::{generic_err, router_missing_err},
     instructions::get_deposit_sol_prefix_metas_and_data,
     interface::{
         keys_signer_writer_to_account_metas, AccountMeta, Instruction, TokenQuoteParams,
@@ -12,31 +14,34 @@ use crate::{
 };
 
 /// Requires `update()` to be called before calling this function
-#[wasm_bindgen(js_name = getDepositSolQuote)]
-pub fn get_deposit_sol_quote(
+#[wasm_bindgen(js_name = quoteDepositSol)]
+pub fn quote_deposit_sol(
     this: &SanctumRouterHandle,
     params: TokenQuoteParams,
-) -> Option<TokenQuoteWithRouterFee> {
+) -> Result<TokenQuoteWithRouterFee, JsError> {
     match params.out_mint.0 {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
             .marinade_router
-            .to_deposit_sol_router()
-            .get_deposit_sol_quote(params.amt),
+            .deposit_sol_quoter()
+            .quote_deposit_sol(params.amt)
+            .map_err(generic_err),
         mint => this
             .0
             .spl_routers
             .iter()
-            .find(|r| r.stake_pool.pool_mint == mint)?
-            .to_deposit_sol_router()
-            .get_deposit_sol_quote(params.amt),
+            .find(|r| r.stake_pool.pool_mint == mint)
+            .ok_or_else(router_missing_err)?
+            .deposit_sol_quoter()
+            .quote_deposit_sol(params.amt)
+            .map_err(generic_err),
     }
     .map(|q| TokenQuoteWithRouterFee(WithRouterFee::zero(q)))
 }
 
 /// Requires `update()` to be called before calling this function
-#[wasm_bindgen(js_name = getDepositSolIx)]
-pub fn get_deposit_sol_ix(
+#[wasm_bindgen(js_name = depositSolIx)]
+pub fn deposit_sol_ix(
     this: &SanctumRouterHandle,
     params: TokenSwapParams,
 ) -> Result<Instruction, JsError> {
@@ -45,7 +50,7 @@ pub fn get_deposit_sol_ix(
 
     let metas: Box<[AccountMeta]> = match out_mint {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {
-            let router = this.0.marinade_router.to_deposit_sol_router();
+            let router = this.0.marinade_router.deposit_sol_suf_accs();
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,
@@ -64,12 +69,12 @@ pub fn get_deposit_sol_ix(
                 .iter()
                 .find(|r| r.stake_pool.pool_mint == mint)
                 .ok_or_else(router_missing_err)?
-                .to_deposit_sol_router();
+                .deposit_sol_suf_accs();
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
-                &DepositSol::suffix_accounts(&router).as_borrowed().0,
-                &DepositSol::suffix_is_signer(&router).0,
-                &DepositSol::suffix_is_writable(&router).0,
+                &router.suffix_accounts().as_borrowed().0,
+                &router.suffix_is_signer().0,
+                &router.suffix_is_writable().0,
             );
 
             [prefix_metas.as_ref(), suffix_accounts.as_ref()]

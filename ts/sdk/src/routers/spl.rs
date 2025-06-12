@@ -1,5 +1,6 @@
 use sanctum_router_core::{
-    SplStakePoolDepositSolRouter, SplStakePoolDepositStakeRouter, SplStakePoolWithdrawSolRouter,
+    SplDepositSolQuoter, SplSolSufAccs, SplStakePoolDepositStakeRouter,
+    SplStakePoolWithdrawSolRouter,
 };
 use sanctum_spl_stake_pool_core::{
     StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo,
@@ -24,17 +25,27 @@ pub struct SplStakePoolRouterOwned {
     pub reserve_stake_lamports: u64,
 }
 
+/// DepositSol
 impl SplStakePoolRouterOwned {
-    pub fn to_deposit_sol_router(&self) -> SplStakePoolDepositSolRouter {
-        SplStakePoolDepositSolRouter {
-            stake_pool_addr: &self.stake_pool_addr,
-            stake_pool_program: &self.stake_pool_program,
+    pub fn deposit_sol_quoter(&self) -> SplDepositSolQuoter {
+        SplDepositSolQuoter {
             stake_pool: &self.stake_pool,
             curr_epoch: self.curr_epoch,
-            withdraw_authority_program_address: &self.withdraw_authority_program_address,
         }
     }
 
+    pub fn deposit_sol_suf_accs(&self) -> SplSolSufAccs {
+        SplSolSufAccs {
+            stake_pool: &self.stake_pool,
+            stake_pool_program: &self.stake_pool_program,
+            stake_pool_addr: &self.stake_pool_addr,
+            withdraw_authority_program_address: &self.withdraw_authority_program_address,
+        }
+    }
+}
+
+/// WithdrawSol
+impl SplStakePoolRouterOwned {
     pub fn to_withdraw_sol_router(&self) -> SplStakePoolWithdrawSolRouter {
         SplStakePoolWithdrawSolRouter {
             stake_pool_addr: &self.stake_pool_addr,
@@ -45,7 +56,10 @@ impl SplStakePoolRouterOwned {
             reserve_stake_lamports: self.reserve_stake_lamports,
         }
     }
+}
 
+/// DepositStake
+impl SplStakePoolRouterOwned {
     /// Sets validator stake according to validator stake info on this struct
     pub fn to_deposit_stake_router(
         &self,
@@ -74,7 +88,10 @@ impl SplStakePoolRouterOwned {
             validator_stake_info,
         })
     }
+}
 
+/// Update helpers
+impl SplStakePoolRouterOwned {
     pub fn update_stake_pool(&mut self, stake_pool_data: &[u8]) -> Result<(), JsError> {
         self.stake_pool = StakePool::borsh_de(stake_pool_data)?;
         Ok(())

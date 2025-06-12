@@ -3,47 +3,7 @@ use sanctum_marinade_liquid_staking_core::{
     DepositSolQuoteArgs, MarinadeError, State as MarinadeState,
 };
 
-use crate::{DepositSol, DepositSolQuoter, DepositSolSufAccs, TokenQuote};
-
-impl DepositSol for MarinadeSolQuoter<'_> {
-    type Accs = MarinadeDepositSolIxSuffixKeysOwned;
-    type AccFlags = MarinadeDepositSolIxSuffixAccsFlag;
-
-    fn get_deposit_sol_quote(&self, lamports: u64) -> Option<TokenQuote> {
-        let quote = self
-            .state
-            .quote_deposit_sol(
-                lamports,
-                DepositSolQuoteArgs {
-                    msol_leg_balance: self.msol_leg_balance,
-                },
-            )
-            .ok()?;
-        Some(quote.into())
-    }
-
-    fn suffix_accounts(&self) -> Self::Accs {
-        NewMarinadeDepositSolIxSuffixAccsBuilder::start()
-            .with_marinade_program(sanctum_marinade_liquid_staking_core::MARINADE_STAKING_PROGRAM)
-            .with_state(sanctum_marinade_liquid_staking_core::STATE_PUBKEY)
-            .with_msol_mint_auth(sanctum_marinade_liquid_staking_core::MSOL_MINT_AUTHORITY_PUBKEY)
-            .with_reserve(sanctum_marinade_liquid_staking_core::RESERVE_PUBKEY)
-            .with_liq_pool_msol_leg(self.state.liq_pool.msol_leg)
-            .with_liq_pool_msol_leg_auth(
-                sanctum_marinade_liquid_staking_core::LIQ_POOL_MSOL_LEG_AUTHORITY_PUBKEY,
-            )
-            .with_liq_pool_sol_leg(sanctum_marinade_liquid_staking_core::LIQ_POOL_SOL_LEG_PUBKEY)
-            .build()
-    }
-
-    fn suffix_is_signer(&self) -> Self::AccFlags {
-        MARINADE_DEPOSIT_SOL_IX_SUFFIX_IS_SIGNER
-    }
-
-    fn suffix_is_writable(&self) -> Self::AccFlags {
-        MARINADE_DEPOSIT_SOL_IX_SUFFIX_IS_WRITER
-    }
-}
+use crate::{DepositSolQuoter, DepositSolSufAccs, TokenQuote};
 
 #[derive(Debug, Clone, Copy)]
 pub struct MarinadeSolQuoter<'a> {
