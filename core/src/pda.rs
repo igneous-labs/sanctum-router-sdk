@@ -1,6 +1,9 @@
 pub const FEE_SEED: [u8; 3] = *b"fee";
 pub const BRIDGE_STAKE_SEED: [u8; 12] = *b"bridge_stake";
-pub const SLUMDOG_SEED: [u8; 7] = *b"slumdog";
+
+/// `create_with_seed(bridge_stake.pubkey, SLUMDOG_SEED, stake_program)`
+/// to obtain the slumdog stake account address
+pub const SLUMDOG_SEED: &str = "slumdog";
 
 #[inline]
 pub const fn fee_token_acc_seeds(mint: &[u8; 32]) -> (&[u8; 3], &[u8; 32]) {

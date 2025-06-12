@@ -11,13 +11,15 @@ use crate::{
     err::{account_missing_err, invalid_pda_err, router_missing_err},
     instructions::{
         get_deposit_sol_prefix_metas_and_data, get_deposit_stake_prefix_metas_and_data,
+        get_prefund_withdraw_stake_prefix_metas_and_data,
         get_withdraw_wrapped_sol_prefix_metas_and_data,
     },
     interface::{
         get_account_data, keys_signer_writer_to_account_metas, AccountMap, AccountMeta,
         DepositStakeQuoteParams, DepositStakeQuoteWithRouterFee, DepositStakeSwapParams,
         Instruction, PrefundWithdrawStakeQuote, SplPoolAccounts, TokenQuoteParams,
-        TokenQuoteWithRouterFee, TokenSwapParams, WithdrawStakeQuoteParams, B58PK,
+        TokenQuoteWithRouterFee, TokenSwapParams, WithdrawStakeQuoteParams,
+        WithdrawStakeSwapParams, B58PK,
     },
     pda::spl::{find_deposit_auth_pda_internal, find_withdraw_auth_pda_internal},
     router::Update,
@@ -200,9 +202,7 @@ pub fn get_accounts_to_update(
             }
             mint => accounts.extend(
                 this.0
-                    .spl_routers
-                    .iter()
-                    .find(|r| r.stake_pool.pool_mint == mint)
+                    .find_spl_by_mint(&mint)
                     .ok_or(router_missing_err())?
                     .get_accounts_to_update()
                     .map(B58PK::new),
@@ -260,9 +260,7 @@ pub fn get_deposit_sol_quote(
             .get_deposit_sol_quote(params.amt),
         mint => this
             .0
-            .spl_routers
-            .iter()
-            .find(|r| r.stake_pool.pool_mint == mint)?
+            .find_spl_by_mint(&mint)?
             .to_deposit_sol_router()
             .get_deposit_sol_quote(params.amt),
     }
@@ -295,9 +293,7 @@ pub fn get_deposit_sol_ix(
         mint => {
             let router = this
                 .0
-                .spl_routers
-                .iter()
-                .find(|r| r.stake_pool.pool_mint == mint)
+                .find_spl_by_mint(&mint)
                 .ok_or(router_missing_err())?
                 .to_deposit_sol_router();
 
@@ -329,9 +325,7 @@ pub fn get_withdraw_sol_quote(
     params: TokenQuoteParams,
 ) -> Option<TokenQuoteWithRouterFee> {
     this.0
-        .spl_routers
-        .iter()
-        .find(|r| r.stake_pool.pool_mint == params.inp_mint.0)?
+        .find_spl_by_mint(&params.inp_mint.0)?
         .to_withdraw_sol_router()
         .get_withdraw_sol_quote(params.amt)
         .map(|q| TokenQuoteWithRouterFee(q.withdraw_sol_with_router_fee()))
@@ -345,9 +339,7 @@ pub fn get_withdraw_sol_ix(
 ) -> Result<Instruction, JsError> {
     let router = this
         .0
-        .spl_routers
-        .iter()
-        .find(|r| r.stake_pool.pool_mint == params.inp.0)
+        .find_spl_by_mint(&params.inp.0)
         .ok_or(router_missing_err())?
         .to_withdraw_sol_router();
 
@@ -387,11 +379,7 @@ pub fn get_deposit_stake_quote(
             .to_deposit_stake_router(&params.vote.0)?
             .get_deposit_stake_quote(params.inp_stake),
         mint => {
-            let router = this
-                .0
-                .spl_routers
-                .iter()
-                .find(|r| r.stake_pool.pool_mint == mint)?;
+            let router = this.0.find_spl_by_mint(&mint)?;
             router
                 .to_deposit_stake_router(&params.vote.0)?
                 .get_deposit_stake_quote(params.inp_stake)
@@ -455,9 +443,7 @@ pub fn get_deposit_stake_ix(
         mint => {
             let router = this
                 .0
-                .spl_routers
-                .iter()
-                .find(|r| r.stake_pool.pool_mint == mint)
+                .find_spl_by_mint(&mint)
                 .ok_or(router_missing_err())?
                 .to_deposit_stake_router(&vote_account)
                 .ok_or(router_missing_err())?;
@@ -498,11 +484,7 @@ pub fn get_prefund_withdraw_stake_quote(
             .to_withdraw_stake_router(out_vote.as_ref())?
             .get_prefund_withdraw_stake_quote(params.amt, &reserves_balance, reserves_fee),
         mint => {
-            let router = this
-                .0
-                .spl_routers
-                .iter()
-                .find(|r| r.stake_pool.pool_mint == mint)?;
+            let router = this.0.find_spl_by_mint(&mint)?;
             router
                 .to_withdraw_stake_router(out_vote.as_ref())?
                 .get_prefund_withdraw_stake_quote(params.amt, &reserves_balance, reserves_fee)
@@ -511,10 +493,75 @@ pub fn get_prefund_withdraw_stake_quote(
     Some(PrefundWithdrawStakeQuote(quote))
 }
 
+/// Requires `update()` to be called before calling this function
+#[wasm_bindgen(js_name = getPrefundWithdrawStakeIx)]
+pub fn get_prefund_withdraw_stake_ix(
+    this: &SanctumRouterHandle,
+    params: WithdrawStakeSwapParams,
+) -> Result<Instruction, JsError> {
+    let inp_mint = params.inp.0;
+    let vote = Some(&params.out.0);
+    let (prefix_metas, data) = get_prefund_withdraw_stake_prefix_metas_and_data(&params)?;
+
+    let metas: Box<[AccountMeta]> = match inp_mint {
+        solido_legacy_core::STSOL_MINT_ADDR => {
+            let router = this
+                .0
+                .lido_router
+                .to_withdraw_stake_router(vote)
+                .ok_or(router_missing_err())?;
+
+            let suffix_accounts = keys_signer_writer_to_account_metas(
+                &router.suffix_accounts().as_borrowed().0,
+                &router.suffix_is_signer().0,
+                &router.suffix_is_writable().0,
+            );
+
+            [prefix_metas.as_ref(), suffix_accounts.as_ref()]
+                .concat()
+                .into()
+        }
+        mint => {
+            let router = this
+                .0
+                .find_spl_by_mint(&mint)
+                .ok_or(router_missing_err())?
+                .to_withdraw_stake_router(vote)
+                .ok_or(router_missing_err())?;
+
+            let suffix_accounts = keys_signer_writer_to_account_metas(
+                &router.suffix_accounts().as_borrowed().0,
+                &router.suffix_is_signer().0,
+                &router.suffix_is_writable().0,
+            );
+
+            [prefix_metas.as_ref(), suffix_accounts.as_ref()]
+                .concat()
+                .into()
+        }
+    };
+
+    let ix = Instruction {
+        program_address: B58PK::new(SANCTUM_ROUTER_PROGRAM),
+        accounts: metas,
+        data: Box::new(data.to_buf()),
+    };
+
+    Ok(ix)
+}
+
 #[derive(Clone, Debug)]
 pub struct SanctumRouter {
     pub spl_routers: Vec<SplStakePoolRouterOwned>,
     pub lido_router: LidoRouterOwned,
     pub marinade_router: MarinadeRouterOwned,
     pub reserve_router: ReserveRouterOwned,
+}
+
+impl SanctumRouter {
+    fn find_spl_by_mint(&self, mint: &[u8; 32]) -> Option<&SplStakePoolRouterOwned> {
+        self.spl_routers
+            .iter()
+            .find(|r| r.stake_pool.pool_mint == *mint)
+    }
 }
