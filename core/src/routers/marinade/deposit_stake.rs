@@ -1,21 +1,39 @@
 use generic_array_struct::generic_array_struct;
 use sanctum_marinade_liquid_staking_core::{
     DepositStakeQuoteArgs, MarinadeError, StakeAccountLamports, State as MarinadeState,
-    MARINADE_STAKING_PROGRAM, MSOL_MINT_AUTHORITY_PUBKEY, STATE_PUBKEY,
+    ValidatorRecord, MARINADE_STAKING_PROGRAM, MSOL_MINT_AUTHORITY_PUBKEY, STATE_PUBKEY,
 };
 
 use crate::{
-    ActiveStakeParams, DepositStakeQuote, DepositStakeQuoter, DepositStakeSufAccs, MarinadeQuoter,
-    STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, SYSVAR_RENT, TOKEN_PROGRAM,
+    ActiveStakeParams, DepositStakeQuote, DepositStakeQuoter, DepositStakeSufAccs, STAKE_PROGRAM,
+    SYSTEM_PROGRAM, SYSVAR_CLOCK, SYSVAR_RENT, TOKEN_PROGRAM,
 };
 
-impl DepositStakeQuoter for MarinadeQuoter<'_> {
+#[derive(Debug, Clone, Copy)]
+pub struct MarinadeDepositStakeQuoter<'a> {
+    pub state: &'a MarinadeState,
+    pub msol_leg_balance: u64,
+    pub validator_records: &'a [ValidatorRecord],
+}
+
+impl DepositStakeQuoter for MarinadeDepositStakeQuoter<'_> {
     type Error = MarinadeError;
 
     fn quote_deposit_stake(
         &self,
         inp: ActiveStakeParams,
     ) -> Result<DepositStakeQuote, Self::Error> {
+        if !self
+            .validator_records
+            .iter()
+            .any(|v| *v.validator_account() == inp.vote)
+            && self.state.validator_system.auto_add_validator_enabled == 0
+        {
+            // TODO: add the validator not on list error to
+            // sanctum_marinade_liquid_staking_core
+            return Err(MarinadeError::StakeAccountIsEmergencyUnstaking);
+        }
+
         self.state
             .quote_deposit_stake(
                 StakeAccountLamports {

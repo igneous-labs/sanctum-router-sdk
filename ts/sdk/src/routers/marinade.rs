@@ -1,7 +1,10 @@
 use sanctum_marinade_liquid_staking_core::{
     State as MarinadeState, ValidatorList, ValidatorRecord,
 };
-use sanctum_router_core::{MarinadeDepositSolSufAccs, MarinadeDepositStakeSufAccs, MarinadeQuoter};
+use sanctum_router_core::{
+    MarinadeDepositSolQuoter, MarinadeDepositSolSufAccs, MarinadeDepositStakeQuoter,
+    MarinadeDepositStakeSufAccs,
+};
 use wasm_bindgen::JsError;
 
 use crate::{
@@ -18,18 +21,15 @@ pub struct MarinadeRouterOwned {
     pub msol_leg_balance: u64,
 }
 
-/// DepositSol + DepositStake common
+/// DepositSol
 impl MarinadeRouterOwned {
-    pub fn quoter(&self) -> MarinadeQuoter {
-        MarinadeQuoter {
+    pub fn deposit_sol_quoter(&self) -> MarinadeDepositSolQuoter {
+        MarinadeDepositSolQuoter {
             state: &self.state,
             msol_leg_balance: self.msol_leg_balance,
         }
     }
-}
 
-/// DepositSol
-impl MarinadeRouterOwned {
     pub fn deposit_sol_suf_accs(&self) -> MarinadeDepositSolSufAccs {
         MarinadeDepositSolSufAccs::from_state(&self.state)
     }
@@ -37,6 +37,14 @@ impl MarinadeRouterOwned {
 
 /// DepositStake
 impl MarinadeRouterOwned {
+    pub fn deposit_stake_quoter(&self) -> MarinadeDepositStakeQuoter {
+        MarinadeDepositStakeQuoter {
+            state: &self.state,
+            msol_leg_balance: self.msol_leg_balance,
+            validator_records: &self.validator_records,
+        }
+    }
+
     pub fn deposit_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],

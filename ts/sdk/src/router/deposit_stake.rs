@@ -72,7 +72,7 @@ pub fn quote_deposit_stake(
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
             .marinade_router
-            .quoter()
+            .deposit_stake_quoter()
             .quote_deposit_stake(active_stake_params)
             .map_err(generic_err),
         mint => {

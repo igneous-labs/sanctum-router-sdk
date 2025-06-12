@@ -39,6 +39,7 @@ impl DepositStakeQuoter for SplDepositStakeQuoter<'_> {
             // TODO: this err should be smth like "validator not on list" instead
             // in sanctum-spl-stake-pool-sdk
             .ok_or(SplStakePoolError::IncorrectDepositVoteAddress)?;
+        // .quote_deposit_stake() ensures preferred validator matches if set
         self.stake_pool
             .quote_deposit_stake(
                 sanctum_spl_stake_pool_core::StakeAccountLamports {

@@ -3,9 +3,15 @@ use sanctum_marinade_liquid_staking_core::{
     DepositSolQuoteArgs, MarinadeError, State as MarinadeState,
 };
 
-use crate::{DepositSolQuoter, DepositSolSufAccs, MarinadeQuoter, TokenQuote};
+use crate::{DepositSolQuoter, DepositSolSufAccs, TokenQuote};
 
-impl DepositSolQuoter for MarinadeQuoter<'_> {
+#[derive(Debug, Clone, Copy)]
+pub struct MarinadeDepositSolQuoter<'a> {
+    pub state: &'a MarinadeState,
+    pub msol_leg_balance: u64,
+}
+
+impl DepositSolQuoter for MarinadeDepositSolQuoter<'_> {
     type Error = MarinadeError;
 
     #[inline]
