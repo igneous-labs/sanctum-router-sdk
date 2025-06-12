@@ -9,16 +9,6 @@ pub use deposit_stake::*;
 pub use withdraw_sol::*;
 
 #[derive(Debug, Clone)]
-pub struct SplStakePoolWithdrawSolRouter<'a> {
-    pub stake_pool_addr: &'a [u8; 32],
-    pub stake_pool_program: &'a [u8; 32],
-    pub stake_pool: &'a StakePool,
-    pub curr_epoch: u64,
-    pub withdraw_authority_program_address: &'a [u8; 32],
-    pub reserve_stake_lamports: u64,
-}
-
-#[derive(Debug, Clone)]
 pub struct SplStakePoolDepositStakeRouter<'a> {
     pub stake_pool_addr: &'a [u8; 32],
     pub stake_pool_program: &'a [u8; 32],

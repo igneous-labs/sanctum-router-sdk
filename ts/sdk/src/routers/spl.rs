@@ -1,6 +1,5 @@
 use sanctum_router_core::{
-    SplDepositSolQuoter, SplSolSufAccs, SplStakePoolDepositStakeRouter,
-    SplStakePoolWithdrawSolRouter,
+    SplDepositSolQuoter, SplSolSufAccs, SplStakePoolDepositStakeRouter, SplWithdrawSolQuoter,
 };
 use sanctum_spl_stake_pool_core::{
     StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo,
@@ -25,16 +24,9 @@ pub struct SplStakePoolRouterOwned {
     pub reserve_stake_lamports: u64,
 }
 
-/// DepositSol
+/// DepositSol + WithdrawSol common
 impl SplStakePoolRouterOwned {
-    pub fn deposit_sol_quoter(&self) -> SplDepositSolQuoter {
-        SplDepositSolQuoter {
-            stake_pool: &self.stake_pool,
-            curr_epoch: self.curr_epoch,
-        }
-    }
-
-    pub fn deposit_sol_suf_accs(&self) -> SplSolSufAccs {
+    pub fn sol_suf_accs(&self) -> SplSolSufAccs {
         SplSolSufAccs {
             stake_pool: &self.stake_pool,
             stake_pool_program: &self.stake_pool_program,
@@ -44,16 +36,23 @@ impl SplStakePoolRouterOwned {
     }
 }
 
-/// WithdrawSol
+/// DepositSol
 impl SplStakePoolRouterOwned {
-    pub fn to_withdraw_sol_router(&self) -> SplStakePoolWithdrawSolRouter {
-        SplStakePoolWithdrawSolRouter {
-            stake_pool_addr: &self.stake_pool_addr,
-            stake_pool_program: &self.stake_pool_program,
+    pub fn deposit_sol_quoter(&self) -> SplDepositSolQuoter {
+        SplDepositSolQuoter {
             stake_pool: &self.stake_pool,
             curr_epoch: self.curr_epoch,
-            withdraw_authority_program_address: &self.withdraw_authority_program_address,
+        }
+    }
+}
+
+/// WithdrawSol
+impl SplStakePoolRouterOwned {
+    pub fn withdraw_sol_quoter(&self) -> SplWithdrawSolQuoter {
+        SplWithdrawSolQuoter {
+            stake_pool: &self.stake_pool,
             reserve_stake_lamports: self.reserve_stake_lamports,
+            curr_epoch: self.curr_epoch,
         }
     }
 }

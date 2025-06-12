@@ -1,8 +1,8 @@
-use sanctum_router_core::{WithdrawSol, SANCTUM_ROUTER_PROGRAM};
+use sanctum_router_core::{WithdrawSolQuoter, WithdrawSolSufAccs, SANCTUM_ROUTER_PROGRAM};
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::router_missing_err,
+    err::{generic_err, router_missing_err},
     instructions::get_withdraw_wrapped_sol_prefix_metas_and_data,
     interface::{
         keys_signer_writer_to_account_metas, Instruction, TokenQuoteParams, TokenSwapParams, B58PK,
@@ -11,23 +11,25 @@ use crate::{
 };
 
 /// Requires `update()` to be called before calling this function
-#[wasm_bindgen(js_name = getWithdrawSolQuote)]
-pub fn get_withdraw_sol_quote(
+#[wasm_bindgen(js_name = quoteWithdrawSol)]
+pub fn quote_withdraw_sol(
     this: &SanctumRouterHandle,
     params: TokenQuoteParams,
-) -> Option<TokenQuoteWithRouterFee> {
+) -> Result<TokenQuoteWithRouterFee, JsError> {
     this.0
         .spl_routers
         .iter()
-        .find(|r| r.stake_pool.pool_mint == params.inp_mint.0)?
-        .to_withdraw_sol_router()
-        .get_withdraw_sol_quote(params.amt)
+        .find(|r| r.stake_pool.pool_mint == params.inp_mint.0)
+        .ok_or_else(router_missing_err)?
+        .withdraw_sol_quoter()
+        .quote_withdraw_sol(params.amt)
         .map(|q| TokenQuoteWithRouterFee(q.withdraw_sol_with_router_fee()))
+        .map_err(generic_err)
 }
 
 /// Requires `update()` to be called before calling this function
-#[wasm_bindgen(js_name = getWithdrawSolIx)]
-pub fn get_withdraw_sol_ix(
+#[wasm_bindgen(js_name = withdrawSolIx)]
+pub fn withdraw_sol_ix(
     this: &SanctumRouterHandle,
     params: TokenSwapParams,
 ) -> Result<Instruction, JsError> {
@@ -37,14 +39,14 @@ pub fn get_withdraw_sol_ix(
         .iter()
         .find(|r| r.stake_pool.pool_mint == params.inp.0)
         .ok_or_else(router_missing_err)?
-        .to_withdraw_sol_router();
+        .sol_suf_accs();
 
     let (prefix_metas, data) = get_withdraw_wrapped_sol_prefix_metas_and_data(params)?;
 
     let suffix_accounts = keys_signer_writer_to_account_metas(
-        &WithdrawSol::suffix_accounts(&router).as_borrowed().0,
-        &WithdrawSol::suffix_is_signer(&router).0,
-        &WithdrawSol::suffix_is_writable(&router).0,
+        &router.suffix_accounts().as_borrowed().0,
+        &router.suffix_is_signer().0,
+        &router.suffix_is_writable().0,
     );
 
     Ok(Instruction {

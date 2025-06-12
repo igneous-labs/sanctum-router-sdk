@@ -26,7 +26,7 @@ export async function depositSolFixturesTest(
     amt,
     inpMint: NATIVE_MINT,
     outMint: mint,
-  })!;
+  });
   const params: TokenSwapParams = {
     amt,
     inp: NATIVE_MINT,

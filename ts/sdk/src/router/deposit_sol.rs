@@ -69,7 +69,7 @@ pub fn deposit_sol_ix(
                 .iter()
                 .find(|r| r.stake_pool.pool_mint == mint)
                 .ok_or_else(router_missing_err)?
-                .deposit_sol_suf_accs();
+                .sol_suf_accs();
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,
