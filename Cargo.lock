@@ -1968,7 +1968,7 @@ dependencies = [
 [[package]]
 name = "sanctum-spl-stake-pool-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#78919c9d00186d15739e09161c350ff927560d66"
+source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#7a6dd2adb65242af4c3dc215e9252882e0f24f5f"
 dependencies = [
  "borsh 1.5.7",
  "const-crypto",

@@ -1,5 +1,3 @@
-use sanctum_spl_stake_pool_core::STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS;
-
 use crate::StakeAccountLamports;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -22,19 +20,4 @@ pub struct WithdrawStakeQuote {
 
     /// In terms of input tokens, charged by the stake pool
     pub fee: u64,
-}
-
-impl WithdrawStakeQuote {
-    /// Create a quote for a withdrawn stake account that has rent-exemption prefunded
-    #[inline]
-    pub const fn prefund(inp: u64, staked_lamports: u64, fee: u64) -> Self {
-        Self {
-            inp,
-            out: StakeAccountLamports {
-                staked: staked_lamports,
-                unstaked: STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS,
-            },
-            fee,
-        }
-    }
 }

@@ -29,6 +29,12 @@ impl WithdrawStake for SplStakePoolWithdrawStakeRouter<'_> {
                 },
             )
             .ok()?;
+
+        if lamports_staked > self.max_split_lamports {
+            // NotEnoughLiquidity
+            return None;
+        }
+
         Some(WithdrawStakeQuote {
             inp: tokens_in,
             out: StakeAccountLamports {

@@ -23,6 +23,7 @@ impl WithdrawStake for LidoWithdrawStakeRouter<'_> {
         let lamports_staked = self.state.exchange_rate.quote_withdraw_stake(pool_tokens)?;
         let max_withdraw_lamports = max_withdraw_lamports(self.validator_effective_stake_balance)?;
         if lamports_staked > max_withdraw_lamports {
+            // NotEnoughLiquidity
             return None;
         }
         Some(WithdrawStakeQuote {

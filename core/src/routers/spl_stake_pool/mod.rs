@@ -49,6 +49,7 @@ pub struct SplStakePoolWithdrawStakeRouter<'a> {
     pub stake_pool_program: &'a [u8; 32],
     pub stake_pool: &'a StakePool,
     pub current_epoch: u64,
+    pub max_split_lamports: u64,
     /// For Stake Pool's WithdrawStake Ix (Suffix)
     pub withdraw_authority_program_address: &'a [u8; 32],
     pub validator_stake: [u8; 32],

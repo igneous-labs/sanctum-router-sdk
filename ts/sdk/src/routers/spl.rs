@@ -3,7 +3,7 @@ use sanctum_router_core::{
     SplStakePoolWithdrawStakeRouter,
 };
 use sanctum_spl_stake_pool_core::{
-    StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo,
+    StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo, MIN_ACTIVE_STAKE,
 };
 use wasm_bindgen::JsError;
 
@@ -88,12 +88,16 @@ impl SplStakePoolRouterOwned {
                     .find(|v| v.vote_account_address() == vote_account)
             },
         )?;
+        let max_split_lamports = validator_stake_info
+            .active_stake_lamports()
+            .saturating_sub(MIN_ACTIVE_STAKE);
 
         Some(SplStakePoolWithdrawStakeRouter {
             stake_pool_addr: &self.stake_pool_addr,
             stake_pool_program: &self.stake_pool_program,
             stake_pool: &self.stake_pool,
             current_epoch: self.curr_epoch,
+            max_split_lamports,
             withdraw_authority_program_address: &self.withdraw_authority_program_address,
             validator_stake: find_validator_stake_account_pda_internal(
                 &self.stake_pool_program,
