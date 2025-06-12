@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bs58_fixed::Bs58String;
 use bs58_fixed_wasm::Bs58Array;
-use sanctum_router_core::StakeAccountLamports;
+use sanctum_router_core::{ActiveStakeParams, StakeAccountLamports};
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
@@ -122,13 +122,22 @@ pub struct TokenQuoteParams {
     pub out_mint: B58PK,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
 pub struct DepositStakeQuoteParams {
     pub validator_vote: B58PK,
     pub out_mint: B58PK,
     pub inp_stake: StakeAccountLamports,
+}
+
+impl DepositStakeQuoteParams {
+    pub fn to_active_stake_params(self) -> ActiveStakeParams {
+        ActiveStakeParams {
+            vote: self.validator_vote.0,
+            lamports: self.inp_stake,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]

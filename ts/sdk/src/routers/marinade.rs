@@ -1,7 +1,7 @@
 use sanctum_marinade_liquid_staking_core::{
     State as MarinadeState, ValidatorList, ValidatorRecord,
 };
-use sanctum_router_core::{MarinadeSolQuoter, MarinadeSolSufAccs, MarinadeStakeRouter};
+use sanctum_router_core::{MarinadeDepositSolSufAccs, MarinadeDepositStakeSufAccs, MarinadeQuoter};
 use wasm_bindgen::JsError;
 
 use crate::{
@@ -18,26 +18,31 @@ pub struct MarinadeRouterOwned {
     pub msol_leg_balance: u64,
 }
 
-/// DepositSol
+/// DepositSol + DepositStake common
 impl MarinadeRouterOwned {
-    pub fn deposit_sol_quoter(&self) -> MarinadeSolQuoter {
-        MarinadeSolQuoter {
+    pub fn quoter(&self) -> MarinadeQuoter {
+        MarinadeQuoter {
             state: &self.state,
             msol_leg_balance: self.msol_leg_balance,
         }
     }
+}
 
-    pub fn deposit_sol_suf_accs(&self) -> MarinadeSolSufAccs {
-        MarinadeSolSufAccs::from_state(&self.state)
+/// DepositSol
+impl MarinadeRouterOwned {
+    pub fn deposit_sol_suf_accs(&self) -> MarinadeDepositSolSufAccs {
+        MarinadeDepositSolSufAccs::from_state(&self.state)
     }
 }
 
 /// DepositStake
 impl MarinadeRouterOwned {
-    pub fn to_deposit_stake_router(&self, vote_account: &[u8; 32]) -> Option<MarinadeStakeRouter> {
-        Some(MarinadeStakeRouter {
+    pub fn deposit_stake_suf_accs(
+        &self,
+        vote_account: &[u8; 32],
+    ) -> Option<MarinadeDepositStakeSufAccs> {
+        Some(MarinadeDepositStakeSufAccs {
             state: &self.state,
-            msol_leg_balance: self.msol_leg_balance,
             duplication_flag: find_marinade_duplication_flag_pda_internal(vote_account)?.0,
         })
     }

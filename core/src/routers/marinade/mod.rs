@@ -6,8 +6,8 @@ pub use deposit_stake::*;
 
 use sanctum_marinade_liquid_staking_core::State as MarinadeState;
 
-pub struct MarinadeStakeRouter<'a> {
+#[derive(Debug, Clone, Copy)]
+pub struct MarinadeQuoter<'a> {
     pub state: &'a MarinadeState,
     pub msol_leg_balance: u64,
-    pub duplication_flag: [u8; 32],
 }

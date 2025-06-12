@@ -1,7 +1,9 @@
 mod deposit_stake;
+mod stake;
 mod token;
 
 pub use deposit_stake::*;
+pub use stake::*;
 pub use token::*;
 
 /// A quote with the sanctum router global fee charged on top.

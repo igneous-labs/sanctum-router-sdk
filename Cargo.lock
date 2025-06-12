@@ -249,7 +249,7 @@ dependencies = [
 [[package]]
 name = "sanctum-reserve-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-reserve-sdk.git?branch=master#83df1d67ed803c29186d4e9b6af58f07bbd39e23"
+source = "git+https://github.com/igneous-labs/sanctum-reserve-sdk.git?branch=master#17d03d6e527c797eff3fd39dbdd33a757d3ac5eb"
 dependencies = [
  "borsh",
  "const-crypto",
@@ -297,7 +297,7 @@ dependencies = [
 [[package]]
 name = "sanctum-spl-stake-pool-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#44ba7b1efe6828e43d24d9814e4d59764a5f7409"
+source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#22b99f275ca3190bcf4cce319c67ffd38bd3c661"
 dependencies = [
  "borsh",
  "const-crypto",

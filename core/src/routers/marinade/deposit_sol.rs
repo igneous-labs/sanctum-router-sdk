@@ -3,15 +3,9 @@ use sanctum_marinade_liquid_staking_core::{
     DepositSolQuoteArgs, MarinadeError, State as MarinadeState,
 };
 
-use crate::{DepositSolQuoter, DepositSolSufAccs, TokenQuote};
+use crate::{DepositSolQuoter, DepositSolSufAccs, MarinadeQuoter, TokenQuote};
 
-#[derive(Debug, Clone, Copy)]
-pub struct MarinadeSolQuoter<'a> {
-    pub state: &'a MarinadeState,
-    pub msol_leg_balance: u64,
-}
-
-impl DepositSolQuoter for MarinadeSolQuoter<'_> {
+impl DepositSolQuoter for MarinadeQuoter<'_> {
     type Error = MarinadeError;
 
     #[inline]
@@ -28,11 +22,11 @@ impl DepositSolQuoter for MarinadeSolQuoter<'_> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct MarinadeSolSufAccs<'a> {
+pub struct MarinadeDepositSolSufAccs<'a> {
     pub liq_pool_msol_leg: &'a [u8; 32],
 }
 
-impl DepositSolSufAccs for MarinadeSolSufAccs<'_> {
+impl DepositSolSufAccs for MarinadeDepositSolSufAccs<'_> {
     type Accs = MarinadeDepositSolIxSuffixKeysOwned;
     type AccFlags = MarinadeDepositSolIxSuffixAccsFlag;
 
@@ -62,7 +56,7 @@ impl DepositSolSufAccs for MarinadeSolSufAccs<'_> {
     }
 }
 
-impl<'a> MarinadeSolSufAccs<'a> {
+impl<'a> MarinadeDepositSolSufAccs<'a> {
     #[inline]
     pub const fn from_state(state: &'a MarinadeState) -> Self {
         Self {
