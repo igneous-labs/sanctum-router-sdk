@@ -1,4 +1,5 @@
 use generic_array_struct::generic_array_struct;
+use sanctum_reserve_core::{quote_unstake, PoolBalance};
 
 use crate::{
     conv_unstake_quote, DepositStake, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM,
@@ -14,13 +15,17 @@ impl DepositStake for ReserveRouter<'_> {
         &self,
         stake_account_lamports: crate::traits::StakeAccountLamports,
     ) -> Option<crate::DepositStakeQuote> {
-        let quote = self.pool.quote_unstake(
-            self.fee_account,
-            self.protocol_fee_account,
-            self.pool_sol_reserves,
+        let quote = quote_unstake(
+            &PoolBalance {
+                pool_incoming_stake: self.pool.incoming_stake,
+                sol_reserves_lamports: self.pool_sol_reserves,
+            },
+            &self.fee_account.0,
+            &self.protocol_fee_account.fee_ratios(),
             stake_account_lamports.total(),
             false,
-        )?;
+        )
+        .ok()?;
 
         Some(conv_unstake_quote(quote, stake_account_lamports))
     }

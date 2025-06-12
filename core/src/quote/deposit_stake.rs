@@ -93,6 +93,6 @@ pub fn conv_unstake_quote(
     DepositStakeQuote {
         inp,
         out: lamports_to_unstaker,
-        fee,
+        fee: fee.total(),
     }
 }
