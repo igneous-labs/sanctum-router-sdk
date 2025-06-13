@@ -69,7 +69,7 @@ impl MarinadeRouterOwned {
         count: usize,
     ) -> Result<(), JsError> {
         let validator_list = ValidatorList::try_from_acc_data(validator_list_data, count)
-            .ok_or(invalid_data_err())?;
+            .ok_or_else(invalid_data_err)?;
 
         self.validator_records = validator_list.0.to_vec();
         Ok(())

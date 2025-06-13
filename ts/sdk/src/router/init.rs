@@ -1,12 +1,14 @@
 use sanctum_marinade_liquid_staking_core::State as MarinadeState;
 use sanctum_reserve_core::{Fee, Pool, ProtocolFee};
 use sanctum_spl_stake_pool_core::StakePool;
+use serde::{Deserialize, Serialize};
 use solido_legacy_core::Lido;
+use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
     err::{account_missing_err, invalid_pda_err},
-    interface::{get_account_data, AccountMap, SplPoolAccounts, B58PK},
+    interface::{get_account_data, AccountMap, B58PK},
     pda::spl::{find_deposit_auth_pda_internal, find_withdraw_auth_pda_internal},
     router::{SanctumRouter, SanctumRouterHandle},
     routers::{
@@ -14,6 +16,14 @@ use crate::{
         SplStakePoolRouterOwned,
     },
 };
+
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+#[serde(rename_all = "camelCase")]
+pub struct SplPoolAccounts {
+    pub pool: B58PK,
+    pub validator_list: B58PK,
+}
 
 /// Returns the accounts that need to be fetched to initialize the router.
 #[wasm_bindgen(js_name = getInitAccounts)]
@@ -107,7 +117,7 @@ pub fn from_fetched_accounts(
             let pool_account = accounts
                 .0
                 .get(&lst.pool)
-                .ok_or(account_missing_err(&lst.pool.0))?;
+                .ok_or_else(|| account_missing_err(&lst.pool.0))?;
             let stake_pool_addr = lst.pool.0;
             let program_addr = pool_account.owner.0;
             let pool_data = StakePool::borsh_de(&*pool_account.data)?;

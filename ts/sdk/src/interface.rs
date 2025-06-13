@@ -1,10 +1,9 @@
+//! Common typescript interface types that are imported in more than one module
+
 use std::collections::HashMap;
 
 use bs58_fixed::Bs58String;
 use bs58_fixed_wasm::Bs58Array;
-use sanctum_router_core::{
-    ActiveStakeParams, Prefund, StakeAccountLamports, TokenQuote, WithRouterFee,
-};
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
@@ -98,7 +97,7 @@ pub(crate) fn get_account(
     accounts
         .0
         .get(&B58PK::new(pubkey))
-        .ok_or(account_missing_err(&pubkey))
+        .ok_or_else(|| account_missing_err(&pubkey))
 }
 
 pub(crate) fn get_account_data(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&[u8], JsError> {
@@ -113,183 +112,4 @@ pub struct OwnedAccount {
     #[tsify(type = "Uint8Array")] // Instead of number[]
     pub data: Box<[u8]>,
     pub lamports: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct TokenQuoteParams {
-    pub amt: u64,
-
-    /// Input mint
-    pub inp: B58PK,
-
-    /// Output mint
-    pub out: B58PK,
-}
-
-// need to use a simple newtype here instead of type alias
-// otherwise wasm_bindgen shits itself with missing generics
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct TokenQuoteWithRouterFee(pub(crate) WithRouterFee<TokenQuote>);
-
-impl DepositStakeQuoteParams {
-    pub fn to_active_stake_params(self) -> ActiveStakeParams {
-        ActiveStakeParams {
-            vote: self.vote.0,
-            lamports: self.inp,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct TokenSwapParams {
-    pub amt: u64,
-
-    /// Input mint
-    pub inp: B58PK,
-
-    /// Output mint
-    pub out: B58PK,
-
-    /// Input token account to transfer `amt` tokens from
-    pub signer_inp: B58PK,
-
-    /// Output token account to receive tokens to
-    pub signer_out: B58PK,
-
-    /// Signing authority of `self.signer_inp`; user making the swap.
-    pub signer: B58PK,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct DepositStakeQuoteParams {
-    /// Validator vote account the stake account to be deposited is delegated to
-    pub vote: B58PK,
-
-    /// Balance of the stake account to be deposited
-    pub inp: StakeAccountLamports,
-
-    /// Output mint
-    pub out: B58PK,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct DepositStakeQuote {
-    /// Validator vote account `inp` is delegated to
-    pub vote: B58PK,
-
-    /// Stake to be deposited
-    pub inp: StakeAccountLamports,
-
-    /// Output tokens, after subtracting fees
-    pub out: u64,
-
-    /// In terms of output tokens
-    pub fee: u64,
-}
-
-// need to use a simple newtype here instead of type alias
-// otherwise wasm_bindgen shits itself with missing generics
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct DepositStakeQuoteWithRouterFee(pub(crate) WithRouterFee<DepositStakeQuote>);
-
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct DepositStakeSwapParams {
-    /// Vote account `self.signer_inp` stake account is delegated to
-    pub inp: B58PK,
-
-    /// Output mint
-    pub out: B58PK,
-
-    /// Stake account to deposit
-    pub signer_inp: B58PK,
-
-    /// Output token account to receive tokens to
-    pub signer_out: B58PK,
-
-    /// Signing authority of `self.signer_inp`; user making the swap.
-    pub signer: B58PK,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct WithdrawStakeQuoteParams {
-    pub amt: u64,
-
-    /// Input mint
-    pub inp: B58PK,
-
-    /// Desired vote account of output stake account.
-    /// If null, then any vote account of any validator in the stake pool
-    /// may be used
-    #[tsify(optional)]
-    pub out: Option<B58PK>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct WithdrawStakeQuote {
-    /// Validator vote account output stake acc will be delegated to
-    pub vote: B58PK,
-
-    /// input tokens
-    pub inp: u64,
-
-    /// Output stake account balances, after subtracting fees
-    pub out: StakeAccountLamports,
-
-    /// In terms of input tokens, charged by the stake pool
-    pub fee: u64,
-}
-
-// need to use a simple newtype here instead of type alias
-// otherwise wasm_bindgen shits itself with missing generics
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct PrefundWithdrawStakeQuote(pub(crate) Prefund<WithdrawStakeQuote>);
-
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct WithdrawStakeSwapParams {
-    pub amt: u64,
-
-    /// Input mint
-    pub inp: B58PK,
-
-    /// Vote account the withdrawn stake account will be delegated to
-    pub out: B58PK,
-
-    /// Input token account to transfer `amt` tokens from
-    pub signer_inp: B58PK,
-
-    /// Bridge stake seed of the stake account to withdraw
-    pub bridge_stake_seed: u32,
-
-    /// Signing authority of `self.signer_inp`; user making the swap.
-    pub signer: B58PK,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi)]
-#[serde(rename_all = "camelCase")]
-pub struct SplPoolAccounts {
-    pub pool: B58PK,
-    pub validator_list: B58PK,
 }

@@ -1,35 +1,66 @@
 use sanctum_router_core::{
-    DepositStakeQuoter, DepositStakeSufAccs, WithRouterFee, SANCTUM_ROUTER_PROGRAM,
+    ActiveStakeParams, DepositStakeIxAccsBuilder, DepositStakeIxData, DepositStakeQuoter,
+    DepositStakeSufAccs, StakeAccountLamports, WithRouterFee, DEPOSIT_STAKE_IX_ACCS_LEN,
+    DEPOSIT_STAKE_IX_IS_SIGNER, DEPOSIT_STAKE_IX_IS_WRITER_NON_WSOL_OUT,
+    DEPOSIT_STAKE_IX_IS_WRITER_WSOL_OUT, NATIVE_MINT, SANCTUM_ROUTER_PROGRAM,
 };
+use serde::{Deserialize, Serialize};
+use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, router_missing_err},
-    instructions::get_deposit_stake_prefix_metas_and_data,
-    interface::{
-        keys_signer_writer_to_account_metas, AccountMeta, DepositStakeQuote,
-        DepositStakeQuoteParams, DepositStakeQuoteWithRouterFee, DepositStakeSwapParams,
-        Instruction, B58PK,
-    },
+    err::{generic_err, invalid_pda_err, router_missing_err},
+    interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
+    pda::router::find_fee_token_account_pda_internal,
     router::SanctumRouterHandle,
 };
 
-fn conv_quote(
-    WithRouterFee {
-        quote: sanctum_router_core::DepositStakeQuote { inp, out, fee },
-        router_fee,
-    }: WithRouterFee<sanctum_router_core::DepositStakeQuote>,
-) -> DepositStakeQuoteWithRouterFee {
-    DepositStakeQuoteWithRouterFee(WithRouterFee {
-        quote: DepositStakeQuote {
-            inp: inp.lamports,
-            vote: B58PK::new(inp.vote),
-            out,
-            fee,
-        },
-        router_fee,
-    })
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeQuoteParams {
+    /// Validator vote account the stake account to be deposited is delegated to
+    pub vote: B58PK,
+
+    /// Balance of the stake account to be deposited
+    pub inp: StakeAccountLamports,
+
+    /// Output mint
+    pub out: B58PK,
 }
+
+impl DepositStakeQuoteParams {
+    pub fn to_active_stake_params(self) -> ActiveStakeParams {
+        ActiveStakeParams {
+            vote: self.vote.0,
+            lamports: self.inp,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeQuote {
+    /// Validator vote account `inp` is delegated to
+    pub vote: B58PK,
+
+    /// Stake to be deposited
+    pub inp: StakeAccountLamports,
+
+    /// Output tokens, after subtracting fees
+    pub out: u64,
+
+    /// In terms of output tokens
+    pub fee: u64,
+}
+
+// need to use a simple newtype here instead of type alias
+// otherwise wasm_bindgen shits itself with missing generics
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeQuoteWithRouterFee(pub(crate) WithRouterFee<DepositStakeQuote>);
 
 /// Requires `update()` to be called before calling this function
 #[wasm_bindgen(js_name = quoteDepositStake)]
@@ -74,6 +105,26 @@ pub fn quote_deposit_stake(
     })
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeSwapParams {
+    /// Vote account `self.signer_inp` stake account is delegated to
+    pub inp: B58PK,
+
+    /// Output mint
+    pub out: B58PK,
+
+    /// Stake account to deposit
+    pub signer_inp: B58PK,
+
+    /// Output token account to receive tokens to
+    pub signer_out: B58PK,
+
+    /// Signing authority of `self.signer_inp`; user making the swap.
+    pub signer: B58PK,
+}
+
 /// Requires `update()` to be called before calling this function
 /// Stake account to deposit should be set on `params.signerInp`
 /// Vote account of the stake account to deposit should be set on `params.inp`
@@ -85,7 +136,7 @@ pub fn deposit_stake_ix(
     let out_mint = params.out.0;
     let vote_account = params.inp.0;
     let stake_account = params.signer_inp.0;
-    let (prefix_metas, data) = get_deposit_stake_prefix_metas_and_data(params)?;
+    let (prefix_metas, data) = deposit_stake_prefix_metas_and_data(&params)?;
 
     let metas: Box<[AccountMeta]> = match out_mint {
         sanctum_router_core::NATIVE_MINT => {
@@ -151,4 +202,52 @@ pub fn deposit_stake_ix(
     };
 
     Ok(ix)
+}
+
+fn conv_quote(
+    WithRouterFee {
+        quote: sanctum_router_core::DepositStakeQuote { inp, out, fee },
+        router_fee,
+    }: WithRouterFee<sanctum_router_core::DepositStakeQuote>,
+) -> DepositStakeQuoteWithRouterFee {
+    DepositStakeQuoteWithRouterFee(WithRouterFee {
+        quote: DepositStakeQuote {
+            inp: inp.lamports,
+            vote: B58PK::new(inp.vote),
+            out,
+            fee,
+        },
+        router_fee,
+    })
+}
+
+fn deposit_stake_prefix_metas_and_data(
+    swap_params: &DepositStakeSwapParams,
+) -> Result<([AccountMeta; DEPOSIT_STAKE_IX_ACCS_LEN], DepositStakeIxData), JsError> {
+    let metas = keys_signer_writer_to_account_metas(
+        &DepositStakeIxAccsBuilder::start()
+            .with_user(swap_params.signer.0)
+            .with_out_token(swap_params.signer_out.0)
+            .with_out_fee_token(
+                find_fee_token_account_pda_internal(&swap_params.out.0)
+                    .ok_or_else(invalid_pda_err)?
+                    .0,
+            )
+            .with_out_mint(swap_params.out.0)
+            .with_inp_stake(swap_params.signer_inp.0)
+            .build()
+            .as_borrowed()
+            .0,
+        &DEPOSIT_STAKE_IX_IS_SIGNER.0,
+        &if swap_params.out.0 == NATIVE_MINT {
+            DEPOSIT_STAKE_IX_IS_WRITER_WSOL_OUT
+        } else {
+            DEPOSIT_STAKE_IX_IS_WRITER_NON_WSOL_OUT
+        }
+        .0,
+    );
+
+    let data = DepositStakeIxData::new();
+
+    Ok((metas, data))
 }
