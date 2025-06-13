@@ -1,12 +1,21 @@
 use generic_array_struct::generic_array_struct;
-use sanctum_spl_stake_pool_core::WithdrawStakeQuoteArgs;
+use sanctum_spl_stake_pool_core::{StakePool, WithdrawStakeQuoteArgs};
 
 use crate::{
     StakeAccountLamports, WithdrawStake, WithdrawStakeQuote, STAKE_PROGRAM, SYSTEM_PROGRAM,
     SYSVAR_CLOCK, TOKEN_PROGRAM,
 };
 
-use super::SplStakePoolWithdrawStakeRouter;
+#[derive(Debug, Clone)]
+pub struct SplStakePoolWithdrawStakeRouter<'a> {
+    pub stake_pool_addr: &'a [u8; 32],
+    pub stake_pool_program: &'a [u8; 32],
+    pub stake_pool: &'a StakePool,
+    pub current_epoch: u64,
+    /// For Stake Pool's WithdrawStake Ix (Suffix)
+    pub withdraw_authority_program_address: &'a [u8; 32],
+    pub validator_stake: [u8; 32],
+}
 
 impl WithdrawStake for SplStakePoolWithdrawStakeRouter<'_> {
     type Accs = SplWithdrawStakeIxSuffixKeysOwned;

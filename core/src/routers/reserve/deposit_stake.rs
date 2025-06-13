@@ -1,34 +1,60 @@
 use generic_array_struct::generic_array_struct;
-use sanctum_reserve_core::{quote_unstake, PoolBalance};
-
-use crate::{
-    conv_unstake_quote, DepositStake, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM,
+use sanctum_reserve_core::{
+    quote_unstake, Fee, Pool, PoolBalance, ProtocolFee, ReserveError, UnstakeQuote,
 };
 
-use super::ReserveRouter;
+use crate::{
+    ActiveStakeParams, DepositStakeQuote, DepositStakeQuoter, DepositStakeSufAccs, STAKE_PROGRAM,
+    SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM,
+};
 
-impl DepositStake for ReserveRouter<'_> {
-    type Accs = ReserveDepositStakeIxSuffixKeysOwned;
-    type AccFlags = ReserveDepositStakeIxSuffixAccsFlag;
+#[derive(Debug, Clone)]
+pub struct ReserveDepositStakeQuoter<'a> {
+    pub pool: &'a Pool,
+    pub fee_account: &'a Fee,
+    pub protocol_fee_account: &'a ProtocolFee,
+    pub pool_sol_reserves: u64,
+}
 
-    fn get_deposit_stake_quote(
+impl DepositStakeQuoter for ReserveDepositStakeQuoter<'_> {
+    type Error = ReserveError;
+
+    fn quote_deposit_stake(
         &self,
-        stake_account_lamports: crate::traits::StakeAccountLamports,
-    ) -> Option<crate::DepositStakeQuote> {
-        let quote = quote_unstake(
+        inp: ActiveStakeParams,
+    ) -> Result<DepositStakeQuote, Self::Error> {
+        quote_unstake(
             &PoolBalance {
                 pool_incoming_stake: self.pool.incoming_stake,
                 sol_reserves_lamports: self.pool_sol_reserves,
             },
             &self.fee_account.0,
             &self.protocol_fee_account.fee_ratios(),
-            stake_account_lamports.total(),
+            inp.lamports.total(),
             false,
         )
-        .ok()?;
-
-        Some(conv_unstake_quote(quote, stake_account_lamports))
+        .map(
+            |UnstakeQuote {
+                 lamports_to_unstaker,
+                 fee,
+                 ..
+             }| DepositStakeQuote {
+                inp,
+                out: lamports_to_unstaker,
+                fee: fee.total(),
+            },
+        )
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ReserveDepositStakeSufAccs {
+    pub stake_acc_record_addr: [u8; 32],
+}
+
+impl DepositStakeSufAccs for ReserveDepositStakeSufAccs {
+    type Accs = ReserveDepositStakeIxSuffixKeysOwned;
+    type AccFlags = ReserveDepositStakeIxSuffixAccsFlag;
 
     fn suffix_accounts(&self) -> Self::Accs {
         ReserveDepositStakeIxSuffixAccsBuilder::start()
