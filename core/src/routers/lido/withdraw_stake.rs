@@ -1,5 +1,5 @@
 use generic_array_struct::generic_array_struct;
-use solido_legacy_core::{max_withdraw_lamports, Validator};
+use solido_legacy_core::{max_withdraw_lamports, LidoError, Validator};
 
 use crate::{
     ActiveStakeParams, StakeAccountLamports, WithdrawStakeQuote, WithdrawStakeQuoter,
@@ -33,20 +33,8 @@ impl<'a> LidoWithdrawStakeQuoter<'a> {
     }
 }
 
-// TODO: This is a temp filler type. Add a proper error type in solido_legacy_core
-#[derive(Debug, Clone, Copy)]
-pub struct LidoErr;
-
-impl core::fmt::Display for LidoErr {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{self:?}")
-    }
-}
-
-impl core::error::Error for LidoErr {}
-
 impl WithdrawStakeQuoter for LidoWithdrawStakeQuoter<'_> {
-    type Error = LidoErr;
+    type Error = LidoError;
 
     #[inline]
     fn quote_withdraw_stake(
@@ -56,23 +44,19 @@ impl WithdrawStakeQuoter for LidoWithdrawStakeQuoter<'_> {
     ) -> Result<WithdrawStakeQuote, Self::Error> {
         if let Some(v) = vote {
             if v != self.largest_stake_vote {
-                // ERR: lido only allows withdrawing from largest validator
-                return Err(LidoErr);
+                return Err(LidoError::ValidatorWithMoreStakeExists);
             }
         }
         if self.curr_epoch > self.exchange_rate.computed_in_epoch {
-            // ERR: exchange rate not updated for this epoch
-            return Err(LidoErr);
+            return Err(LidoError::ExchangeRateNotUpdatedInThisEpoch);
         }
-        let lamports_staked = self
-            .exchange_rate
-            .quote_withdraw_stake(tokens)
-            .ok_or(LidoErr)?;
+        let lamports_staked = self.exchange_rate.quote_withdraw_stake(tokens)?;
         let max_withdraw_lamports =
-            max_withdraw_lamports(self.largest_stake_effective_stake_balance).ok_or(LidoErr)?;
+            max_withdraw_lamports(self.largest_stake_effective_stake_balance)
+                .ok_or(LidoError::CalculationFailure)?;
         if lamports_staked > max_withdraw_lamports {
-            // ERR: StakeWithdrawalTooLarge
-            return Err(LidoErr);
+            // StakeWithdrawalTooLarge
+            return Err(LidoError::InvalidAmount);
         }
         Ok(WithdrawStakeQuote {
             inp: tokens,

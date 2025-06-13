@@ -50,9 +50,7 @@ impl WithdrawStakeQuoter for SplWithdrawStakeQuoter<'_> {
             (v, Some(p)) => {
                 if let Some(v) = v {
                     if *v != p {
-                        // TODO: this should be something like IncorrectWithdrawVoteAddress
-                        // in sanctum-spl-stake-pool-sdk instead
-                        return Err(SplStakePoolError::IncorrectDepositVoteAddress);
+                        return Err(SplStakePoolError::IncorrectWithdrawVoteAddress);
                     }
                 }
                 let preferred = self
@@ -79,9 +77,8 @@ impl WithdrawStakeQuoter for SplWithdrawStakeQuoter<'_> {
         )?;
 
         if lamports_staked > vsi.active_stake_lamports() {
-            // TODO: this should be something like StakeWithdrawalTooLarge
-            // in sanctum-spl-stake-pool-sdk instead
-            return Err(SplStakePoolError::SolWithdrawalTooLarge);
+            // StakeWithdrawalTooLarge
+            return Err(SplStakePoolError::StakeLamportsNotEqualToMinimum);
         }
         Ok(WithdrawStakeQuote {
             inp: tokens_in,

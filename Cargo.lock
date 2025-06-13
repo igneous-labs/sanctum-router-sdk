@@ -298,7 +298,7 @@ dependencies = [
 [[package]]
 name = "sanctum-spl-stake-pool-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#c2f5462ebd85967b1af9f5122c74af64cdb913c9"
+source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#1a74b32a5df3853212bda2bd28cced0d2b7a8ead"
 dependencies = [
  "borsh",
  "const-crypto",
@@ -364,7 +364,7 @@ checksum = "5f179d4e11094a893b82fff208f74d448a7512f99f5a0acbd5c679b705f83ed9"
 [[package]]
 name = "solido-legacy-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/solido-legacy-sdk.git?branch=master#17884bd00aa3f2286e3d59951e667a285a24eb65"
+source = "git+https://github.com/igneous-labs/solido-legacy-sdk.git?branch=master#2c0eef6ac666974fb20906c43302575692a1b848"
 dependencies = [
  "borsh",
  "const-crypto",
