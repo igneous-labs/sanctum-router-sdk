@@ -1,7 +1,7 @@
 import {
   findFeeTokenAccountPda,
-  getDepositStakeIx,
-  getDepositStakeQuote,
+  depositStakeIx,
+  quoteDepositStake,
   type DepositStakeQuoteWithRouterFee,
   type DepositStakeSwapParams,
   type Instruction,
@@ -39,11 +39,11 @@ export async function depositStakeFixturesTest(
     staked: stakedLamports,
     unstaked: unstakedLamports,
   };
-  const quote = getDepositStakeQuote(router, {
-    validatorVote: vote,
+  const quote = quoteDepositStake(router, {
+    vote,
     outMint: mint,
     inpStake,
-  })!;
+  });
   const params: DepositStakeSwapParams = {
     inp: vote,
     out: mint,
@@ -52,7 +52,7 @@ export async function depositStakeFixturesTest(
     signer: withdrawer,
   };
 
-  const ix = getDepositStakeIx(router, params);
+  const ix = depositStakeIx(router, params);
 
   await simDepositStakeAssertQuoteMatches(rpc, quote, params, ix);
 }

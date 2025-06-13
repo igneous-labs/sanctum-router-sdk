@@ -1,29 +1,39 @@
 use generic_array_struct::generic_array_struct;
-use sanctum_spl_stake_pool_core::DepositSolQuoteArgs;
+use sanctum_spl_stake_pool_core::{DepositSolQuoteArgs, SplStakePoolError, StakePool};
 
-use crate::{traits::DepositSol, TokenQuote};
+use crate::{DepositSolQuoter, DepositSolSufAccs, SplSolSufAccs, TokenQuote};
 
-use super::SplStakePoolDepositSolRouter;
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SplDepositSolQuoter<'a> {
+    pub stake_pool: &'a StakePool,
+    pub curr_epoch: u64,
+}
 
-impl DepositSol for SplStakePoolDepositSolRouter<'_> {
-    type Accs = SplDepositSolIxSuffixKeysOwned;
-    type AccFlags = SplDepositSolIxSuffixAccsFlag;
+impl DepositSolQuoter for SplDepositSolQuoter<'_> {
+    type Error = SplStakePoolError;
 
-    fn get_deposit_sol_quote(&self, lamports: u64) -> Option<TokenQuote> {
-        let quote = self
-            .stake_pool
+    #[inline]
+    fn quote_deposit_sol(&self, lamports: u64) -> Result<TokenQuote, Self::Error> {
+        self.stake_pool
             .quote_deposit_sol(
                 lamports,
                 DepositSolQuoteArgs {
-                    // Has no effect
+                    // This automatically filters out permissioned pools with SOL deposit auth,
+                    // since these pools will have Some(sol_deposit_auth) that
+                    // does not match system program
                     depositor: [0; 32],
                     current_epoch: self.curr_epoch,
                 },
             )
-            .ok()?;
-        Some(quote.into())
+            .map(Into::into)
     }
+}
 
+impl DepositSolSufAccs for SplSolSufAccs<'_> {
+    type Accs = SplDepositSolIxSuffixKeysOwned;
+    type AccFlags = SplDepositSolIxSuffixAccsFlag;
+
+    #[inline]
     fn suffix_accounts(&self) -> Self::Accs {
         SplDepositSolIxSuffixAccsBuilder::start()
             .with_stake_pool_program(*self.stake_pool_program)
@@ -34,10 +44,12 @@ impl DepositSol for SplStakePoolDepositSolRouter<'_> {
             .build()
     }
 
+    #[inline]
     fn suffix_is_signer(&self) -> Self::AccFlags {
         SPL_DEPOSIT_SOL_IX_SUFFIX_IS_SIGNER
     }
 
+    #[inline]
     fn suffix_is_writable(&self) -> Self::AccFlags {
         SPL_DEPOSIT_SOL_IX_SUFFIX_IS_WRITER
     }

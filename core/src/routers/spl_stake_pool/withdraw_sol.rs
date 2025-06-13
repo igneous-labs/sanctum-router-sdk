@@ -1,17 +1,24 @@
 use generic_array_struct::generic_array_struct;
-use sanctum_spl_stake_pool_core::WithdrawSolQuoteArgs;
+use sanctum_spl_stake_pool_core::{SplStakePoolError, StakePool, WithdrawSolQuoteArgs};
 
-use crate::{TokenQuote, WithdrawSol, STAKE_PROGRAM, SYSVAR_CLOCK, SYSVAR_STAKE_HISTORY};
+use crate::{
+    SplSolSufAccs, TokenQuote, WithdrawSolQuoter, WithdrawSolSufAccs, STAKE_PROGRAM, SYSVAR_CLOCK,
+    SYSVAR_STAKE_HISTORY,
+};
 
-use super::SplStakePoolWithdrawSolRouter;
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SplWithdrawSolQuoter<'a> {
+    pub stake_pool: &'a StakePool,
+    pub reserve_stake_lamports: u64,
+    pub curr_epoch: u64,
+}
 
-impl WithdrawSol for SplStakePoolWithdrawSolRouter<'_> {
-    type Accs = SplWithdrawSolIxSuffixKeysOwned;
-    type AccFlags = SplWithdrawSolIxSuffixAccsFlag;
+impl WithdrawSolQuoter for SplWithdrawSolQuoter<'_> {
+    type Error = SplStakePoolError;
 
-    fn get_withdraw_sol_quote(&self, lamports: u64) -> Option<TokenQuote> {
-        let quote = self
-            .stake_pool
+    #[inline]
+    fn quote_withdraw_sol(&self, lamports: u64) -> Result<TokenQuote, Self::Error> {
+        self.stake_pool
             .quote_withdraw_sol(
                 lamports,
                 WithdrawSolQuoteArgs {
@@ -19,10 +26,15 @@ impl WithdrawSol for SplStakePoolWithdrawSolRouter<'_> {
                     reserve_stake_lamports: self.reserve_stake_lamports,
                 },
             )
-            .ok()?;
-        Some(quote.into())
+            .map(Into::into)
     }
+}
 
+impl WithdrawSolSufAccs for SplSolSufAccs<'_> {
+    type Accs = SplWithdrawSolIxSuffixKeysOwned;
+    type AccFlags = SplWithdrawSolIxSuffixAccsFlag;
+
+    #[inline]
     fn suffix_accounts(&self) -> Self::Accs {
         SplWithdrawSolIxSuffixAccsBuilder::start()
             .with_spl_stake_pool_program(*self.stake_pool_program)
@@ -37,10 +49,12 @@ impl WithdrawSol for SplStakePoolWithdrawSolRouter<'_> {
             .build()
     }
 
+    #[inline]
     fn suffix_is_signer(&self) -> Self::AccFlags {
         SPL_WITHDRAW_SOL_IX_SUFFIX_IS_SIGNER
     }
 
+    #[inline]
     fn suffix_is_writable(&self) -> Self::AccFlags {
         SPL_WITHDRAW_SOL_IX_SUFFIX_IS_WRITER
     }
@@ -88,6 +102,7 @@ impl<T> SplWithdrawSolIxSuffixAccs<T> {
 }
 
 impl<T> AsRef<[T]> for SplWithdrawSolIxSuffixAccs<T> {
+    #[inline]
     fn as_ref(&self) -> &[T] {
         &self.0
     }

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use wasm_bindgen::{intern, JsError};
 
 use crate::interface::Bs58PkString;
@@ -19,4 +21,8 @@ pub fn invalid_data_err() -> JsError {
 
 pub fn router_missing_err() -> JsError {
     JsError::new(intern("Router missing from Sanctum Router"))
+}
+
+pub fn generic_err(e: impl Display) -> JsError {
+    JsError::new(&format!("{e}"))
 }

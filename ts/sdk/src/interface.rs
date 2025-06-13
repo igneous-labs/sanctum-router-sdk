@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bs58_fixed::Bs58String;
 use bs58_fixed_wasm::Bs58Array;
 use sanctum_router_core::{
-    DepositStakeQuote, Prefund, StakeAccountLamports, TokenQuote, WithRouterFee, WithdrawStakeQuote,
+    ActiveStakeParams, Prefund, StakeAccountLamports, TokenQuote, WithRouterFee,
 };
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
@@ -126,10 +126,19 @@ pub struct TokenQuoteParams {
 
 // need to use a simple newtype here instead of type alias
 // otherwise wasm_bindgen shits itself with missing generics
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenQuoteWithRouterFee(pub(crate) WithRouterFee<TokenQuote>);
+
+impl DepositStakeQuoteParams {
+    pub fn to_active_stake_params(self) -> ActiveStakeParams {
+        ActiveStakeParams {
+            vote: self.vote.0,
+            lamports: self.inp_stake,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
@@ -153,7 +162,7 @@ pub struct TokenSwapParams {
     pub signer: B58PK,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
 pub struct DepositStakeQuoteParams {
@@ -161,6 +170,23 @@ pub struct DepositStakeQuoteParams {
     pub vote: B58PK,
     pub inp_stake: StakeAccountLamports,
     pub out_mint: B58PK,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeQuote {
+    /// Validator vote account `inp_stake` is delegated to
+    pub vote: B58PK,
+
+    /// Stake to be deposited
+    pub inp: StakeAccountLamports,
+
+    /// Output tokens, after subtracting fees
+    pub out: u64,
+
+    /// In terms of output tokens
+    pub fee: u64,
 }
 
 // need to use a simple newtype here instead of type alias
@@ -202,6 +228,23 @@ pub struct WithdrawStakeQuoteParams {
     /// may be used
     #[tsify(optional)]
     pub out_vote: Option<B58PK>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct WithdrawStakeQuote {
+    /// Validator vote account `out` stake acc will be delegated to
+    pub vote: B58PK,
+
+    /// input tokens
+    pub inp: u64,
+
+    /// Output stake account, after subtracting fees
+    pub out: StakeAccountLamports,
+
+    /// In terms of input tokens
+    pub fee: u64,
 }
 
 // need to use a simple newtype here instead of type alias
