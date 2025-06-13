@@ -273,6 +273,7 @@ dependencies = [
  "sanctum-router-core",
  "sanctum-spl-stake-pool-core",
  "serde",
+ "solido-legacy-core",
  "tsify-next",
  "wasm-bindgen",
 ]

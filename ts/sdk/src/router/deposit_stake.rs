@@ -1,42 +1,18 @@
 use sanctum_router_core::{
-    DepositStakeQuoter, DepositStakeSufAccs, StakeAccountLamports, WithRouterFee,
-    SANCTUM_ROUTER_PROGRAM,
+    DepositStakeQuoter, DepositStakeSufAccs, WithRouterFee, SANCTUM_ROUTER_PROGRAM,
 };
-use serde::{Deserialize, Serialize};
-use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
     err::{generic_err, router_missing_err},
     instructions::get_deposit_stake_prefix_metas_and_data,
     interface::{
-        keys_signer_writer_to_account_metas, AccountMeta, DepositStakeQuoteParams,
-        DepositStakeSwapParams, Instruction, B58PK,
+        keys_signer_writer_to_account_metas, AccountMeta, DepositStakeQuote,
+        DepositStakeQuoteParams, DepositStakeQuoteWithRouterFee, DepositStakeSwapParams,
+        Instruction, B58PK,
     },
     router::SanctumRouterHandle,
 };
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct DepositStakeQuote {
-    pub inp_stake: StakeAccountLamports,
-
-    pub validator_vote: B58PK,
-
-    /// Output tokens, after subtracting fees
-    pub out: u64,
-
-    /// In terms of output tokens
-    pub fee: u64,
-}
-
-// need to use a simple newtype here instead of type alias
-// otherwise wasm_bindgen shits itself with missing generics
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
-pub struct DepositStakeQuoteWithRouterFee(WithRouterFee<DepositStakeQuote>);
 
 fn conv_quote(
     WithRouterFee {
@@ -46,8 +22,8 @@ fn conv_quote(
 ) -> DepositStakeQuoteWithRouterFee {
     DepositStakeQuoteWithRouterFee(WithRouterFee {
         quote: DepositStakeQuote {
-            inp_stake: inp.lamports,
-            validator_vote: B58PK::new(inp.vote),
+            inp: inp.lamports,
+            vote: B58PK::new(inp.vote),
             out,
             fee,
         },
@@ -62,7 +38,8 @@ pub fn quote_deposit_stake(
     params: DepositStakeQuoteParams,
 ) -> Result<DepositStakeQuoteWithRouterFee, JsError> {
     let active_stake_params = params.to_active_stake_params();
-    match params.out_mint.0 {
+    let out_mint = params.out.0;
+    match out_mint {
         sanctum_router_core::NATIVE_MINT => this
             .0
             .reserve_router
@@ -89,7 +66,7 @@ pub fn quote_deposit_stake(
         }
     }
     .map(|q| {
-        conv_quote(if params.out_mint.0 != sanctum_router_core::NATIVE_MINT {
+        conv_quote(if params.out.0 != sanctum_router_core::NATIVE_MINT {
             q.with_router_fee()
         } else {
             WithRouterFee::zero(q)

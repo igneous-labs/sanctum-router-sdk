@@ -22,6 +22,7 @@ wasm-bindgen = { workspace = true }
 sanctum-marinade-liquid-staking-core = { workspace = true }
 sanctum-reserve-core = { workspace = true }
 sanctum-spl-stake-pool-core = { workspace = true }
+solido-legacy-core = { workspace = true }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

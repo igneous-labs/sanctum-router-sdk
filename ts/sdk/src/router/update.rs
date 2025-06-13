@@ -34,6 +34,9 @@ pub fn get_accounts_to_update(
                         .map(B58PK::new),
                 );
             }
+            solido_legacy_core::STSOL_MINT_ADDR => {
+                accounts.extend(this.0.lido_router.get_accounts_to_update().map(B58PK::new));
+            }
             mint => accounts.extend(
                 this.0
                     .spl_routers
@@ -64,6 +67,9 @@ pub fn update(
             }
             sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {
                 this.0.marinade_router.update(accounts)?;
+            }
+            solido_legacy_core::STSOL_MINT_ADDR => {
+                this.0.lido_router.update(accounts)?;
             }
             mint => {
                 this.0

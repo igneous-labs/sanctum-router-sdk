@@ -15,6 +15,8 @@ export const STAKE_ACC_STAKE_OFFSET = 156;
 export const STAKE_ACC_ACTIVATION_EPOCH_OFFSET = 164;
 const STAKE_ACC_DEACTIVATION_EPOCH_OFFSET = 172;
 
+export const STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS = 2282880n;
+
 export function stakeAccWithdrawer(accData: ReadonlyUint8Array): Address {
   return getAddressDecoder().decode(accData, STAKE_ACC_WITHDRAWER_OFFSET);
 }

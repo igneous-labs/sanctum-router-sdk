@@ -15,6 +15,7 @@ pub struct LidoWithdrawStakeQuoter<'a> {
 }
 
 impl<'a> LidoWithdrawStakeQuoter<'a> {
+    /// Returns `None` if `validator_list` is empty
     #[inline]
     pub fn new(
         state: &'a solido_legacy_core::Lido,

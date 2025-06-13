@@ -6,6 +6,7 @@ use tsify_next::Tsify;
 
 use crate::interface::B58PK;
 
+pub mod lido;
 pub mod marinade;
 pub mod reserve;
 pub mod router;
@@ -20,7 +21,8 @@ const MAX_SEED_LEN: usize = 32;
 /// Maximum number of seeds
 const MAX_SEEDS: usize = 16;
 
-const PDA_MARKER: &[u8; 21] = b"ProgramDerivedAddress";
+const PDA_MARKER_LEN: usize = 21;
+const PDA_MARKER: &[u8; PDA_MARKER_LEN] = b"ProgramDerivedAddress";
 
 /// Create a PDA without checking that its not on curve
 pub(crate) fn create_raw_pda(
@@ -73,4 +75,26 @@ pub(crate) fn find_pda(seeds: &[&[u8]], program_id: &[u8; 32]) -> Option<([u8; 3
             create_pda(seeds.iter().chain(once(bump_slice)), program_id).map(|pda| (pda, bump))
         })
         .next()
+}
+
+pub(crate) fn pk_create_with_seed(
+    base: &[u8; 32],
+    seed: &str,
+    program_id: &[u8; 32],
+) -> Option<[u8; 32]> {
+    if seed.len() > MAX_SEED_LEN {
+        return None;
+    }
+
+    // unwrap-safety: 32 > PDA_MARKER_LEN
+    if program_id.last_chunk::<PDA_MARKER_LEN>().unwrap() == PDA_MARKER {
+        // IllegalOwner
+        return None;
+    }
+
+    let mut hasher = hmac_sha256::Hash::new();
+    hasher.update(base);
+    hasher.update(seed);
+    hasher.update(program_id);
+    Some(hasher.finalize())
 }

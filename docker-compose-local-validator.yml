@@ -41,13 +41,18 @@ services:
         "none",
 
         "--upgradeable-program",
-        "stkitrT1Uoy18Dk1fTrgPw8W6MVzoCfYoAFT4MLsmhq",
-        "/test-fixtures/programs/stakedex.so",
+        "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD",
+        "/test-fixtures/programs/marinade.so",
         "none",
 
         "--upgradeable-program",
-        "MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD",
-        "/test-fixtures/programs/marinade.so",
+        "CrX7kMhLC3cSsXJdT7JDgqrRVWGnUpX3gfEfxxU2NVLi",
+        "/test-fixtures/programs/lido.so",
+        "none",
+
+        "--upgradeable-program",
+        "stkitrT1Uoy18Dk1fTrgPw8W6MVzoCfYoAFT4MLsmhq",
+        "/test-fixtures/programs/stakedex.so",
         "none",
 
         "--deactivate-feature",
