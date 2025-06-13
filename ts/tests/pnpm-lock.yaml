@@ -11,12 +11,18 @@ importers:
       '@sanctumso/sanctum-router':
         specifier: file:../sdk/pkg
         version: file:../sdk/pkg
+      '@solana-program/compute-budget':
+        specifier: ^0.8.0
+        version: 0.8.0(@solana/kit@2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.2))
       '@solana/kit':
         specifier: ^2.1.0
         version: 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.2)
       '@types/node':
         specifier: ^22
         version: 22.15.18
+      compute-budget~:
+        specifier: "link:\e[200~@solana-program/compute-budget~"
+        version: "link:\e[200~@solana-program/compute-budget~"
       lossless-json:
         specifier: ^4.1.0
         version: 4.1.0
@@ -425,6 +431,11 @@ packages:
 
   '@sanctumso/sanctum-router@file:../sdk/pkg':
     resolution: {directory: ../sdk/pkg, type: directory}
+
+  '@solana-program/compute-budget@0.8.0':
+    resolution: {integrity: sha512-qPKxdxaEsFxebZ4K5RPuy7VQIm/tfJLa1+Nlt3KNA8EYQkz9Xm8htdoEaXVrer9kpgzzp9R3I3Bh6omwCM06tQ==}
+    peerDependencies:
+      '@solana/kit': ^2.1.0
 
   '@solana/accounts@2.1.1':
     resolution: {integrity: sha512-Q9mG0o/6oyiUSw1CXCkG50TWlYiODJr3ZilEDLIyXpYJzOstRZM4XOzbRACveX4PXFoufPzpR1sSVK6qfcUUCw==}
@@ -1121,6 +1132,10 @@ snapshots:
     optional: true
 
   '@sanctumso/sanctum-router@file:../sdk/pkg': {}
+
+  '@solana-program/compute-budget@0.8.0(@solana/kit@2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.2))':
+    dependencies:
+      '@solana/kit': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.2)
 
   '@solana/accounts@2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)':
     dependencies:

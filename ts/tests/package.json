@@ -13,6 +13,7 @@
   },
   "devDependencies": {
     "@sanctumso/sanctum-router": "file:../sdk/pkg",
+    "@solana-program/compute-budget": "^0.8.0",
     "@solana/kit": "^2.1.0",
     "@types/node": "^22",
     "lossless-json": "^4.1.0",

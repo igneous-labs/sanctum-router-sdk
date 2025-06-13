@@ -12,12 +12,12 @@ import { NATIVE_MINT, testFixturesTokenAcc, tokenAccBalance } from "../token";
 import {
   address,
   getBase64Encoder,
-  lamports,
   type Rpc,
   type SolanaRpcApi,
 } from "@solana/kit";
 import { ixToSimTx, txSimParams } from "../tx";
 import { expect } from "vitest";
+import { stakeAccStake, stakeAccVote } from "../stake";
 
 // Assume bridge stake seed 0 is always unsed
 const BRIDGE_STAKE_SEED = 0;
@@ -62,9 +62,15 @@ async function simPrefundWithdrawStakeAssertQuoteMatches(
   rpc: Rpc<SolanaRpcApi>,
   {
     quote: {
+      vote,
       inp,
       out: { staked, unstaked },
+      // TODO: we might want to test that the collected fee matches too.
+      // Probably just pass poolFeeTokenAcc as an arg to this fn
+      fee: _f,
     },
+    // TODO: assert slumdog stake is of this amount of lamports
+    prefundFee: _p,
   }: PrefundWithdrawStakeQuote,
   { signerInp, signer }: WithdrawStakeSwapParams,
   ix: Instruction
@@ -76,8 +82,9 @@ async function simPrefundWithdrawStakeAssertQuoteMatches(
     address(signerInp),
     address(findBridgeStakeAccPda(signer, BRIDGE_STAKE_SEED)[0]),
   ];
+  const existingAddrs = [address(signerInp)];
 
-  const befSwap = await fetchAccountMap(rpc, addresses);
+  const befSwap = await fetchAccountMap(rpc, existingAddrs);
   const inpTokenAccBalBef = tokenAccBalance(befSwap.get(signerInp)!.data);
 
   const tx = ixToSimTx(address(signer), ix);
@@ -91,8 +98,16 @@ async function simPrefundWithdrawStakeAssertQuoteMatches(
   const inpTokenAccBalAft = tokenAccBalance(
     new Uint8Array(getBase64Encoder().encode(aftSwap[0]!.data[0]))
   );
-  const bridgeStakeAccBalAft = aftSwap[1]!.lamports;
-
   expect(inpTokenAccBalBef - inpTokenAccBalAft).toEqual(inp);
-  expect(bridgeStakeAccBalAft).toEqual(lamports(staked + unstaked));
+
+  const bridgeStakeAccAft = aftSwap[1]!;
+  const bridgeStakeAccLamportsAft = bridgeStakeAccAft.lamports;
+  const bridgeStakeAccDataAft = getBase64Encoder().encode(
+    bridgeStakeAccAft.data[0]
+  );
+  const bridgeStakeAccStakeAft = stakeAccStake(bridgeStakeAccDataAft);
+  const bridgeStakeAccVoteAft = stakeAccVote(bridgeStakeAccDataAft);
+  expect(bridgeStakeAccVoteAft).toEqual(vote);
+  expect(bridgeStakeAccStakeAft).toEqual(staked);
+  expect(bridgeStakeAccLamportsAft).toEqual(staked + unstaked);
 }
