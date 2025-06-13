@@ -50,7 +50,10 @@ impl WithdrawStakeQuoter for LidoWithdrawStakeQuoter<'_> {
         if self.curr_epoch > self.exchange_rate.computed_in_epoch {
             return Err(LidoError::ExchangeRateNotUpdatedInThisEpoch);
         }
-        let lamports_staked = self.exchange_rate.quote_withdraw_stake(tokens)?;
+        let lamports_staked = self
+            .exchange_rate
+            .quote_withdraw_stake(tokens)
+            .ok_or(LidoError::CalculationFailure)?;
         let max_withdraw_lamports =
             max_withdraw_lamports(self.largest_stake_effective_stake_balance)
                 .ok_or(LidoError::CalculationFailure)?;

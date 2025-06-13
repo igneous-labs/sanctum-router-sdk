@@ -364,7 +364,7 @@ checksum = "5f179d4e11094a893b82fff208f74d448a7512f99f5a0acbd5c679b705f83ed9"
 [[package]]
 name = "solido-legacy-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/solido-legacy-sdk.git?branch=master#2c0eef6ac666974fb20906c43302575692a1b848"
+source = "git+https://github.com/igneous-labs/solido-legacy-sdk.git?branch=master#280d6fc5053cd58099a073a620a1b32fff1e8fc1"
 dependencies = [
  "borsh",
  "const-crypto",
