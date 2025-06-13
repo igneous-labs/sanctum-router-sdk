@@ -120,8 +120,12 @@ pub struct OwnedAccount {
 #[serde(rename_all = "camelCase")]
 pub struct TokenQuoteParams {
     pub amt: u64,
-    pub inp_mint: B58PK,
-    pub out_mint: B58PK,
+
+    /// Input mint
+    pub inp: B58PK,
+
+    /// Output mint
+    pub out: B58PK,
 }
 
 // need to use a simple newtype here instead of type alias
@@ -135,7 +139,7 @@ impl DepositStakeQuoteParams {
     pub fn to_active_stake_params(self) -> ActiveStakeParams {
         ActiveStakeParams {
             vote: self.vote.0,
-            lamports: self.inp_stake,
+            lamports: self.inp,
         }
     }
 }
@@ -166,17 +170,21 @@ pub struct TokenSwapParams {
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
 pub struct DepositStakeQuoteParams {
-    /// Validator vote account `inp_stake` is delegated to
+    /// Validator vote account the stake account to be deposited is delegated to
     pub vote: B58PK,
-    pub inp_stake: StakeAccountLamports,
-    pub out_mint: B58PK,
+
+    /// Balance of the stake account to be deposited
+    pub inp: StakeAccountLamports,
+
+    /// Output mint
+    pub out: B58PK,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
 pub struct DepositStakeQuote {
-    /// Validator vote account `inp_stake` is delegated to
+    /// Validator vote account `inp` is delegated to
     pub vote: B58PK,
 
     /// Stake to be deposited
@@ -221,13 +229,15 @@ pub struct DepositStakeSwapParams {
 #[serde(rename_all = "camelCase")]
 pub struct WithdrawStakeQuoteParams {
     pub amt: u64,
-    pub inp_mint: B58PK,
 
-    /// Desired vote account of `out_stake`.
+    /// Input mint
+    pub inp: B58PK,
+
+    /// Desired vote account of `out`.
     /// If null, then any vote account of any validator in the stake pool
     /// may be used
     #[tsify(optional)]
-    pub out_vote: Option<B58PK>,
+    pub out: Option<B58PK>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]

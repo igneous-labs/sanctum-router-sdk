@@ -19,7 +19,8 @@ pub fn quote_deposit_sol(
     this: &SanctumRouterHandle,
     params: TokenQuoteParams,
 ) -> Result<TokenQuoteWithRouterFee, JsError> {
-    match params.out_mint.0 {
+    let out_mint = params.out.0;
+    match out_mint {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
             .marinade_router

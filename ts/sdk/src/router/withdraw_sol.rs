@@ -17,10 +17,11 @@ pub fn quote_withdraw_sol(
     this: &SanctumRouterHandle,
     params: TokenQuoteParams,
 ) -> Result<TokenQuoteWithRouterFee, JsError> {
+    let inp_mint = params.inp.0;
     this.0
         .spl_routers
         .iter()
-        .find(|r| r.stake_pool.pool_mint == params.inp_mint.0)
+        .find(|r| r.stake_pool.pool_mint == inp_mint)
         .ok_or_else(router_missing_err)?
         .withdraw_sol_quoter()
         .quote_withdraw_sol(params.amt)

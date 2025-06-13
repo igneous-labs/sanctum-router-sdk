@@ -38,7 +38,8 @@ pub fn quote_deposit_stake(
     params: DepositStakeQuoteParams,
 ) -> Result<DepositStakeQuoteWithRouterFee, JsError> {
     let active_stake_params = params.to_active_stake_params();
-    match params.out_mint.0 {
+    let out_mint = params.out.0;
+    match out_mint {
         sanctum_router_core::NATIVE_MINT => this
             .0
             .reserve_router
@@ -65,7 +66,7 @@ pub fn quote_deposit_stake(
         }
     }
     .map(|q| {
-        conv_quote(if params.out_mint.0 != sanctum_router_core::NATIVE_MINT {
+        conv_quote(if params.out.0 != sanctum_router_core::NATIVE_MINT {
             q.with_router_fee()
         } else {
             WithRouterFee::zero(q)

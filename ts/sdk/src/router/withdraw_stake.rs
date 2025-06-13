@@ -42,10 +42,11 @@ pub fn quote_prefund_withdraw_stake(
     this: &SanctumRouterHandle,
     params: WithdrawStakeQuoteParams,
 ) -> Result<PrefundWithdrawStakeQuote, JsError> {
-    let out_vote = params.out_vote.map(|pk| pk.0);
+    let inp_mint = params.inp.0;
+    let out_vote = params.out.map(|pk| pk.0);
     let out_vote = out_vote.as_ref();
     let (reserves_balance, reserves_fee) = this.0.reserve_router.prefund_params();
-    let quote = match params.inp_mint.0 {
+    let quote = match inp_mint {
         solido_legacy_core::STSOL_MINT_ADDR => this
             .0
             .lido_router
