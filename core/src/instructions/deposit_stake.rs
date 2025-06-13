@@ -23,8 +23,12 @@ pub type DepositStakeIxKeys<'a> = DepositStakeIxAccs<&'a [u8; 32]>;
 pub type DepositStakeIxAccsFlag = DepositStakeIxAccs<bool>;
 
 /// To support Marinade's DepositStake, `user` needs to be mutable
-pub const DEPOSIT_STAKE_IX_IS_WRITER: DepositStakeIxAccsFlag =
+pub const DEPOSIT_STAKE_IX_IS_WRITER_NON_WSOL_OUT: DepositStakeIxAccsFlag =
     DepositStakeIxAccs([true; DEPOSIT_STAKE_IX_ACCS_LEN]);
+
+/// If output mint is wsol, it must be set to readonly
+pub const DEPOSIT_STAKE_IX_IS_WRITER_WSOL_OUT: DepositStakeIxAccsFlag =
+    DEPOSIT_STAKE_IX_IS_WRITER_NON_WSOL_OUT.const_with_out_mint(false);
 
 pub const DEPOSIT_STAKE_IX_IS_SIGNER: DepositStakeIxAccsFlag =
     DepositStakeIxAccs([false; DEPOSIT_STAKE_IX_ACCS_LEN]).const_with_user(true);

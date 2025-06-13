@@ -1,7 +1,8 @@
 use sanctum_router_core::{
     ActiveStakeParams, DepositStakeIxAccsBuilder, DepositStakeIxData, DepositStakeQuoter,
     DepositStakeSufAccs, StakeAccountLamports, WithRouterFee, DEPOSIT_STAKE_IX_ACCS_LEN,
-    DEPOSIT_STAKE_IX_IS_SIGNER, DEPOSIT_STAKE_IX_IS_WRITER, SANCTUM_ROUTER_PROGRAM,
+    DEPOSIT_STAKE_IX_IS_SIGNER, DEPOSIT_STAKE_IX_IS_WRITER_NON_WSOL_OUT,
+    DEPOSIT_STAKE_IX_IS_WRITER_WSOL_OUT, NATIVE_MINT, SANCTUM_ROUTER_PROGRAM,
 };
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
@@ -238,7 +239,12 @@ fn deposit_stake_prefix_metas_and_data(
             .as_borrowed()
             .0,
         &DEPOSIT_STAKE_IX_IS_SIGNER.0,
-        &DEPOSIT_STAKE_IX_IS_WRITER.0,
+        &if swap_params.out.0 == NATIVE_MINT {
+            DEPOSIT_STAKE_IX_IS_WRITER_WSOL_OUT
+        } else {
+            DEPOSIT_STAKE_IX_IS_WRITER_NON_WSOL_OUT
+        }
+        .0,
     );
 
     let data = DepositStakeIxData::new();
