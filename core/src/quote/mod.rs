@@ -1,12 +1,14 @@
 mod deposit_stake;
 mod prefund;
 mod stake;
+mod swap_via_stake;
 mod token;
 mod withdraw_stake;
 
 pub use deposit_stake::*;
 pub use prefund::*;
 pub use stake::*;
+pub use swap_via_stake::*;
 pub use token::*;
 pub use withdraw_stake::*;
 
