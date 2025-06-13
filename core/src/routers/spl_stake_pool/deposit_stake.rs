@@ -27,18 +27,14 @@ impl DepositStakeQuoter for SplDepositStakeQuoter<'_> {
     ) -> Result<DepositStakeQuote, Self::Error> {
         // we do not handle private pools with custom deposit auths
         if self.stake_pool.stake_deposit_authority != *self.default_stake_deposit_authority {
-            // TODO: this err should be smth like "incorrect stake deposit auth" instead
-            // in sanctum-spl-stake-pool-sdk
-            return Err(SplStakePoolError::InvalidState);
+            return Err(SplStakePoolError::InvalidStakeDepositAuthority);
         }
 
         let vsi = self
             .validator_list
             .iter()
             .find(|vsi| *vsi.vote_account_address() == stake.vote)
-            // TODO: this err should be smth like "validator not on list" instead
-            // in sanctum-spl-stake-pool-sdk
-            .ok_or(SplStakePoolError::IncorrectDepositVoteAddress)?;
+            .ok_or(SplStakePoolError::ValidatorNotFound)?;
         // .quote_deposit_stake() ensures preferred validator matches if set
         self.stake_pool
             .quote_deposit_stake(

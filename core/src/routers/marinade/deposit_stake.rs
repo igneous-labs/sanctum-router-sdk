@@ -29,9 +29,7 @@ impl DepositStakeQuoter for MarinadeDepositStakeQuoter<'_> {
             .any(|v| *v.validator_account() == inp.vote)
             && self.state.validator_system.auto_add_validator_enabled == 0
         {
-            // TODO: add the validator not on list error to
-            // sanctum_marinade_liquid_staking_core
-            return Err(MarinadeError::StakeAccountIsEmergencyUnstaking);
+            return Err(MarinadeError::WrongValidatorAccountOrIndex);
         }
 
         self.state

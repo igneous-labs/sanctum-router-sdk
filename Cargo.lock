@@ -237,7 +237,7 @@ dependencies = [
 [[package]]
 name = "sanctum-marinade-liquid-staking-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-marinade-liquid-staking-sdk.git?branch=main#6de0b1ffa7a38e4224fcb4deffdbe4c3d6f434a1"
+source = "git+https://github.com/igneous-labs/sanctum-marinade-liquid-staking-sdk.git?branch=main#f80137d176859bd9ab125f4214b6db40a32d42f5"
 dependencies = [
  "borsh",
  "const-crypto",
@@ -297,7 +297,7 @@ dependencies = [
 [[package]]
 name = "sanctum-spl-stake-pool-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#22b99f275ca3190bcf4cce319c67ffd38bd3c661"
+source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#c2f5462ebd85967b1af9f5122c74af64cdb913c9"
 dependencies = [
  "borsh",
  "const-crypto",
