@@ -1,3 +1,5 @@
+//! Common typescript interface types that are imported in more than one module
+
 use std::collections::HashMap;
 
 use bs58_fixed::Bs58String;
