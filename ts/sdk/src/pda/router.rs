@@ -46,7 +46,15 @@ pub fn find_bridge_stake_acc_pda(
         .map(|(p, b)| FoundPda(B58PK::new(p), b))
 }
 
-pub fn create_slumdog_stake(bridge_stake: &[u8; 32]) -> [u8; 32] {
+/// `Pubkey::create_with_seed(bridge_stake_pk)` to obtain the slumdog stake account addr
+///
+/// @param {B58PK} arg0 the bridge stake pubkey
+#[wasm_bindgen(js_name = createSlumdogStakeAddr)]
+pub fn create_slumdog_stake_addr(Bs58Array(bridge_stake): &B58PK) -> B58PK {
+    B58PK::new(create_slumdog_stake_internal(bridge_stake))
+}
+
+pub fn create_slumdog_stake_internal(bridge_stake: &[u8; 32]) -> [u8; 32] {
     // unwrap-safety:
     // - seed.len() <= MAX_SEED_LEN
     // - Stake program ID's last bytes are not PDA_MARKER

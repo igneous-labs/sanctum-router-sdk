@@ -20,9 +20,6 @@ importers:
       '@types/node':
         specifier: ^22
         version: 22.15.18
-      compute-budget~:
-        specifier: "link:\e[200~@solana-program/compute-budget~"
-        version: "link:\e[200~@solana-program/compute-budget~"
       lossless-json:
         specifier: ^4.1.0
         version: 4.1.0
