@@ -1,23 +1,36 @@
 use sanctum_router_core::{
     DepositSolQuoter, DepositSolSufAccs, WithRouterFee, SANCTUM_ROUTER_PROGRAM,
 };
+use serde::{Deserialize, Serialize};
+use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
     err::{generic_err, router_missing_err},
     instructions::get_deposit_sol_prefix_metas_and_data,
     interface::{
-        keys_signer_writer_to_account_metas, AccountMeta, Instruction, TokenQuoteParams,
-        TokenQuoteWithRouterFee, TokenSwapParams, B58PK,
+        keys_signer_writer_to_account_metas, AccountMeta, Instruction, TokenQuoteWithRouterFee,
+        TokenSwapParams, B58PK,
     },
     router::SanctumRouterHandle,
 };
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositSolQuoteParams {
+    /// Input lamport amount
+    pub amt: u64,
+
+    /// Output mint
+    pub out: B58PK,
+}
 
 /// Requires `update()` to be called before calling this function
 #[wasm_bindgen(js_name = quoteDepositSol)]
 pub fn quote_deposit_sol(
     this: &SanctumRouterHandle,
-    params: TokenQuoteParams,
+    params: DepositSolQuoteParams,
 ) -> Result<TokenQuoteWithRouterFee, JsError> {
     let out_mint = params.out.0;
     match out_mint {
