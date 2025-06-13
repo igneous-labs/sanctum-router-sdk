@@ -20,8 +20,8 @@ pub struct ReserveRouterOwned {
 impl ReserveRouterOwned {
     pub fn deposit_stake_quoter(&self) -> ReserveDepositStakeQuoter {
         ReserveDepositStakeQuoter {
-            pool: &self.pool,
-            fee_account: &self.fee_account,
+            pool_incoming_stake: self.pool.incoming_stake,
+            fee_account: &self.fee_account.0,
             protocol_fee_account: &self.protocol_fee_account,
             pool_sol_reserves: self.pool_sol_reserves,
         }

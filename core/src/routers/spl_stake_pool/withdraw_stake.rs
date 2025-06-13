@@ -1,3 +1,8 @@
+use core::{
+    iter::{Chain, Map},
+    slice,
+};
+
 use generic_array_struct::generic_array_struct;
 use sanctum_spl_stake_pool_core::{
     SplStakePoolError, StakePool, ValidatorStakeInfo, WithdrawStakeQuoteArgs, MIN_ACTIVE_STAKE,
@@ -8,8 +13,6 @@ use crate::{
     WithdrawStakeSufAccs, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM,
 };
 
-// TODO: need to make a variant of this that quotes for a single individual validator
-// to build the quoting iterator for SwapViaStake
 #[derive(Debug, Clone, Copy)]
 pub struct SplWithdrawStakeQuoter<'a> {
     pub stake_pool: &'a StakePool,
@@ -36,6 +39,7 @@ impl SplWithdrawStakeQuoter<'_> {
 impl WithdrawStakeQuoter for SplWithdrawStakeQuoter<'_> {
     type Error = SplStakePoolError;
 
+    #[inline]
     fn quote_withdraw_stake(
         &self,
         tokens: u64,
@@ -65,33 +69,127 @@ impl WithdrawStakeQuoter for SplWithdrawStakeQuoter<'_> {
             }
         }
         .ok_or(SplStakePoolError::ValidatorNotFound)?;
-        let sanctum_spl_stake_pool_core::WithdrawStakeQuote {
-            tokens_in,
-            lamports_staked,
-            fee_amount,
-        } = self.stake_pool.quote_withdraw_stake(
+        let quote = self.stake_pool.quote_withdraw_stake(
             tokens,
             WithdrawStakeQuoteArgs {
                 current_epoch: self.current_epoch,
             },
         )?;
-
-        if lamports_staked > vsi.active_stake_lamports() {
-            // StakeWithdrawalTooLarge
-            return Err(SplStakePoolError::StakeLamportsNotEqualToMinimum);
-        }
-        Ok(WithdrawStakeQuote {
-            inp: tokens_in,
-            out: ActiveStakeParams {
-                vote: *vsi.vote_account_address(),
-                lamports: StakeAccountLamports {
-                    staked: lamports_staked,
-                    unstaked: 0,
-                },
-            },
-            fee: fee_amount,
-        })
+        conv_quote(quote, vsi)
     }
+}
+// Q: why not just use `SplWithdrawStakeQuoter` but with a single elem slice for
+// `validator_list`?
+// A: need to handle preferred withdraw validator case a bit differently,
+// since we dont have find_max_validator() here
+//
+/// [`SplWithdrawStakeQuoter`], but only for one of the validators in the pool
+/// instead of all of them.
+#[derive(Debug, Clone, Copy)]
+pub struct SplWithdrawStakeValQuoter<'a> {
+    pub stake_pool: &'a StakePool,
+    pub current_epoch: u64,
+    pub validator: &'a ValidatorStakeInfo,
+}
+
+impl WithdrawStakeQuoter for SplWithdrawStakeValQuoter<'_> {
+    type Error = SplStakePoolError;
+
+    #[inline]
+    fn quote_withdraw_stake(
+        &self,
+        tokens: u64,
+        vote: Option<&[u8; 32]>,
+    ) -> Result<WithdrawStakeQuote, Self::Error> {
+        if let Some(v) = vote {
+            if v != self.validator.vote_account_address() {
+                return Err(SplStakePoolError::IncorrectWithdrawVoteAddress);
+            }
+        }
+        let quote = self.stake_pool.quote_withdraw_stake(
+            tokens,
+            WithdrawStakeQuoteArgs {
+                current_epoch: self.current_epoch,
+            },
+        )?;
+        conv_quote(quote, self.validator)
+    }
+}
+
+pub type SplWithdrawStakeValQuoterSliceItr<'a, F> = Map<slice::Iter<'a, ValidatorStakeInfo>, F>;
+
+pub type SplWithdrawStakeValQuoterItr<'a, F> =
+    Chain<SplWithdrawStakeValQuoterSliceItr<'a, F>, SplWithdrawStakeValQuoterSliceItr<'a, F>>;
+
+impl<'a> SplWithdrawStakeValQuoter<'a> {
+    /// Returns an iterator of withdraw stake quoters for each validator on the list.
+    ///
+    /// Special cases if preferred withdraw validator is set:
+    /// - if preferred withdraw validator is exhausted, an iterator over all other validators is returned
+    /// - otherwise, a iterator yielding a single entry of the preferred withdraw validator is returned
+    ///
+    /// Returns Err if preferred withdraw validator is set but not on list.
+    #[inline]
+    pub fn all<'parent: 'a>(
+        stake_pool: &'parent StakePool,
+        validator_list: &'parent [ValidatorStakeInfo],
+        current_epoch: u64,
+    ) -> Result<
+        SplWithdrawStakeValQuoterItr<'a, impl Fn(&'a ValidatorStakeInfo) -> Self>,
+        SplStakePoolError,
+    > {
+        // use 2 slices to accomodate preferred exhausted case
+        let (s1, s2) = match stake_pool.preferred_withdraw_validator_vote_address {
+            None => (validator_list, [].as_slice()),
+            Some(p) => {
+                let (i, preferred) = validator_list
+                    .iter()
+                    .enumerate()
+                    .find(|(_i, vsi)| *vsi.vote_account_address() == p)
+                    .ok_or(SplStakePoolError::ValidatorNotFound)?;
+                if preferred.active_stake_lamports() <= MIN_ACTIVE_STAKE {
+                    // preferred exhausted: return everything excluding preferred
+                    // unchecked-index: i is in range [0, len-1],
+                    // [i + 1..] will not panic even if i = len-1
+                    (&validator_list[..i], &validator_list[i + 1..])
+                } else {
+                    // preferred not exhausted: return just preferred
+                    (&validator_list[i..i + 1], [].as_slice())
+                }
+            }
+        };
+        let ctor = move |validator| Self {
+            validator,
+            stake_pool,
+            current_epoch,
+        };
+        Ok(s1.iter().map(ctor).chain(s2.iter().map(ctor)))
+    }
+}
+
+fn conv_quote(
+    sanctum_spl_stake_pool_core::WithdrawStakeQuote {
+        tokens_in,
+        lamports_staked,
+        fee_amount,
+    }: sanctum_spl_stake_pool_core::WithdrawStakeQuote,
+    vsi: &ValidatorStakeInfo,
+) -> Result<WithdrawStakeQuote, SplStakePoolError> {
+    if lamports_staked > vsi.active_stake_lamports() {
+        // StakeWithdrawalTooLarge
+        return Err(SplStakePoolError::StakeLamportsNotEqualToMinimum);
+    }
+    Ok(WithdrawStakeQuote {
+        inp: tokens_in,
+        out: ActiveStakeParams {
+            vote: *vsi.vote_account_address(),
+            lamports: StakeAccountLamports {
+                staked: lamports_staked,
+                unstaked: 0,
+            },
+        },
+        fee: fee_amount,
+    })
 }
 
 #[derive(Debug, Clone, Copy)]
