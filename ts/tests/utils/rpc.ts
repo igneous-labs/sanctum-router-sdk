@@ -23,12 +23,14 @@ export async function fetchAccountMap(
           encoding: "base64",
         })
         .send();
+      const a = accountInfo.value;
+      if (a == null) {
+        throw new Error(`Missing account ${account}`);
+      }
       map.set(account, {
-        data: new Uint8Array(
-          getBase64Encoder().encode(accountInfo.value!.data[0])
-        ),
-        owner: accountInfo.value!.owner,
-        lamports: accountInfo.value!.lamports,
+        data: new Uint8Array(getBase64Encoder().encode(a.data[0])),
+        owner: a.owner,
+        lamports: a.lamports,
       });
     })
   );

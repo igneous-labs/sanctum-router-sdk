@@ -6,6 +6,7 @@
   "scripts": {
     "script:sae": "tsx scripts/set-activation-epoch.ts",
     "script:ss": "tsx scripts/set-stake.ts",
+    "script:stoa": "tsx scripts/set-token-acc-owner.ts",
     "start:infra": "docker compose -f ../../docker-compose-local-validator.yml up -d",
     "stop:infra": "docker compose -f ../../docker-compose-local-validator.yml down -v",
     "test": "vitest run"

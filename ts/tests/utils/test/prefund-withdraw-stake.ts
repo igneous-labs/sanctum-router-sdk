@@ -8,7 +8,7 @@ import {
 } from "@sanctumso/sanctum-router";
 import { routerForMints } from "../router";
 import { fetchAccountMap, localRpc } from "../rpc";
-import { testFixturesTokenAcc, tokenAccBalance } from "../token";
+import { NATIVE_MINT, testFixturesTokenAcc, tokenAccBalance } from "../token";
 import {
   address,
   getBase64Encoder,
@@ -31,7 +31,13 @@ export async function prefundWithdrawStakeFixturesTest(
   const { addr: inpTokenAcc, owner: signer } =
     testFixturesTokenAcc(inpTokenAccName);
   const rpc = localRpc();
-  const router = await routerForMints(rpc, [inpMint]);
+
+  // TODO: this API is very ass bec we need to remember to include NATIVE_MINT
+  // as part of the array or else we will get ReserveError(NotEnoughLiquidity)
+  // when quoting because reserves' sol reserves acc is not fetched.
+  //
+  // GH issue #18 fine-grained updates should aim to solve this
+  const router = await routerForMints(rpc, [inpMint, NATIVE_MINT]);
 
   const quote = quotePrefundWithdrawStake(router, {
     amt,
