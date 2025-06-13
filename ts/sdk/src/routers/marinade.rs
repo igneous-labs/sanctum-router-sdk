@@ -1,14 +1,17 @@
 use sanctum_marinade_liquid_staking_core::{
     State as MarinadeState, ValidatorList, ValidatorRecord,
 };
-use sanctum_router_core::{MarinadeSolRouter, MarinadeStakeRouter};
+use sanctum_router_core::{
+    MarinadeDepositSolQuoter, MarinadeDepositSolSufAccs, MarinadeDepositStakeQuoter,
+    MarinadeDepositStakeSufAccs,
+};
 use wasm_bindgen::JsError;
 
 use crate::{
     err::invalid_data_err,
     interface::{get_account_data, AccountMap},
     pda::marinade::find_marinade_duplication_flag_pda_internal,
-    router::Update,
+    update::Update,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -18,22 +21,43 @@ pub struct MarinadeRouterOwned {
     pub msol_leg_balance: u64,
 }
 
+/// DepositSol
 impl MarinadeRouterOwned {
-    pub fn to_deposit_sol_router(&self) -> MarinadeSolRouter {
-        MarinadeSolRouter {
+    pub fn deposit_sol_quoter(&self) -> MarinadeDepositSolQuoter {
+        MarinadeDepositSolQuoter {
             state: &self.state,
             msol_leg_balance: self.msol_leg_balance,
         }
     }
 
-    pub fn to_deposit_stake_router(&self, vote_account: &[u8; 32]) -> Option<MarinadeStakeRouter> {
-        Some(MarinadeStakeRouter {
+    pub fn deposit_sol_suf_accs(&self) -> MarinadeDepositSolSufAccs {
+        MarinadeDepositSolSufAccs::from_state(&self.state)
+    }
+}
+
+/// DepositStake
+impl MarinadeRouterOwned {
+    pub fn deposit_stake_quoter(&self) -> MarinadeDepositStakeQuoter {
+        MarinadeDepositStakeQuoter {
             state: &self.state,
             msol_leg_balance: self.msol_leg_balance,
+            validator_records: &self.validator_records,
+        }
+    }
+
+    pub fn deposit_stake_suf_accs(
+        &self,
+        vote_account: &[u8; 32],
+    ) -> Option<MarinadeDepositStakeSufAccs> {
+        Some(MarinadeDepositStakeSufAccs {
+            state: &self.state,
             duplication_flag: find_marinade_duplication_flag_pda_internal(vote_account)?.0,
         })
     }
+}
 
+/// Update helpers
+impl MarinadeRouterOwned {
     pub fn update_state(&mut self, data: &[u8]) -> Result<(), JsError> {
         self.state = MarinadeState::borsh_de(data)?;
         Ok(())

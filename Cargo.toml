@@ -4,7 +4,6 @@ resolver = "2"
 members = [
     "core", 
     "ts/sdk",
-    "jupiter-amm",
 ]
 
 [workspace.package]
@@ -13,7 +12,6 @@ edition = "2021"
 [workspace.dependencies]
 # In general, keep default-features = false in workspace
 # and enable individual features in indiv crates
-anyhow = { version = "^1", default-features = false }
 borsh = { version = "^1", default-features = false }
 bs58-fixed = { git = "https://github.com/igneous-labs/bs58-fixed.git", branch = "master", default-features = false }
 bs58-fixed-wasm = { git = "https://github.com/igneous-labs/bs58-fixed.git", branch = "master", default-features = false }
@@ -27,11 +25,6 @@ sanctum-u64-ratio = { version = "^1", default-features = false }
 serde = { version = "1.0", default-features = false }
 tsify-next = { version = "^0.5.5", default-features = false }
 wasm-bindgen = "^0.2"
-
-# solana SDKs and crates that depend on solana SDKs
-jupiter-amm-interface = "^0.5"
-rust_decimal = { version = "^1.37", default-features = false }
-solana-sdk = { version = "^2", default-features = false }
 
 # sanctum sdks
 sanctum-marinade-liquid-staking-core = { git = "https://github.com/igneous-labs/sanctum-marinade-liquid-staking-sdk.git", branch = "main", default-features = false }

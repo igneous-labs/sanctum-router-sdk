@@ -1,5 +1,6 @@
 use sanctum_router_core::{
-    SplStakePoolDepositSolRouter, SplStakePoolDepositStakeRouter, SplStakePoolWithdrawSolRouter,
+    SplDepositSolQuoter, SplDepositStakeQuoter, SplDepositStakeSufAccs, SplSolSufAccs,
+    SplWithdrawSolQuoter,
 };
 use sanctum_spl_stake_pool_core::{
     StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo,
@@ -9,7 +10,7 @@ use wasm_bindgen::JsError;
 use crate::{
     interface::{get_account, get_account_data, AccountMap},
     pda::spl::find_validator_stake_account_pda_internal,
-    router::Update,
+    update::Update,
 };
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -24,46 +25,64 @@ pub struct SplStakePoolRouterOwned {
     pub reserve_stake_lamports: u64,
 }
 
+/// DepositSol + WithdrawSol common
 impl SplStakePoolRouterOwned {
-    pub fn to_deposit_sol_router(&self) -> SplStakePoolDepositSolRouter {
-        SplStakePoolDepositSolRouter {
-            stake_pool_addr: &self.stake_pool_addr,
-            stake_pool_program: &self.stake_pool_program,
+    pub fn sol_suf_accs(&self) -> SplSolSufAccs {
+        SplSolSufAccs {
             stake_pool: &self.stake_pool,
-            curr_epoch: self.curr_epoch,
+            stake_pool_program: &self.stake_pool_program,
+            stake_pool_addr: &self.stake_pool_addr,
             withdraw_authority_program_address: &self.withdraw_authority_program_address,
         }
     }
+}
 
-    pub fn to_withdraw_sol_router(&self) -> SplStakePoolWithdrawSolRouter {
-        SplStakePoolWithdrawSolRouter {
-            stake_pool_addr: &self.stake_pool_addr,
-            stake_pool_program: &self.stake_pool_program,
+/// DepositSol
+impl SplStakePoolRouterOwned {
+    pub fn deposit_sol_quoter(&self) -> SplDepositSolQuoter {
+        SplDepositSolQuoter {
             stake_pool: &self.stake_pool,
             curr_epoch: self.curr_epoch,
-            withdraw_authority_program_address: &self.withdraw_authority_program_address,
+        }
+    }
+}
+
+/// WithdrawSol
+impl SplStakePoolRouterOwned {
+    pub fn withdraw_sol_quoter(&self) -> SplWithdrawSolQuoter {
+        SplWithdrawSolQuoter {
+            stake_pool: &self.stake_pool,
             reserve_stake_lamports: self.reserve_stake_lamports,
+            curr_epoch: self.curr_epoch,
+        }
+    }
+}
+
+/// DepositStake
+impl SplStakePoolRouterOwned {
+    /// Sets validator stake according to validator stake info on this struct
+    pub fn deposit_stake_quoter(&self) -> SplDepositStakeQuoter {
+        SplDepositStakeQuoter {
+            stake_pool: &self.stake_pool,
+            current_epoch: self.curr_epoch,
+            validator_list: &self.validator_list.validators,
+            default_stake_deposit_authority: &self.deposit_authority_program_address,
         }
     }
 
-    /// Sets validator stake according to validator stake info on this struct
-    pub fn to_deposit_stake_router(
+    pub fn deposit_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],
-    ) -> Option<SplStakePoolDepositStakeRouter> {
+    ) -> Option<SplDepositStakeSufAccs> {
         let validator_stake_info = self
             .validator_list
             .validators
             .iter()
             .find(|v| v.vote_account_address() == vote_account)?;
-
-        Some(SplStakePoolDepositStakeRouter {
+        Some(SplDepositStakeSufAccs {
             stake_pool_addr: &self.stake_pool_addr,
             stake_pool_program: &self.stake_pool_program,
             stake_pool: &self.stake_pool,
-            current_epoch: self.curr_epoch,
-            withdraw_authority_program_address: &self.withdraw_authority_program_address,
-            deposit_authority_program_address: &self.deposit_authority_program_address,
             validator_stake: find_validator_stake_account_pda_internal(
                 &self.stake_pool_program,
                 validator_stake_info.vote_account_address(),
@@ -71,10 +90,14 @@ impl SplStakePoolRouterOwned {
                 validator_stake_info.validator_seed_suffix(),
             )?
             .0,
-            validator_stake_info,
+            stake_deposit_authority: &self.deposit_authority_program_address,
+            stake_withdraw_authority: &self.withdraw_authority_program_address,
         })
     }
+}
 
+/// Update helpers
+impl SplStakePoolRouterOwned {
     pub fn update_stake_pool(&mut self, stake_pool_data: &[u8]) -> Result<(), JsError> {
         self.stake_pool = StakePool::borsh_de(stake_pool_data)?;
         Ok(())

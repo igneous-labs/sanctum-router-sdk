@@ -1,34 +1,68 @@
 use generic_array_struct::generic_array_struct;
 use sanctum_marinade_liquid_staking_core::{
-    DepositStakeQuoteArgs, StakeAccountLamports, MARINADE_STAKING_PROGRAM,
-    MSOL_MINT_AUTHORITY_PUBKEY, STATE_PUBKEY,
+    DepositStakeQuoteArgs, MarinadeError, StakeAccountLamports, State as MarinadeState,
+    ValidatorRecord, MARINADE_STAKING_PROGRAM, MSOL_MINT_AUTHORITY_PUBKEY, STATE_PUBKEY,
 };
 
 use crate::{
-    DepositStake, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, SYSVAR_RENT, TOKEN_PROGRAM,
+    ActiveStakeParams, DepositStakeQuote, DepositStakeQuoter, DepositStakeSufAccs, STAKE_PROGRAM,
+    SYSTEM_PROGRAM, SYSVAR_CLOCK, SYSVAR_RENT, TOKEN_PROGRAM,
 };
 
-use super::MarinadeStakeRouter;
+#[derive(Debug, Clone, Copy)]
+pub struct MarinadeDepositStakeQuoter<'a> {
+    pub state: &'a MarinadeState,
+    pub msol_leg_balance: u64,
+    pub validator_records: &'a [ValidatorRecord],
+}
 
-impl DepositStake for MarinadeStakeRouter<'_> {
-    type Accs = MarinadeDepositStakeIxSuffixKeysOwned;
-    type AccFlags = MarinadeDepositStakeIxSuffixAccsFlag;
+impl DepositStakeQuoter for MarinadeDepositStakeQuoter<'_> {
+    type Error = MarinadeError;
 
-    fn get_deposit_stake_quote(
+    fn quote_deposit_stake(
         &self,
-        crate::traits::StakeAccountLamports { staked, unstaked }: crate::traits::StakeAccountLamports,
-    ) -> Option<crate::DepositStakeQuote> {
-        let quote = self
-            .state
+        inp: ActiveStakeParams,
+    ) -> Result<DepositStakeQuote, Self::Error> {
+        if !self
+            .validator_records
+            .iter()
+            .any(|v| *v.validator_account() == inp.vote)
+            && self.state.validator_system.auto_add_validator_enabled == 0
+        {
+            return Err(MarinadeError::WrongValidatorAccountOrIndex);
+        }
+
+        self.state
             .quote_deposit_stake(
-                StakeAccountLamports { staked, unstaked },
+                StakeAccountLamports {
+                    staked: inp.lamports.staked,
+                    unstaked: inp.lamports.unstaked,
+                },
                 DepositStakeQuoteArgs {
                     msol_leg_balance: self.msol_leg_balance,
                 },
             )
-            .ok()?;
-        Some(quote.into())
+            .map(
+                |sanctum_marinade_liquid_staking_core::DepositStakeQuote { tokens_out, .. }| {
+                    DepositStakeQuote {
+                        inp,
+                        out: tokens_out,
+                        fee: 0,
+                    }
+                },
+            )
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct MarinadeDepositStakeSufAccs<'a> {
+    pub state: &'a MarinadeState,
+    pub duplication_flag: [u8; 32],
+}
+
+impl DepositStakeSufAccs for MarinadeDepositStakeSufAccs<'_> {
+    type Accs = MarinadeDepositStakeIxSuffixKeysOwned;
+    type AccFlags = MarinadeDepositStakeIxSuffixAccsFlag;
 
     fn suffix_accounts(&self) -> Self::Accs {
         MarinadeDepositStakeIxSuffixAccsBuilder::start()

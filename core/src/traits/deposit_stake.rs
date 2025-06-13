@@ -1,38 +1,37 @@
-use crate::quote::DepositStakeQuote;
+use core::{error::Error, ops::Deref};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde::Serialize, serde::Deserialize),
-    serde(rename_all = "camelCase")
-)]
-#[cfg_attr(
-    feature = "wasm",
-    derive(tsify_next::Tsify),
-    tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)
-)]
-pub struct StakeAccountLamports {
-    /// Actively staked lamports of this stake account
-    pub staked: u64,
+use crate::{ActiveStakeParams, DepositStakeQuote};
 
-    /// Unstaked lamports of this stake account. Can be rent-exemption, MEV tips etc
-    pub unstaked: u64,
+pub trait DepositStakeQuoter {
+    type Error: Error;
+
+    // pass `stake` by value since we're echoing it in return value anyway
+    fn quote_deposit_stake(
+        &self,
+        stake: ActiveStakeParams,
+    ) -> Result<DepositStakeQuote, Self::Error>;
 }
 
-impl StakeAccountLamports {
-    pub const fn total(&self) -> u64 {
-        self.staked + self.unstaked
+/// Blanket for refs
+/// NB: this means we can only implement this trait for internal types
+impl<R, T: DepositStakeQuoter> DepositStakeQuoter for R
+where
+    R: Deref<Target = T>,
+{
+    type Error = T::Error;
+
+    #[inline]
+    fn quote_deposit_stake(
+        &self,
+        stake: ActiveStakeParams,
+    ) -> Result<DepositStakeQuote, Self::Error> {
+        self.deref().quote_deposit_stake(stake)
     }
 }
 
-pub trait DepositStake {
+pub trait DepositStakeSufAccs {
     type Accs: AsRef<[[u8; 32]]>;
     type AccFlags: AsRef<[bool]>;
-
-    fn get_deposit_stake_quote(
-        &self,
-        stake_account_lamports: StakeAccountLamports,
-    ) -> Option<DepositStakeQuote>;
 
     /// Returned array must have `length = self.suffix_accounts_len()`
     fn suffix_accounts(&self) -> Self::Accs;
@@ -42,4 +41,29 @@ pub trait DepositStake {
 
     /// Returned array must have `length = self.suffix_accounts_len()`
     fn suffix_is_writable(&self) -> Self::AccFlags;
+}
+
+/// Blanket for refs
+/// NB: this means we can only implement this trait for internal types
+impl<R, T: DepositStakeSufAccs> DepositStakeSufAccs for R
+where
+    R: Deref<Target = T>,
+{
+    type Accs = T::Accs;
+    type AccFlags = T::AccFlags;
+
+    #[inline]
+    fn suffix_accounts(&self) -> Self::Accs {
+        self.deref().suffix_accounts()
+    }
+
+    #[inline]
+    fn suffix_is_signer(&self) -> Self::AccFlags {
+        self.deref().suffix_is_signer()
+    }
+
+    #[inline]
+    fn suffix_is_writable(&self) -> Self::AccFlags {
+        self.deref().suffix_is_writable()
+    }
 }
