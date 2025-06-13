@@ -135,7 +135,7 @@ pub fn deposit_stake_ix(
     let out_mint = params.out.0;
     let vote_account = params.inp.0;
     let stake_account = params.signer_inp.0;
-    let (prefix_metas, data) = deposit_stake_prefix_metas_and_data(params)?;
+    let (prefix_metas, data) = deposit_stake_prefix_metas_and_data(&params)?;
 
     let metas: Box<[AccountMeta]> = match out_mint {
         sanctum_router_core::NATIVE_MINT => {
@@ -221,7 +221,7 @@ fn conv_quote(
 }
 
 fn deposit_stake_prefix_metas_and_data(
-    swap_params: DepositStakeSwapParams,
+    swap_params: &DepositStakeSwapParams,
 ) -> Result<([AccountMeta; DEPOSIT_STAKE_IX_ACCS_LEN], DepositStakeIxData), JsError> {
     let metas = keys_signer_writer_to_account_metas(
         &DepositStakeIxAccsBuilder::start()

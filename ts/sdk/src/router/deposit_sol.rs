@@ -82,7 +82,7 @@ pub fn deposit_sol_ix(
     params: DepositSolSwapParams,
 ) -> Result<Instruction, JsError> {
     let out_mint = params.out.0;
-    let (prefix_metas, data) = deposit_sol_prefix_metas_and_data(params)?;
+    let (prefix_metas, data) = deposit_sol_prefix_metas_and_data(&params)?;
 
     let metas: Box<[AccountMeta]> = match out_mint {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {
@@ -129,7 +129,7 @@ pub fn deposit_sol_ix(
 }
 
 fn deposit_sol_prefix_metas_and_data(
-    swap_params: DepositSolSwapParams,
+    swap_params: &DepositSolSwapParams,
 ) -> Result<
     (
         [AccountMeta; STAKE_WRAPPED_SOL_PREFIX_ACCS_LEN],
