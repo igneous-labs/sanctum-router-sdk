@@ -10,6 +10,7 @@ use crate::routers::{
 mod deposit_sol;
 mod deposit_stake;
 mod init;
+mod token_pair;
 mod update;
 mod withdraw_sol;
 mod withdraw_stake;

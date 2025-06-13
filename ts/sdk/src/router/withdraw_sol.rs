@@ -10,12 +10,9 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     err::{generic_err, invalid_pda_err, router_missing_err},
-    interface::{
-        keys_signer_writer_to_account_metas, AccountMeta, Instruction, TokenQuoteWithRouterFee,
-        B58PK,
-    },
+    interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::router::find_fee_token_account_pda_internal,
-    router::SanctumRouterHandle,
+    router::{token_pair::TokenQuoteWithRouterFee, SanctumRouterHandle},
 };
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
