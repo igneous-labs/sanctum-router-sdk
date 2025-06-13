@@ -97,7 +97,7 @@ pub(crate) fn get_account(
     accounts
         .0
         .get(&B58PK::new(pubkey))
-        .ok_or(account_missing_err(&pubkey))
+        .ok_or_else(|| account_missing_err(&pubkey))
 }
 
 pub(crate) fn get_account_data(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&[u8], JsError> {

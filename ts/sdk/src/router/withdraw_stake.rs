@@ -132,7 +132,7 @@ pub fn prefund_withdraw_stake_ix(
                 .0
                 .lido_router
                 .withdraw_stake_suf_accs()
-                .ok_or(router_missing_err())?;
+                .ok_or_else(router_missing_err)?;
 
             if *router.largest_stake_vote != vote {
                 return Err(generic_err(LidoError::ValidatorWithMoreStakeExists));
@@ -152,9 +152,9 @@ pub fn prefund_withdraw_stake_ix(
             let router = this
                 .0
                 .find_spl_by_mint(&mint)
-                .ok_or(router_missing_err())?
+                .ok_or_else(router_missing_err)?
                 .withdraw_stake_suf_accs(&vote)
-                .ok_or(router_missing_err())?;
+                .ok_or_else(router_missing_err)?;
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,

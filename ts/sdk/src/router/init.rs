@@ -117,7 +117,7 @@ pub fn from_fetched_accounts(
             let pool_account = accounts
                 .0
                 .get(&lst.pool)
-                .ok_or(account_missing_err(&lst.pool.0))?;
+                .ok_or_else(|| account_missing_err(&lst.pool.0))?;
             let stake_pool_addr = lst.pool.0;
             let program_addr = pool_account.owner.0;
             let pool_data = StakePool::borsh_de(&*pool_account.data)?;
