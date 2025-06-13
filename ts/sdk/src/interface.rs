@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bs58_fixed::Bs58String;
 use bs58_fixed_wasm::Bs58Array;
 use sanctum_router_core::{
-    DepositStakeQuote, Prefund, StakeAccountLamports, TokenQuote, WithRouterFee,
+    ActiveStakeParams, Prefund, StakeAccountLamports, TokenQuote, WithRouterFee,
 };
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
@@ -120,16 +120,29 @@ pub struct OwnedAccount {
 #[serde(rename_all = "camelCase")]
 pub struct TokenQuoteParams {
     pub amt: u64,
-    pub inp_mint: B58PK,
-    pub out_mint: B58PK,
+
+    /// Input mint
+    pub inp: B58PK,
+
+    /// Output mint
+    pub out: B58PK,
 }
 
 // need to use a simple newtype here instead of type alias
 // otherwise wasm_bindgen shits itself with missing generics
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenQuoteWithRouterFee(pub(crate) WithRouterFee<TokenQuote>);
+
+impl DepositStakeQuoteParams {
+    pub fn to_active_stake_params(self) -> ActiveStakeParams {
+        ActiveStakeParams {
+            vote: self.vote.0,
+            lamports: self.inp,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
@@ -153,14 +166,35 @@ pub struct TokenSwapParams {
     pub signer: B58PK,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
 pub struct DepositStakeQuoteParams {
-    /// Validator vote account `inp_stake` is delegated to
+    /// Validator vote account the stake account to be deposited is delegated to
     pub vote: B58PK,
-    pub inp_stake: StakeAccountLamports,
-    pub out_mint: B58PK,
+
+    /// Balance of the stake account to be deposited
+    pub inp: StakeAccountLamports,
+
+    /// Output mint
+    pub out: B58PK,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+#[serde(rename_all = "camelCase")]
+pub struct DepositStakeQuote {
+    /// Validator vote account `inp` is delegated to
+    pub vote: B58PK,
+
+    /// Stake to be deposited
+    pub inp: StakeAccountLamports,
+
+    /// Output tokens, after subtracting fees
+    pub out: u64,
+
+    /// In terms of output tokens
+    pub fee: u64,
 }
 
 // need to use a simple newtype here instead of type alias
@@ -195,30 +229,32 @@ pub struct DepositStakeSwapParams {
 #[serde(rename_all = "camelCase")]
 pub struct WithdrawStakeQuoteParams {
     pub amt: u64,
-    pub inp_mint: B58PK,
 
-    /// Desired vote account of `out_stake`.
-    /// If omitted, then any vote account of any validator in the stake pool
+    /// Input mint
+    pub inp: B58PK,
+
+    /// Desired vote account of output stake account.
+    /// If null, then any vote account of any validator in the stake pool
     /// may be used
     #[tsify(optional)]
-    pub out_vote: Option<B58PK>,
+    pub out: Option<B58PK>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
 pub struct WithdrawStakeQuote {
-    /// Input pool tokens
+    /// Validator vote account output stake acc will be delegated to
+    pub vote: B58PK,
+
+    /// input tokens
     pub inp: u64,
 
-    /// The stake account that will be withdrawn
+    /// Output stake account balances, after subtracting fees
     pub out: StakeAccountLamports,
 
     /// In terms of input tokens, charged by the stake pool
     pub fee: u64,
-
-    /// Validator vote account `out` stake account will be delegated to
-    pub vote: B58PK,
 }
 
 // need to use a simple newtype here instead of type alias

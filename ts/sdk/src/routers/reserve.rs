@@ -1,11 +1,11 @@
 use sanctum_reserve_core::{Fee, FeeEnum, Pool, PoolBalance, ProtocolFee};
-use sanctum_router_core::ReserveRouter;
+use sanctum_router_core::{ReserveDepositStakeQuoter, ReserveDepositStakeSufAccs};
 use wasm_bindgen::JsError;
 
 use crate::{
     interface::{get_account, get_account_data, AccountMap},
     pda::reserve::find_reserve_stake_account_record_pda_internal,
-    router::Update,
+    update::Update,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -16,20 +16,32 @@ pub struct ReserveRouterOwned {
     pub pool_sol_reserves: u64,
 }
 
+/// DepositStake
 impl ReserveRouterOwned {
-    pub fn to_deposit_stake_router(&self, stake_account_addr: &[u8; 32]) -> Option<ReserveRouter> {
-        Some(ReserveRouter {
+    pub fn deposit_stake_quoter(&self) -> ReserveDepositStakeQuoter {
+        ReserveDepositStakeQuoter {
             pool: &self.pool,
             fee_account: &self.fee_account,
-            pool_sol_reserves: self.pool_sol_reserves,
             protocol_fee_account: &self.protocol_fee_account,
+            pool_sol_reserves: self.pool_sol_reserves,
+        }
+    }
+
+    pub fn deposit_stake_suf_accs(
+        &self,
+        stake_account_addr: &[u8; 32],
+    ) -> Option<ReserveDepositStakeSufAccs> {
+        Some(ReserveDepositStakeSufAccs {
             stake_acc_record_addr: find_reserve_stake_account_record_pda_internal(
                 stake_account_addr,
             )?
             .0,
         })
     }
+}
 
+/// Update helpers
+impl ReserveRouterOwned {
     pub fn update_pool(&mut self, pool_data: &[u8]) -> Result<(), JsError> {
         self.pool = Pool::anchor_de(pool_data)?;
         Ok(())

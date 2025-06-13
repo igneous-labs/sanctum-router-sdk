@@ -1,23 +1,21 @@
 import {
-  findFeeTokenAccountPda,
-  getDepositStakeIx,
-  getPrefundWithdrawStakeQuote,
-  type DepositStakeQuoteWithRouterFee,
-  type DepositStakeSwapParams,
+  findBridgeStakeAccPda,
+  prefundWithdrawStakeIx,
+  quotePrefundWithdrawStake,
   type Instruction,
+  type PrefundWithdrawStakeQuote,
   type WithdrawStakeSwapParams,
 } from "@sanctumso/sanctum-router";
 import { routerForMints } from "../router";
 import { fetchAccountMap, localRpc } from "../rpc";
-import { testFixturesStakeAcc } from "../stake";
 import { testFixturesTokenAcc, tokenAccBalance } from "../token";
 import {
   address,
   getBase64Encoder,
+  lamports,
   type Rpc,
   type SolanaRpcApi,
 } from "@solana/kit";
-import { mapTup } from "../ops";
 import { ixToSimTx, txSimParams } from "../tx";
 import { expect } from "vitest";
 
@@ -30,46 +28,51 @@ export async function prefundWithdrawStakeFixturesTest(
   inpTokenAccName: string,
   outVote?: string | undefined
 ) {
-  const { addr: inpTokenAcc } = testFixturesTokenAcc(inpTokenAccName);
+  const { addr: inpTokenAcc, owner: signer } =
+    testFixturesTokenAcc(inpTokenAccName);
   const rpc = localRpc();
   const router = await routerForMints(rpc, [inpMint]);
 
-  const quote = getPrefundWithdrawStakeQuote(router, {
+  const quote = quotePrefundWithdrawStake(router, {
     amt,
-    inpMint,
-    outVote,
-  })!;
-  const params: WithdrawStakeSwapParams = {
     inp: inpMint,
     out: outVote,
-    signerInp: inpStakeAcc,
-    signerOut: outTokenAcc,
-    signer: withdrawer,
+  });
+  const params: WithdrawStakeSwapParams = {
+    amt,
+    inp: inpMint,
+    out: quote.quote.vote,
+    signerInp: inpTokenAcc,
+    bridgeStakeSeed: BRIDGE_STAKE_SEED,
+    signer,
   };
 
-  const ix = getDepositStakeIx(router, params);
+  const ix = prefundWithdrawStakeIx(router, params);
 
   await simPrefundWithdrawStakeAssertQuoteMatches(rpc, quote, params, ix);
 }
 
 async function simPrefundWithdrawStakeAssertQuoteMatches(
   rpc: Rpc<SolanaRpcApi>,
-  { quote: { out }, routerFee }: DepositStakeQuoteWithRouterFee,
-  { out: outMint, signerOut, signer }: DepositStakeSwapParams,
+  {
+    quote: {
+      inp,
+      out: { staked, unstaked },
+    },
+  }: PrefundWithdrawStakeQuote,
+  { signerInp, signer }: WithdrawStakeSwapParams,
   ix: Instruction
 ) {
   // `addresses` layout:
-  // - signerOut
-  // - router fee token account
+  // - signer input token acc
+  // - output bridge stake acc
   const addresses = [
-    address(signerOut),
-    address(findFeeTokenAccountPda(outMint)[0]),
+    address(signerInp),
+    address(findBridgeStakeAccPda(signer, BRIDGE_STAKE_SEED)[0]),
   ];
 
   const befSwap = await fetchAccountMap(rpc, addresses);
-  const [outTokenAccBalBef, feeTokenAccBalBef] = mapTup(addresses, (addr) =>
-    tokenAccBalance(befSwap.get(addr)!.data)
-  );
+  const inpTokenAccBalBef = tokenAccBalance(befSwap.get(signerInp)!.data);
 
   const tx = ixToSimTx(address(signer), ix);
   const {
@@ -79,12 +82,11 @@ async function simPrefundWithdrawStakeAssertQuoteMatches(
   const debugMsg = `tx: ${tx}\nlogs:\n` + (logs ?? []).join("\n") + "\n";
   expect(err, debugMsg).toBeNull();
 
-  const [outTokenAccBalAft, feeTokenAccBalAft] = mapTup([0, 1], (i) =>
-    tokenAccBalance(
-      new Uint8Array(getBase64Encoder().encode(aftSwap[i]!.data[0]))
-    )
+  const inpTokenAccBalAft = tokenAccBalance(
+    new Uint8Array(getBase64Encoder().encode(aftSwap[0]!.data[0]))
   );
+  const bridgeStakeAccBalAft = aftSwap[1]!.lamports;
 
-  expect(outTokenAccBalAft - outTokenAccBalBef).toEqual(out);
-  expect(feeTokenAccBalAft - feeTokenAccBalBef).toEqual(routerFee);
+  expect(inpTokenAccBalBef - inpTokenAccBalAft).toEqual(inp);
+  expect(bridgeStakeAccBalAft).toEqual(lamports(staked + unstaked));
 }

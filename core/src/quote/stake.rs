@@ -22,3 +22,10 @@ impl StakeAccountLamports {
         self.staked + self.unstaked
     }
 }
+
+// not deriving serde and wasm for this because of [u8; 32]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ActiveStakeParams {
+    pub vote: [u8; 32],
+    pub lamports: StakeAccountLamports,
+}

@@ -1,11 +1,11 @@
-use sanctum_router_core::LidoWithdrawStakeRouter;
+use sanctum_router_core::{LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs};
 use solido_legacy_core::{Lido, ListHeader, Validator, ValidatorList};
 use wasm_bindgen::JsError;
 
 use crate::{
     interface::{get_account_data, AccountMap},
     pda::lido::find_lido_validator_stake_account_pda_internal,
-    router::Update,
+    update::Update,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -15,36 +15,39 @@ pub struct LidoRouterOwned {
     pub curr_epoch: u64,
 }
 
+/// WithdrawStake
 impl LidoRouterOwned {
     /// Lido only allows withdrawing from max stake validator
-    pub fn to_withdraw_stake_router<'a>(
-        &'a self,
-        vote: Option<&'a [u8; 32]>,
-    ) -> Option<LidoWithdrawStakeRouter<'a>> {
+    pub fn withdraw_stake_quoter(&self) -> Option<LidoWithdrawStakeQuoter> {
+        LidoWithdrawStakeQuoter::new(
+            &self.state,
+            &self.validator_list.validators,
+            self.curr_epoch,
+        )
+    }
+
+    /// Lido only allows withdrawing from max stake validator
+    pub fn withdraw_stake_suf_accs(&self) -> Option<LidoWithdrawStakeSufAccs> {
         let max_validator = self
             .validator_list
             .validators
             .iter()
             .max_by_key(|v| v.effective_stake_balance())?;
-
-        let vote_account = vote.map_or_else(
-            || Some(max_validator.vote_account_address()),
-            |v| (v == max_validator.vote_account_address()).then_some(v),
-        )?;
-
-        Some(LidoWithdrawStakeRouter {
-            state: &self.state,
-            voter: vote_account,
+        let largest_stake_vote = max_validator.vote_account_address();
+        Some(LidoWithdrawStakeSufAccs {
+            validator_list_addr: &self.state.validator_list,
+            largest_stake_vote,
             stake_to_split: find_lido_validator_stake_account_pda_internal(
-                max_validator.vote_account_address(),
+                largest_stake_vote,
                 max_validator.stake_seeds().begin(),
             )?
             .0,
-            curr_epoch: self.curr_epoch,
-            validator_effective_stake_balance: max_validator.effective_stake_balance(),
         })
     }
+}
 
+/// Update helpers
+impl LidoRouterOwned {
     pub fn update_state(&mut self, state_data: &[u8]) -> Result<(), JsError> {
         self.state = Lido::borsh_de(state_data)?;
         Ok(())
