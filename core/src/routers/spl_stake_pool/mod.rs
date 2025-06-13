@@ -3,10 +3,12 @@ use sanctum_spl_stake_pool_core::StakePool;
 mod deposit_sol;
 mod deposit_stake;
 mod withdraw_sol;
+mod withdraw_stake;
 
 pub use deposit_sol::*;
 pub use deposit_stake::*;
 pub use withdraw_sol::*;
+pub use withdraw_stake::*;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SplSolSufAccs<'a> {

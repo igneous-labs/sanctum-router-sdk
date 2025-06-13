@@ -1,8 +1,10 @@
 mod deposit_stake;
+mod prefund_withdraw_stake;
 mod stake_wrapped_sol;
 mod withdraw_wrapped_sol;
 
 pub use deposit_stake::*;
+pub use prefund_withdraw_stake::*;
 pub use stake_wrapped_sol::*;
 pub use withdraw_wrapped_sol::*;
 

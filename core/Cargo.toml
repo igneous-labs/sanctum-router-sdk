@@ -17,6 +17,7 @@ sanctum-marinade-liquid-staking-core = { workspace = true }
 sanctum-reserve-core = { workspace = true }
 sanctum-spl-stake-pool-core = { workspace = true }
 sanctum-u64-ratio = { workspace = true }
+solido-legacy-core = { workspace = true }
 
 # The only reason why we have this dep is so that we can activate borsh's
 # `std` feature flag for borsh io errors to implement `std::error::Error`.

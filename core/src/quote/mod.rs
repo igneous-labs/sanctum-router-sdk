@@ -1,10 +1,14 @@
 mod deposit_stake;
+mod prefund;
 mod stake;
 mod token;
+mod withdraw_stake;
 
 pub use deposit_stake::*;
+pub use prefund::*;
 pub use stake::*;
 pub use token::*;
+pub use withdraw_stake::*;
 
 /// A quote with the sanctum router global fee charged on top.
 ///

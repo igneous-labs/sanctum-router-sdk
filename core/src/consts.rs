@@ -1,4 +1,5 @@
 use const_crypto::bs58;
+use sanctum_spl_stake_pool_core::STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS;
 
 pub const SYSVAR_RENT: [u8; 32] =
     bs58::decode_pubkey("SysvarRent111111111111111111111111111111111");
@@ -41,3 +42,15 @@ pub const DEPOSIT_STAKE_GLOBAL_FEE_BPS: u64 = 10;
 
 pub const NATIVE_MINT: [u8; 32] =
     bs58::decode_pubkey("So11111111111111111111111111111111111111112");
+
+pub const PREFUNDER: [u8; 32] = bs58::decode_pubkey("ALpzvhALRr35nH8mw9SXk2WvmwEYjfw1dvmpFG9Kosu6");
+
+// TODO: STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS will change with:
+// - dynamic rent
+// - SOL minimum delegation feature
+/// The flash loan amount given out by the router program to make the slumdog stake and withdrawn stake rent-exempt.
+/// This amount is repaid by instant unstaking the slumdog stake
+pub const PREFUND_FLASH_LOAN_LAMPORTS: u64 = 2 * STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS;
+
+// hardcode for simplicity. Need to refactor when rent becomes variable.
+pub const ZERO_DATA_ACC_RENT_EXEMPT_LAMPORTS: u64 = 890_880;

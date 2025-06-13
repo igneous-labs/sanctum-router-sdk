@@ -5,9 +5,10 @@ use crate::{
     err::{generic_err, router_missing_err},
     instructions::get_withdraw_wrapped_sol_prefix_metas_and_data,
     interface::{
-        keys_signer_writer_to_account_metas, Instruction, TokenQuoteParams, TokenSwapParams, B58PK,
+        keys_signer_writer_to_account_metas, Instruction, TokenQuoteParams,
+        TokenQuoteWithRouterFee, TokenSwapParams, B58PK,
     },
-    router::{token_quote::TokenQuoteWithRouterFee, SanctumRouterHandle},
+    router::SanctumRouterHandle,
 };
 
 /// Requires `update()` to be called before calling this function
@@ -16,10 +17,11 @@ pub fn quote_withdraw_sol(
     this: &SanctumRouterHandle,
     params: TokenQuoteParams,
 ) -> Result<TokenQuoteWithRouterFee, JsError> {
+    let inp_mint = params.inp.0;
     this.0
         .spl_routers
         .iter()
-        .find(|r| r.stake_pool.pool_mint == params.inp_mint.0)
+        .find(|r| r.stake_pool.pool_mint == inp_mint)
         .ok_or_else(router_missing_err)?
         .withdraw_sol_quoter()
         .quote_withdraw_sol(params.amt)

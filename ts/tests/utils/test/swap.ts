@@ -23,7 +23,16 @@ import { ixToSimTx, txSimParams } from "../tx";
 
 export async function simTokenSwapAssertQuoteMatches(
   rpc: Rpc<SolanaRpcApi>,
-  { quote: { inp, out }, routerFee }: TokenQuoteWithRouterFee,
+  {
+    quote: {
+      inp,
+      out,
+      // TODO: we might want to test that the collected fee matches too.
+      // Probably just pass poolFeeTokenAcc as an arg to this fn
+      fee: _,
+    },
+    routerFee,
+  }: TokenQuoteWithRouterFee,
   { out: outMint, amt, signer, signerInp, signerOut }: TokenSwapParams,
   ix: Instruction
 ) {

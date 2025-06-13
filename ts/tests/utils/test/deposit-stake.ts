@@ -40,9 +40,9 @@ export async function depositStakeFixturesTest(
     unstaked: unstakedLamports,
   };
   const quote = quoteDepositStake(router, {
-    validatorVote: vote,
-    outMint: mint,
-    inpStake,
+    vote,
+    out: mint,
+    inp: inpStake,
   });
   const params: DepositStakeSwapParams = {
     inp: vote,
@@ -59,7 +59,15 @@ export async function depositStakeFixturesTest(
 
 async function simDepositStakeAssertQuoteMatches(
   rpc: Rpc<SolanaRpcApi>,
-  { quote: { out }, routerFee }: DepositStakeQuoteWithRouterFee,
+  {
+    quote: {
+      out,
+      // TODO: we might want to test that the collected fee matches too.
+      // Probably just pass poolFeeTokenAcc as an arg to this fn
+      fee: _,
+    },
+    routerFee,
+  }: DepositStakeQuoteWithRouterFee,
   { out: outMint, signerOut, signer }: DepositStakeSwapParams,
   ix: Instruction
 ) {

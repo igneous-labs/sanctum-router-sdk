@@ -102,6 +102,7 @@ impl<T> SplWithdrawSolIxSuffixAccs<T> {
 }
 
 impl<T> AsRef<[T]> for SplWithdrawSolIxSuffixAccs<T> {
+    #[inline]
     fn as_ref(&self) -> &[T] {
         &self.0
     }

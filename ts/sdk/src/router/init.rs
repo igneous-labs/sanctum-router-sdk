@@ -1,6 +1,7 @@
 use sanctum_marinade_liquid_staking_core::State as MarinadeState;
 use sanctum_reserve_core::{Fee, Pool, ProtocolFee};
 use sanctum_spl_stake_pool_core::StakePool;
+use solido_legacy_core::Lido;
 use wasm_bindgen::prelude::*;
 
 use crate::{
@@ -8,7 +9,10 @@ use crate::{
     interface::{get_account_data, AccountMap, SplPoolAccounts, B58PK},
     pda::spl::{find_deposit_auth_pda_internal, find_withdraw_auth_pda_internal},
     router::{SanctumRouter, SanctumRouterHandle},
-    routers::{MarinadeRouterOwned, ReserveRouterOwned, SplStakePoolRouterOwned},
+    routers::{
+        LidoRouterOwned, LidoValidatorListOwned, MarinadeRouterOwned, ReserveRouterOwned,
+        SplStakePoolRouterOwned,
+    },
 };
 
 /// Returns the accounts that need to be fetched to initialize the router.
@@ -17,7 +21,10 @@ pub fn get_init_accounts(spl_lsts: Vec<SplPoolAccounts>) -> Box<[B58PK]> {
     spl_lsts
         .iter()
         .flat_map(|accounts| [accounts.pool, accounts.validator_list])
-        // TODO: Add lido
+        .chain([
+            B58PK::new(solido_legacy_core::LIDO_STATE_ADDR),
+            B58PK::new(solido_legacy_core::VALIDATOR_LIST_ADDR),
+        ])
         .chain([
             B58PK::new(sanctum_reserve_core::POOL),
             B58PK::new(sanctum_reserve_core::FEE),
@@ -37,6 +44,23 @@ pub fn from_fetched_accounts(
     accounts: AccountMap,
     curr_epoch: u64,
 ) -> Result<SanctumRouterHandle, JsError> {
+    // Lido
+    let [Ok(state_data), Ok(validator_list_data)] = [
+        solido_legacy_core::LIDO_STATE_ADDR,
+        solido_legacy_core::VALIDATOR_LIST_ADDR,
+    ]
+    .map(|k| get_account_data(&accounts, k)) else {
+        return Err(JsError::new("Failed to fetch lido accounts"));
+    };
+
+    let mut lido_router = LidoRouterOwned {
+        state: Lido::borsh_de(state_data)?,
+        validator_list: LidoValidatorListOwned::default(),
+        curr_epoch,
+    };
+
+    lido_router.update_validator_list(validator_list_data)?;
+
     // Marinade
     let [Ok(state_data), Ok(validator_records_data)] = [
         sanctum_marinade_liquid_staking_core::STATE_PUBKEY,
@@ -117,6 +141,7 @@ pub fn from_fetched_accounts(
 
     Ok(SanctumRouterHandle(SanctumRouter {
         spl_routers,
+        lido_router,
         marinade_router,
         reserve_router,
     }))
