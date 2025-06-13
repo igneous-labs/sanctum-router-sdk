@@ -24,8 +24,8 @@ export async function withdrawSolFixturesTest(
 
   const quote = quoteWithdrawSol(router, {
     amt,
-    inpMint: mint,
-    outMint: NATIVE_MINT,
+    inp: mint,
+    out: NATIVE_MINT,
   });
   const params: TokenSwapParams = {
     amt,

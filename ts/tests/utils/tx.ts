@@ -1,6 +1,6 @@
 import type { Instruction } from "@sanctumso/sanctum-router";
 import {
-  appendTransactionMessageInstruction,
+  appendTransactionMessageInstructions,
   blockhash,
   compileTransaction,
   createTransactionMessage,
@@ -12,15 +12,24 @@ import {
   type Base64EncodedWireTransaction,
   type IInstruction,
 } from "@solana/kit";
+import { getSetComputeUnitLimitInstruction } from "@solana-program/compute-budget";
 
 export function ixToSimTx(
   payer: Address,
   ix: Instruction
 ): Base64EncodedWireTransaction {
+  // Examples of very expensive transactions that require >200k default CUs
+  // - (Prefund)SwapViaStake
+  // - (Prefund)WithdrawStake for lido
+  const cuLimitIx = getSetComputeUnitLimitInstruction({ units: 1_500_000 });
+
   return pipe(
     createTransactionMessage({ version: 0 }),
     (txm) =>
-      appendTransactionMessageInstruction(ix as unknown as IInstruction, txm),
+      appendTransactionMessageInstructions(
+        [cuLimitIx, ix as unknown as IInstruction],
+        txm
+      ),
     (txm) => setTransactionMessageFeePayer(payer, txm),
     (txm) =>
       setTransactionMessageLifetimeUsingBlockhash(

@@ -6,12 +6,14 @@
   "scripts": {
     "script:sae": "tsx scripts/set-activation-epoch.ts",
     "script:ss": "tsx scripts/set-stake.ts",
+    "script:stoa": "tsx scripts/set-token-acc-owner.ts",
     "start:infra": "docker compose -f ../../docker-compose-local-validator.yml up -d",
     "stop:infra": "docker compose -f ../../docker-compose-local-validator.yml down -v",
     "test": "vitest run"
   },
   "devDependencies": {
     "@sanctumso/sanctum-router": "file:../sdk/pkg",
+    "@solana-program/compute-budget": "^0.8.0",
     "@solana/kit": "^2.1.0",
     "@types/node": "^22",
     "lossless-json": "^4.1.0",

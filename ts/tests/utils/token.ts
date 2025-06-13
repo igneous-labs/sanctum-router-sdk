@@ -16,8 +16,11 @@ export const MSOL_MINT = address("mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So");
 export const PICOSOL_MINT = address(
   "picobAEvs6w7QEknPce34wAE4gknZA9v5tTonnmHYdX"
 );
+export const STSOL_MINT = address(
+  "7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj"
+);
 
-const TOKEN_ACC_OWNER_OFFSET = 32;
+export const TOKEN_ACC_OWNER_OFFSET = 32;
 const TOKEN_ACC_BALANCE_OFFSET = 64;
 
 export function tokenAccOwner(accData: ReadonlyUint8Array): Address {

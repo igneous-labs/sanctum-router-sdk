@@ -24,8 +24,8 @@ export async function depositSolFixturesTest(
 
   const quote = quoteDepositSol(router, {
     amt,
-    inpMint: NATIVE_MINT,
-    outMint: mint,
+    inp: NATIVE_MINT,
+    out: mint,
   });
   const params: TokenSwapParams = {
     amt,

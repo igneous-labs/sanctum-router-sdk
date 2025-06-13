@@ -233,7 +233,7 @@ pub struct WithdrawStakeQuoteParams {
     /// Input mint
     pub inp: B58PK,
 
-    /// Desired vote account of `out`.
+    /// Desired vote account of output stake account.
     /// If null, then any vote account of any validator in the stake pool
     /// may be used
     #[tsify(optional)]
@@ -244,16 +244,16 @@ pub struct WithdrawStakeQuoteParams {
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
 pub struct WithdrawStakeQuote {
-    /// Validator vote account `out` stake acc will be delegated to
+    /// Validator vote account output stake acc will be delegated to
     pub vote: B58PK,
 
     /// input tokens
     pub inp: u64,
 
-    /// Output stake account, after subtracting fees
+    /// Output stake account balances, after subtracting fees
     pub out: StakeAccountLamports,
 
-    /// In terms of input tokens
+    /// In terms of input tokens, charged by the stake pool
     pub fee: u64,
 }
 
