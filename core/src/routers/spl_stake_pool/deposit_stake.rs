@@ -21,6 +21,7 @@ pub struct SplDepositStakeQuoter<'a> {
 impl DepositStakeQuoter for SplDepositStakeQuoter<'_> {
     type Error = SplStakePoolError;
 
+    #[inline]
     fn quote_deposit_stake(
         &self,
         stake: ActiveStakeParams,
@@ -82,6 +83,7 @@ impl DepositStakeSufAccs for SplDepositStakeSufAccs<'_> {
     type Accs = SplDepositStakeIxSuffixKeysOwned;
     type AccFlags = SplDepositStakeIxSuffixAccsFlag;
 
+    #[inline]
     fn suffix_accounts(&self) -> Self::Accs {
         SplDepositStakeIxSuffixAccsBuilder::start()
             .with_spl_stake_pool_program(*self.stake_pool_program)
@@ -99,10 +101,12 @@ impl DepositStakeSufAccs for SplDepositStakeSufAccs<'_> {
             .build()
     }
 
+    #[inline]
     fn suffix_is_signer(&self) -> Self::AccFlags {
         SPL_DEPOSIT_STAKE_IX_SUFFIX_IS_SIGNER
     }
 
+    #[inline]
     fn suffix_is_writable(&self) -> Self::AccFlags {
         SPL_DEPOSIT_STAKE_IX_SUFFIX_IS_WRITER
     }
