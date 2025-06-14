@@ -18,7 +18,7 @@ function main() {
 
   if (!pool || !voteStr) {
     console.log(
-      "Usage: is-on-validator-list.ts <marinade | [spl-validator-list-test-fixtures-name]> <vote-addr>"
+      "Usage: is-on-validator-list.ts <'marinade' | [spl-validator-list-test-fixtures-name]> <vote-addr>"
     );
     return;
   }

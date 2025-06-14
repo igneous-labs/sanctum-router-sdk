@@ -1,5 +1,6 @@
 import { describe, it } from "vitest";
 import {
+  MSOL_MINT,
   NATIVE_MINT,
   prefundSwapViaStakeFixturesTest,
   prefundWithdrawStakeFixturesTest,
@@ -30,6 +31,20 @@ describe("Lido Test", async () => {
       {
         inp: STSOL_TOKEN_ACC_NAME,
         out: "reserve-signer-wsol-token",
+      }
+    );
+  });
+
+  it("lido-prefund-swap-via-stake-into-marinade", async () => {
+    await prefundSwapViaStakeFixturesTest(
+      1_000_000_000n,
+      {
+        inp: STSOL_MINT,
+        out: MSOL_MINT,
+      },
+      {
+        inp: STSOL_TOKEN_ACC_NAME,
+        out: "signer-msol-token",
       }
     );
   });
