@@ -25,7 +25,7 @@ import {
 } from "../stake";
 import { mapTup } from "../ops";
 
-// Assume bridge stake seed 0 is always unsed
+// Assume bridge stake seed 0 is always unused
 const BRIDGE_STAKE_SEED = 0;
 
 export async function prefundWithdrawStakeFixturesTest(

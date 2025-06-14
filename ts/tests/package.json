@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "script:al": "tsx scripts/activate-lut.ts",
     "script:sae": "tsx scripts/set-activation-epoch.ts",
     "script:ss": "tsx scripts/set-stake.ts",
     "script:stoa": "tsx scripts/set-token-acc-owner.ts",
