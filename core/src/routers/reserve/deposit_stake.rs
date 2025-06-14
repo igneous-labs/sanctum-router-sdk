@@ -1,39 +1,30 @@
 use generic_array_struct::generic_array_struct;
 use sanctum_reserve_core::{
-    quote_unstake, Fee, Pool, PoolBalance, ProtocolFee, ReserveError, UnstakeQuote,
+    quote_unstake, FeeEnum, PoolBalance, ProtocolFee, ReserveError, UnstakeQuote,
 };
 
 use crate::{
-    ActiveStakeParams, DepositStakeQuote, DepositStakeQuoter, DepositStakeSufAccs, STAKE_PROGRAM,
-    SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM,
+    slumdog_target_lamports, ActiveStakeParams, DepositStakeQuote, DepositStakeQuoter,
+    DepositStakeSufAccs, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct ReserveDepositStakeQuoter<'a> {
-    pub pool: &'a Pool,
-    pub fee_account: &'a Fee,
+    pub fee_account: &'a FeeEnum,
     pub protocol_fee_account: &'a ProtocolFee,
+    pub pool_incoming_stake: u64,
     pub pool_sol_reserves: u64,
 }
 
 impl DepositStakeQuoter for ReserveDepositStakeQuoter<'_> {
     type Error = ReserveError;
 
+    #[inline]
     fn quote_deposit_stake(
         &self,
         inp: ActiveStakeParams,
     ) -> Result<DepositStakeQuote, Self::Error> {
-        quote_unstake(
-            &PoolBalance {
-                pool_incoming_stake: self.pool.incoming_stake,
-                sol_reserves_lamports: self.pool_sol_reserves,
-            },
-            &self.fee_account.0,
-            &self.protocol_fee_account.fee_ratios(),
-            inp.lamports.total(),
-            false,
-        )
-        .map(
+        self.quote_deposit_stake_inner(inp.lamports.total()).map(
             |UnstakeQuote {
                  lamports_to_unstaker,
                  fee,
@@ -44,6 +35,53 @@ impl DepositStakeQuoter for ReserveDepositStakeQuoter<'_> {
                 fee: fee.total(),
             },
         )
+    }
+}
+
+impl ReserveDepositStakeQuoter<'_> {
+    #[inline]
+    fn quote_deposit_stake_inner(
+        &self,
+        deposit_stake_total_lamports: u64,
+    ) -> Result<UnstakeQuote, ReserveError> {
+        // TODO: need to modify sanctum-reserve-core
+        // to account for `ZERO_DATA_ACC_RENT_EXEMPT_LAMPORTS`
+        quote_unstake(
+            &self.pool_balance(),
+            self.fee_account,
+            &self.protocol_fee_account.fee_ratios(),
+            deposit_stake_total_lamports,
+            false,
+        )
+    }
+
+    #[inline]
+    fn pool_balance(&self) -> PoolBalance {
+        PoolBalance {
+            pool_incoming_stake: self.pool_incoming_stake,
+            sol_reserves_lamports: self.pool_sol_reserves,
+        }
+    }
+
+    #[inline]
+    pub fn after_prefund(self) -> Result<Self, ReserveError> {
+        let stake = slumdog_target_lamports(&self.pool_balance(), self.fee_account)
+            .ok_or(ReserveError::InternalError)?;
+        let quote = self.quote_deposit_stake_inner(stake)?;
+        let Self {
+            fee_account,
+            protocol_fee_account,
+            pool_incoming_stake,
+            pool_sol_reserves,
+        } = self;
+        Ok(Self {
+            fee_account,
+            protocol_fee_account,
+            // unchecked-arith: SOL supply is nowhere near u64::MAX
+            pool_incoming_stake: pool_incoming_stake + quote.stake_account_lamports,
+            // unchecked-arith: quote_deposit_stake_inner() passed means pool has enough liquidity
+            pool_sol_reserves: pool_sol_reserves - quote.reserves_lamports_outflow(),
+        })
     }
 }
 

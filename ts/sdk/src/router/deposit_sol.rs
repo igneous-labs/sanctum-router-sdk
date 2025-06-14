@@ -8,7 +8,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_pda_err, router_missing_err},
+    err::{generic_err, invalid_pda_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::router::find_fee_token_account_pda_internal,
     router::{token_pair::TokenQuoteWithRouterFee, SanctumRouterHandle},
@@ -41,10 +41,7 @@ pub fn quote_deposit_sol(
             .map_err(generic_err),
         mint => this
             .0
-            .spl_routers
-            .iter()
-            .find(|r| r.stake_pool.pool_mint == mint)
-            .ok_or_else(router_missing_err)?
+            .try_find_spl_by_mint(&mint)?
             .deposit_sol_quoter()
             .quote_deposit_sol(params.amt)
             .map_err(generic_err),
@@ -96,13 +93,7 @@ pub fn deposit_sol_ix(
                 .into()
         }
         mint => {
-            let router = this
-                .0
-                .spl_routers
-                .iter()
-                .find(|r| r.stake_pool.pool_mint == mint)
-                .ok_or_else(router_missing_err)?
-                .sol_suf_accs();
+            let router = this.0.try_find_spl_by_mint(&mint)?.sol_suf_accs();
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,

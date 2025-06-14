@@ -65,6 +65,7 @@ impl AccountMeta {
     }
 }
 
+#[inline] // inlining reduces binary size by a bit
 pub fn keys_signer_writer_to_account_metas<const N: usize>(
     keys: &[&[u8; 32]; N],
     signer: &[bool; N],

@@ -8,6 +8,8 @@ use crate::{
 };
 
 /// Returns the accounts needed to update a specific routers according to the mint addresses.
+///
+/// Dedups returned pubkey list
 #[wasm_bindgen(js_name = getAccountsToUpdate)]
 pub fn get_accounts_to_update(
     this: &SanctumRouterHandle,
@@ -39,16 +41,15 @@ pub fn get_accounts_to_update(
             }
             mint => accounts.extend(
                 this.0
-                    .spl_routers
-                    .iter()
-                    .find(|r| r.stake_pool.pool_mint == mint)
-                    .ok_or_else(router_missing_err)?
+                    .try_find_spl_by_mint(&mint)?
                     .get_accounts_to_update()
                     .map(B58PK::new),
             ),
         }
     }
 
+    accounts.sort();
+    accounts.dedup();
     Ok(accounts.into_boxed_slice())
 }
 

@@ -27,6 +27,8 @@ impl LidoRouterOwned {
     }
 
     /// Lido only allows withdrawing from max stake validator
+    ///
+    /// Returns `None` if data missing or validator stake acc PDA invalid
     pub fn withdraw_stake_suf_accs(&self) -> Option<LidoWithdrawStakeSufAccs> {
         let max_validator = self
             .validator_list

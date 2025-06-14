@@ -105,6 +105,7 @@ impl SplStakePoolRouterOwned {
         }
     }
 
+    /// Returns `None` if vote acc not on validator list or validator stake acc PDA invalid
     pub fn withdraw_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],

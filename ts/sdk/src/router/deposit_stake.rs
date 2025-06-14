@@ -84,12 +84,7 @@ pub fn quote_deposit_stake(
             .quote_deposit_stake(active_stake_params)
             .map_err(generic_err),
         mint => {
-            let router = this
-                .0
-                .spl_routers
-                .iter()
-                .find(|r| r.stake_pool.pool_mint == mint)
-                .ok_or_else(router_missing_err)?;
+            let router = this.0.try_find_spl_by_mint(&mint)?;
             router
                 .deposit_stake_quoter()
                 .quote_deposit_stake(active_stake_params)
@@ -126,8 +121,9 @@ pub struct DepositStakeSwapParams {
 }
 
 /// Requires `update()` to be called before calling this function
-/// Stake account to deposit should be set on `params.signerInp`
-/// Vote account of the stake account to deposit should be set on `params.inp`
+///
+/// @param {SanctumRouterHandle} _this
+/// @param {DepositStakeSwapParams} params
 #[wasm_bindgen(js_name = depositStakeIx)]
 pub fn deposit_stake_ix(
     this: &SanctumRouterHandle,
@@ -176,10 +172,7 @@ pub fn deposit_stake_ix(
         mint => {
             let router = this
                 .0
-                .spl_routers
-                .iter()
-                .find(|r| r.stake_pool.pool_mint == mint)
-                .ok_or_else(router_missing_err)?
+                .try_find_spl_by_mint(&mint)?
                 .deposit_stake_suf_accs(&vote_account)
                 .ok_or_else(router_missing_err)?;
 

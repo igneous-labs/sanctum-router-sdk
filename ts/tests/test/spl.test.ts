@@ -1,39 +1,93 @@
 import { describe, it } from "vitest";
 import {
+  BSOL_MINT,
   depositSolFixturesTest,
   depositStakeFixturesTest,
+  MSOL_MINT,
+  NATIVE_MINT,
   PICOSOL_MINT,
+  prefundSwapViaStakeFixturesTest,
   prefundWithdrawStakeFixturesTest,
   withdrawSolFixturesTest,
 } from "../utils";
 
+const PICOSOL_TOKEN_ACC_NAME = "signer-picosol-token";
+
 describe("SPL Test", async () => {
-  it("spl-stake-pool-deposit-sol", async () => {
+  // DepositSol
+  it("spl-picosol-deposit-sol", async () => {
     await depositSolFixturesTest(1000000n, PICOSOL_MINT, {
       inp: "spl-signer-wsol-token",
-      out: "signer-picosol-token",
+      out: PICOSOL_TOKEN_ACC_NAME,
     });
   });
 
-  it("spl-stake-pool-withdraw-sol", async () => {
+  // WithdrawSol
+  it("spl-picosol-withdraw-sol", async () => {
     await withdrawSolFixturesTest(1000000n, PICOSOL_MINT, {
-      inp: "signer-picosol-token",
+      inp: PICOSOL_TOKEN_ACC_NAME,
       out: "spl-signer-wsol-token",
     });
   });
 
-  it("spl-stake-pool-deposit-stake", async () => {
+  // DepositStake
+  it("spl-picosol-deposit-stake", async () => {
     await depositStakeFixturesTest(PICOSOL_MINT, {
       inp: "picosol-deposit-stake",
-      out: "signer-picosol-token",
+      out: PICOSOL_TOKEN_ACC_NAME,
     });
   });
 
-  it("spl-stake-pool-prefund-withdraw-stake", async () => {
+  // PrefundWithdrawStake
+  it("spl-picosol-prefund-withdraw-stake", async () => {
     await prefundWithdrawStakeFixturesTest(
       1_000_000_000n,
       PICOSOL_MINT,
-      "signer-picosol-token"
+      PICOSOL_TOKEN_ACC_NAME
+    );
+  });
+
+  // PrefundSwapViaStake
+
+  it("spl-picosol-prefund-swap-via-stake-into-reserve", async () => {
+    await prefundSwapViaStakeFixturesTest(
+      1_000_000_000n,
+      {
+        inp: PICOSOL_MINT,
+        out: NATIVE_MINT,
+      },
+      {
+        inp: PICOSOL_TOKEN_ACC_NAME,
+        out: "reserve-signer-wsol-token",
+      }
+    );
+  });
+
+  it("spl-picosol-prefund-swap-via-stake-into-marinade", async () => {
+    await prefundSwapViaStakeFixturesTest(
+      1_000_000_000n,
+      {
+        inp: PICOSOL_MINT,
+        out: MSOL_MINT,
+      },
+      {
+        inp: PICOSOL_TOKEN_ACC_NAME,
+        out: "signer-msol-token",
+      }
+    );
+  });
+
+  it("spl-picosol-prefund-swap-via-stake-into-spl-bsol", async () => {
+    await prefundSwapViaStakeFixturesTest(
+      1_000_000_000n,
+      {
+        inp: PICOSOL_MINT,
+        out: BSOL_MINT,
+      },
+      {
+        inp: PICOSOL_TOKEN_ACC_NAME,
+        out: "signer-bsol-token",
+      }
     );
   });
 });
