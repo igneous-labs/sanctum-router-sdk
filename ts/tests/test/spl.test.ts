@@ -1,5 +1,6 @@
 import { describe, it } from "vitest";
 import {
+  BSOL_MINT,
   depositSolFixturesTest,
   depositStakeFixturesTest,
   MSOL_MINT,
@@ -72,6 +73,20 @@ describe("SPL Test", async () => {
       {
         inp: PICOSOL_TOKEN_ACC_NAME,
         out: "signer-msol-token",
+      }
+    );
+  });
+
+  it("spl-picosol-prefund-swap-via-stake-into-spl-bsol", async () => {
+    await prefundSwapViaStakeFixturesTest(
+      1_000_000_000n,
+      {
+        inp: PICOSOL_MINT,
+        out: BSOL_MINT,
+      },
+      {
+        inp: PICOSOL_TOKEN_ACC_NAME,
+        out: "signer-bsol-token",
       }
     );
   });

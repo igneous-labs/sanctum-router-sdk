@@ -13,6 +13,7 @@ export const NATIVE_MINT = address(
   "So11111111111111111111111111111111111111112"
 );
 export const MSOL_MINT = address("mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So");
+export const BSOL_MINT = address("bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1");
 export const PICOSOL_MINT = address(
   "picobAEvs6w7QEknPce34wAE4gknZA9v5tTonnmHYdX"
 );

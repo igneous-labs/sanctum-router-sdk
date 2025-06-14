@@ -9,7 +9,7 @@ import {
 } from "@sanctumso/sanctum-router";
 import type { Rpc, SolanaRpcApi } from "@solana/kit";
 import { fetchAccountMap } from "./rpc";
-import { PICOSOL_ACCS } from "./spl";
+import { BSOL_ACCS, PICOSOL_ACCS } from "./spl";
 
 /**
  * Initializes, updates and returns `SanctumRouterHandle` that is ready for quoting
@@ -26,9 +26,9 @@ import { PICOSOL_ACCS } from "./spl";
 export async function routerForMints(
   rpc: Rpc<SolanaRpcApi>,
   mints: B58PK[],
-  // TODO: picosol is currently the only SPL being tested.
+  // TODO: bsol and picosol are currently the only SPL pools being tested.
   // May need to add to this list in the future if we add more.
-  spls: SplPoolAccounts[] = [PICOSOL_ACCS],
+  spls: SplPoolAccounts[] = [BSOL_ACCS, PICOSOL_ACCS],
   currEpoch: bigint = 0n
 ): Promise<SanctumRouterHandle> {
   const initAccounts = getInitAccounts(spls);
