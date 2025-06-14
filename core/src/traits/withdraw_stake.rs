@@ -5,7 +5,7 @@ use sanctum_spl_stake_pool_core::STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS;
 
 use crate::{
     reserves_has_enough_for_slumdog, slumdog_target_lamports, ActiveStakeParams, Prefund,
-    StakeAccountLamports, WithdrawStakeQuote,
+    StakeAccountLamports, StakeQuoteError, WithdrawStakeQuote,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -24,7 +24,7 @@ impl<E: core::fmt::Debug> Display for PrefundWithdrawStakeQuoteErr<E> {
 impl<E: core::fmt::Debug> Error for PrefundWithdrawStakeQuoteErr<E> {}
 
 pub trait WithdrawStakeQuoter {
-    type Error: Error;
+    type Error: Error + StakeQuoteError;
 
     /// # Params
     /// - `tokens` LST tokens to redeem to stake, in atomics

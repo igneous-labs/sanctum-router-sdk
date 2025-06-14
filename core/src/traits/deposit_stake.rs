@@ -1,9 +1,9 @@
 use core::{error::Error, ops::Deref};
 
-use crate::{ActiveStakeParams, DepositStakeQuote};
+use crate::{ActiveStakeParams, DepositStakeQuote, StakeQuoteError};
 
 pub trait DepositStakeQuoter {
-    type Error: Error;
+    type Error: Error + StakeQuoteError;
 
     // pass `stake` by value since we're echoing it in return value anyway
     fn quote_deposit_stake(

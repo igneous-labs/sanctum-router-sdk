@@ -84,12 +84,7 @@ pub fn quote_deposit_stake(
             .quote_deposit_stake(active_stake_params)
             .map_err(generic_err),
         mint => {
-            let router = this
-                .0
-                .spl_routers
-                .iter()
-                .find(|r| r.stake_pool.pool_mint == mint)
-                .ok_or_else(router_missing_err)?;
+            let router = this.0.try_find_spl_by_mint(&mint)?;
             router
                 .deposit_stake_quoter()
                 .quote_deposit_stake(active_stake_params)
@@ -176,10 +171,7 @@ pub fn deposit_stake_ix(
         mint => {
             let router = this
                 .0
-                .spl_routers
-                .iter()
-                .find(|r| r.stake_pool.pool_mint == mint)
-                .ok_or_else(router_missing_err)?
+                .try_find_spl_by_mint(&mint)?
                 .deposit_stake_suf_accs(&vote_account)
                 .ok_or_else(router_missing_err)?;
 

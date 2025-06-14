@@ -15,7 +15,7 @@ edition = "2021"
 borsh = { version = "^1", default-features = false }
 bs58-fixed = { git = "https://github.com/igneous-labs/bs58-fixed.git", branch = "master", default-features = false }
 bs58-fixed-wasm = { git = "https://github.com/igneous-labs/bs58-fixed.git", branch = "master", default-features = false }
-console_error_panic_hook = "^0.1"
+console_error_panic_hook = { version = "^0.1", default-features = false }
 const-crypto = { version = "^0.3.0", default-features = false }
 ed25519-compact = { version = "^2", default-features = false }
 generic-array-struct = { version = "^0.3.1-bc", default-features = false }
@@ -24,7 +24,7 @@ sanctum-fee-ratio = { version = "^1", default-features = false }
 sanctum-u64-ratio = { version = "^1", default-features = false }
 serde = { version = "1.0", default-features = false }
 tsify-next = { version = "^0.5.5", default-features = false }
-wasm-bindgen = "^0.2"
+wasm-bindgen = { version = "^0.2", default-features = false }
 
 # sanctum sdks
 sanctum-marinade-liquid-staking-core = { git = "https://github.com/igneous-labs/sanctum-marinade-liquid-staking-sdk.git", branch = "main", default-features = false }

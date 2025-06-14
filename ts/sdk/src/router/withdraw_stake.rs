@@ -80,10 +80,7 @@ pub fn quote_prefund_withdraw_stake(
             .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
             .map_err(generic_err),
         mint => {
-            let router = this
-                .0
-                .find_spl_by_mint(&mint)
-                .ok_or_else(router_missing_err)?;
+            let router = this.0.try_find_spl_by_mint(&mint)?;
             router
                 .withdraw_stake_quoter()
                 .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
@@ -135,7 +132,7 @@ pub fn prefund_withdraw_stake_ix(
                 .ok_or_else(router_missing_err)?;
 
             if *router.largest_stake_vote != vote {
-                return Err(generic_err(LidoError::ValidatorWithMoreStakeExists));
+                return Err(LidoError::ValidatorWithMoreStakeExists.into());
             }
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
@@ -151,8 +148,7 @@ pub fn prefund_withdraw_stake_ix(
         mint => {
             let router = this
                 .0
-                .find_spl_by_mint(&mint)
-                .ok_or_else(router_missing_err)?
+                .try_find_spl_by_mint(&mint)?
                 .withdraw_stake_suf_accs(&vote)
                 .ok_or_else(router_missing_err)?;
 
