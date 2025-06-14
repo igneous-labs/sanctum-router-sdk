@@ -27,6 +27,7 @@ impl ReserveRouterOwned {
         }
     }
 
+    /// Returns `None` if stake acc record PDA invalid
     pub fn deposit_stake_suf_accs(
         &self,
         stake_account_addr: &[u8; 32],

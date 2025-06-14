@@ -121,8 +121,9 @@ pub struct DepositStakeSwapParams {
 }
 
 /// Requires `update()` to be called before calling this function
-/// Stake account to deposit should be set on `params.signerInp`
-/// Vote account of the stake account to deposit should be set on `params.inp`
+///
+/// @param {SanctumRouterHandle} _this
+/// @param {DepositStakeSwapParams} params
 #[wasm_bindgen(js_name = depositStakeIx)]
 pub fn deposit_stake_ix(
     this: &SanctumRouterHandle,
