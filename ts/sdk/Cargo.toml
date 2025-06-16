@@ -2,6 +2,7 @@
 name = "sanctum-router" # npm package name without @sanctumso/ scope
 version = "0.0.1-dev-1" # npm package version
 edition = { workspace = true }
+publish = false # this gets published to npm, not crates.io
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -16,6 +17,7 @@ ed25519-compact = { workspace = true }
 hmac-sha256 = { workspace = true }
 sanctum-router-core = { workspace = true , features = ["wasm"] }
 serde = { workspace = true }
+serde_bytes = { workspace = true, features = ["alloc"] }
 tsify-next = { workspace = true, features = ["js"] }
 wasm-bindgen = { workspace = true }
 
@@ -23,9 +25,3 @@ sanctum-marinade-liquid-staking-core = { workspace = true }
 sanctum-reserve-core = { workspace = true }
 sanctum-spl-stake-pool-core = { workspace = true }
 solido-legacy-core = { workspace = true }
-
-# The `console_error_panic_hook` crate provides better debugging of panics by
-# logging them with `console.error`. This is great for development, but requires
-# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
-# code size when deploying.
-console_error_panic_hook = { workspace = true, optional = true }

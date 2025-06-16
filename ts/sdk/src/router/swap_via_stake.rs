@@ -10,6 +10,7 @@ use sanctum_router_core::{
     SYSTEM_PROGRAM, SYSVAR_CLOCK,
 };
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use solido_legacy_core::STSOL_MINT_ADDR;
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
@@ -274,7 +275,7 @@ pub fn prefund_swap_via_stake_ix(
     let ix = Instruction {
         program_address: B58PK::new(SANCTUM_ROUTER_PROGRAM),
         accounts: metas.into(),
-        data: Box::new(data.to_buf()),
+        data: ByteBuf::from(data.to_buf()),
     };
 
     Ok(ix)

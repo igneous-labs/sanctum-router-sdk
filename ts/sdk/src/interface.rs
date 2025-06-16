@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use bs58_fixed::Bs58String;
 use bs58_fixed_wasm::Bs58Array;
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use tsify_next::Tsify;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
@@ -81,7 +82,7 @@ pub fn keys_signer_writer_to_account_metas<const N: usize>(
 #[tsify(into_wasm_abi, from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
 pub struct Instruction {
-    pub data: Box<[u8]>,
+    pub data: ByteBuf,
     pub accounts: Box<[AccountMeta]>,
     pub program_address: B58PK,
 }

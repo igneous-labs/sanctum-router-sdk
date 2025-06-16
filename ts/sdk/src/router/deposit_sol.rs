@@ -4,6 +4,7 @@ use sanctum_router_core::{
     STAKE_WRAPPED_SOL_PREFIX_IS_SIGNER, STAKE_WRAPPED_SOL_PREFIX_IS_WRITER, TOKEN_PROGRAM,
 };
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
@@ -110,7 +111,7 @@ pub fn deposit_sol_ix(
     let ix = Instruction {
         program_address: B58PK::new(SANCTUM_ROUTER_PROGRAM),
         accounts: metas,
-        data: Box::new(data.to_buf()),
+        data: ByteBuf::from(data.to_buf()),
     };
 
     Ok(ix)
