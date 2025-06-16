@@ -100,6 +100,7 @@ pub(crate) fn get_account(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&Ac
         .ok_or_else(|| account_missing_err(&pubkey))
 }
 
+/// Basically HashMap.get(), but returns [`account_missing_err()`] if account missing instead of `None`
 pub(crate) fn get_account_data(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&[u8], JsError> {
     get_account(accounts, pubkey).map(|account| account.data.as_ref())
 }

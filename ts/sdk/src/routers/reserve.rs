@@ -1,11 +1,12 @@
 use sanctum_reserve_core::{Fee, FeeEnum, Pool, PoolBalance, ProtocolFee};
-use sanctum_router_core::{ReserveDepositStakeQuoter, ReserveDepositStakeSufAccs};
+use sanctum_router_core::{ReserveDepositStakeQuoter, ReserveDepositStakeSufAccs, NATIVE_MINT};
 use wasm_bindgen::JsError;
 
 use crate::{
+    err::unsupported_update,
     interface::{get_account, get_account_data, AccountMap},
     pda::reserve::find_reserve_stake_account_record_pda_internal,
-    update::Update,
+    update::{PoolUpdateType, Update},
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -70,33 +71,43 @@ impl ReserveRouterOwned {
 }
 
 impl Update for ReserveRouterOwned {
-    fn get_accounts_to_update(&self) -> impl Iterator<Item = [u8; 32]> {
-        [
-            sanctum_reserve_core::POOL,
-            sanctum_reserve_core::FEE,
-            sanctum_reserve_core::PROTOCOL_FEE,
-            sanctum_reserve_core::POOL_SOL_RESERVES,
-        ]
+    fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
+        match ty {
+            PoolUpdateType::DepositStake => [
+                sanctum_reserve_core::POOL,
+                sanctum_reserve_core::FEE,
+                sanctum_reserve_core::PROTOCOL_FEE,
+                sanctum_reserve_core::POOL_SOL_RESERVES,
+            ]
+            .map(Some),
+            _ => [None; 4],
+        }
         .into_iter()
+        .flatten()
     }
 
-    fn update(&mut self, accounts: &AccountMap) -> Result<(), JsError> {
-        let [Ok(pool_data), Ok(fee_data), Ok(protocol_fee_data)] = [
-            sanctum_reserve_core::POOL,
-            sanctum_reserve_core::FEE,
-            sanctum_reserve_core::PROTOCOL_FEE,
-        ]
-        .map(|pk| get_account_data(accounts, pk)) else {
-            return Err(JsError::new("Failed to fetch reserve accounts"));
-        };
+    fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+        match ty {
+            PoolUpdateType::DepositStake => {
+                let [Ok(pool_data), Ok(fee_data), Ok(protocol_fee_data)] = [
+                    sanctum_reserve_core::POOL,
+                    sanctum_reserve_core::FEE,
+                    sanctum_reserve_core::PROTOCOL_FEE,
+                ]
+                .map(|pk| get_account_data(accounts, pk)) else {
+                    return Err(JsError::new("Failed to fetch reserve accounts"));
+                };
 
-        self.update_pool(pool_data)?;
-        self.update_fee(fee_data)?;
-        self.update_protocol_fee(protocol_fee_data)?;
+                self.update_pool(pool_data)?;
+                self.update_fee(fee_data)?;
+                self.update_protocol_fee(protocol_fee_data)?;
 
-        self.pool_sol_reserves =
-            get_account(accounts, sanctum_reserve_core::POOL_SOL_RESERVES)?.lamports;
+                self.pool_sol_reserves =
+                    get_account(accounts, sanctum_reserve_core::POOL_SOL_RESERVES)?.lamports;
 
-        Ok(())
+                Ok(())
+            }
+            _ => Err(unsupported_update(ty, &NATIVE_MINT)),
+        }
     }
 }

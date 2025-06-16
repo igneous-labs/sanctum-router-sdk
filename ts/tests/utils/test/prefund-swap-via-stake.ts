@@ -4,7 +4,7 @@ import {
   type SwapViaStakeSwapParams,
 } from "@sanctumso/sanctum-router";
 import { mapTup } from "../ops";
-import { routerForMints } from "../router";
+import { routerForSwaps } from "../router";
 import { NATIVE_MINT, testFixturesTokenAcc } from "../token";
 import { localRpc } from "../rpc";
 import { simTokenSwapAssertQuoteMatches } from "./swap";
@@ -23,12 +23,9 @@ export async function prefundSwapViaStakeFixturesTest(
   ] = mapTup([inpTokenAccName, outTokenAccName], testFixturesTokenAcc);
   const rpc = localRpc();
 
-  // TODO: this API is very ass bec we need to remember to include NATIVE_MINT
-  // as part of the array or else we will get ReserveError(NotEnoughLiquidity)
-  // when quoting because reserves' sol reserves acc is not fetched.
-  //
-  // GH issue #18 fine-grained updates should aim to solve this
-  const router = await routerForMints(rpc, [inpMint, outMint, NATIVE_MINT]);
+  const router = await routerForSwaps(rpc, [
+    { prefundSwapViaStake: { inp: inpMint, out: outMint } },
+  ]);
 
   const {
     quote: { quote, routerFee },

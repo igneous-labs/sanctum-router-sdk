@@ -1,11 +1,14 @@
 use sanctum_router_core::{LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs};
-use solido_legacy_core::{Lido, ListHeader, Validator, ValidatorList, SYSVAR_CLOCK};
+use solido_legacy_core::{
+    Lido, ListHeader, Validator, ValidatorList, STSOL_MINT_ADDR, SYSVAR_CLOCK,
+};
 use wasm_bindgen::JsError;
 
 use crate::{
+    err::unsupported_update,
     interface::{get_account_data, AccountMap},
     pda::lido::find_lido_validator_stake_account_pda_internal,
-    update::Update,
+    update::{PoolUpdateType, Update},
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -61,28 +64,38 @@ impl LidoRouterOwned {
 }
 
 impl Update for LidoRouterOwned {
-    fn get_accounts_to_update(&self) -> impl Iterator<Item = [u8; 32]> {
-        [
-            solido_legacy_core::LIDO_STATE_ADDR,
-            solido_legacy_core::VALIDATOR_LIST_ADDR,
-            SYSVAR_CLOCK,
-        ]
+    fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
+        match ty {
+            PoolUpdateType::WithdrawStake => [
+                solido_legacy_core::LIDO_STATE_ADDR,
+                solido_legacy_core::VALIDATOR_LIST_ADDR,
+                SYSVAR_CLOCK,
+            ]
+            .map(Some),
+            _ => [None; 3],
+        }
         .into_iter()
+        .flatten()
     }
 
-    fn update(&mut self, accounts: &AccountMap) -> Result<(), JsError> {
-        let [Ok(state_data), Ok(validator_list_data)] = [
-            solido_legacy_core::LIDO_STATE_ADDR,
-            solido_legacy_core::VALIDATOR_LIST_ADDR,
-        ]
-        .map(|k| get_account_data(accounts, k)) else {
-            return Err(JsError::new("Failed to fetch lido accounts"));
-        };
+    fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+        match ty {
+            PoolUpdateType::WithdrawStake => {
+                let [Ok(state_data), Ok(validator_list_data)] = [
+                    solido_legacy_core::LIDO_STATE_ADDR,
+                    solido_legacy_core::VALIDATOR_LIST_ADDR,
+                ]
+                .map(|k| get_account_data(accounts, k)) else {
+                    return Err(JsError::new("Failed to fetch lido accounts"));
+                };
 
-        self.update_state(state_data)?;
-        self.update_validator_list(validator_list_data)?;
+                self.update_state(state_data)?;
+                self.update_validator_list(validator_list_data)?;
 
-        Ok(())
+                Ok(())
+            }
+            _ => Err(unsupported_update(ty, &STSOL_MINT_ADDR)),
+        }
     }
 }
 
