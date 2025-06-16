@@ -13,7 +13,7 @@ describe("SPL Test", async () => {
   // DepositSol
   it("spl-picosol-deposit-sol", async () => {
     await depositSolFixturesTest(1000000n, {
-      inp: "spl-signer-wsol-token",
+      inp: "signer-wsol-token",
       out: PICOSOL_TOKEN_ACC_NAME,
     });
   });
@@ -22,7 +22,7 @@ describe("SPL Test", async () => {
   it("spl-picosol-withdraw-sol", async () => {
     await withdrawSolFixturesTest(1000000n, {
       inp: PICOSOL_TOKEN_ACC_NAME,
-      out: "spl-signer-wsol-token",
+      out: "signer-wsol-token",
     });
   });
 
@@ -47,7 +47,7 @@ describe("SPL Test", async () => {
   it("spl-picosol-prefund-swap-via-stake-into-reserve", async () => {
     await prefundSwapViaStakeFixturesTest(1_000_000_000n, {
       inp: PICOSOL_TOKEN_ACC_NAME,
-      out: "reserve-signer-wsol-token",
+      out: "signer-wsol-token",
     });
   });
 

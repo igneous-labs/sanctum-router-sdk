@@ -7,7 +7,7 @@ describe("Marinade Test", async () => {
   // DepositSol
   it("marinade-deposit-sol", async () => {
     await depositSolFixturesTest(1000000n, {
-      inp: "marinade-signer-wsol-token",
+      inp: "signer-wsol-token",
       out: MSOL_TOKEN_ACC_NAME,
     });
   });

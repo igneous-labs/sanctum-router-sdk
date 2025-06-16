@@ -6,7 +6,7 @@ describe("Reserve Test", async () => {
   it("reserve-deposit-stake", async () => {
     await depositStakeFixturesTest({
       inp: "reserve-deposit-stake",
-      out: "reserve-signer-wsol-token",
+      out: "signer-wsol-token",
     });
   });
 });

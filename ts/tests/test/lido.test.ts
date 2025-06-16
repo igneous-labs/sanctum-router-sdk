@@ -20,7 +20,7 @@ describe("Lido Test", async () => {
   it("lido-prefund-swap-via-stake-into-reserve", async () => {
     await prefundSwapViaStakeFixturesTest(1_000_000_000n, {
       inp: STSOL_TOKEN_ACC_NAME,
-      out: "reserve-signer-wsol-token",
+      out: "signer-wsol-token",
     });
   });
 
