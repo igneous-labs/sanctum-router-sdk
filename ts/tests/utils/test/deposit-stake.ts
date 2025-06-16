@@ -20,11 +20,14 @@ import { mapTup } from "../ops";
 import { ixToSimTx, txSimParams } from "../tx";
 import { expect } from "vitest";
 
-export async function depositStakeFixturesTest(
-  mint: string,
-  { inp: inpStakeAccName, out: outTokenAccName }: { inp: string; out: string }
-) {
-  const { addr: outTokenAcc } = testFixturesTokenAcc(outTokenAccName);
+export async function depositStakeFixturesTest({
+  inp: inpStakeAccName,
+  out: outTokenAccName,
+}: {
+  inp: string;
+  out: string;
+}) {
+  const { addr: outTokenAcc, mint } = testFixturesTokenAcc(outTokenAccName);
   const {
     addr: inpStakeAcc,
     vote,

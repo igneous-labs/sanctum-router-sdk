@@ -11,13 +11,12 @@ import { simTokenSwapAssertQuoteMatches } from "./swap";
 
 export async function depositSolFixturesTest(
   amt: bigint,
-  mint: string,
   tokenAccFixtures: { inp: string; out: string }
 ) {
   const { inp: inpTokenAccName, out: outTokenAccName } = tokenAccFixtures;
   const [
     { addr: inpTokenAcc, owner: inpTokenAccOwner },
-    { addr: outTokenAcc },
+    { addr: outTokenAcc, mint },
   ] = mapTup([inpTokenAccName, outTokenAccName], testFixturesTokenAcc);
   const rpc = localRpc();
   const router = await routerForMints(rpc, [mint]);
