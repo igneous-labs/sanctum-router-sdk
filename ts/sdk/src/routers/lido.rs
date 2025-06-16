@@ -1,17 +1,48 @@
 use sanctum_router_core::{LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs};
-use solido_legacy_core::{Lido, ListHeader, Validator, ValidatorList, SYSVAR_CLOCK};
+use solido_legacy_core::{
+    Lido, ListHeader, Validator, ValidatorList, STSOL_MINT_ADDR, SYSVAR_CLOCK,
+};
 use wasm_bindgen::JsError;
 
 use crate::{
+    err::unsupported_update,
     interface::{get_account_data, AccountMap},
     pda::lido::find_lido_validator_stake_account_pda_internal,
-    update::Update,
+    update::{PoolUpdateType, Update},
 };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct LidoRouterOwned {
     pub state: Lido,
     pub validator_list: LidoValidatorListOwned,
+}
+
+/// Init
+impl LidoRouterOwned {
+    pub const fn init_accounts() -> [[u8; 32]; 2] {
+        [
+            solido_legacy_core::LIDO_STATE_ADDR,
+            solido_legacy_core::VALIDATOR_LIST_ADDR,
+        ]
+    }
+
+    pub fn init(accounts: &AccountMap) -> Result<Self, JsError> {
+        let [s, v] = Self::init_accounts().map(|k| get_account_data(accounts, k));
+        let state_data = s?;
+        let validator_list_data = v?;
+
+        let state = Lido::borsh_de(state_data)?;
+        let ValidatorList { header, entries } = ValidatorList::deserialize(validator_list_data)?;
+        let validator_list = LidoValidatorListOwned {
+            header,
+            validators: entries.to_vec(),
+        };
+
+        Ok(Self {
+            state,
+            validator_list,
+        })
+    }
 }
 
 /// WithdrawStake
@@ -43,46 +74,29 @@ impl LidoRouterOwned {
     }
 }
 
-/// Update helpers
-impl LidoRouterOwned {
-    pub fn update_state(&mut self, state_data: &[u8]) -> Result<(), JsError> {
-        self.state = Lido::borsh_de(state_data)?;
-        Ok(())
-    }
-
-    pub fn update_validator_list(&mut self, validator_list_data: &[u8]) -> Result<(), JsError> {
-        let validator_list = ValidatorList::deserialize(validator_list_data)?;
-        self.validator_list = LidoValidatorListOwned {
-            header: validator_list.header,
-            validators: validator_list.entries.to_vec(),
-        };
-        Ok(())
-    }
-}
-
 impl Update for LidoRouterOwned {
-    fn get_accounts_to_update(&self) -> impl Iterator<Item = [u8; 32]> {
-        [
-            solido_legacy_core::LIDO_STATE_ADDR,
-            solido_legacy_core::VALIDATOR_LIST_ADDR,
-            SYSVAR_CLOCK,
-        ]
+    fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
+        match ty {
+            PoolUpdateType::WithdrawStake => [
+                solido_legacy_core::LIDO_STATE_ADDR,
+                solido_legacy_core::VALIDATOR_LIST_ADDR,
+                SYSVAR_CLOCK,
+            ]
+            .map(Some),
+            _ => [None; 3],
+        }
         .into_iter()
+        .flatten()
     }
 
-    fn update(&mut self, accounts: &AccountMap) -> Result<(), JsError> {
-        let [Ok(state_data), Ok(validator_list_data)] = [
-            solido_legacy_core::LIDO_STATE_ADDR,
-            solido_legacy_core::VALIDATOR_LIST_ADDR,
-        ]
-        .map(|k| get_account_data(accounts, k)) else {
-            return Err(JsError::new("Failed to fetch lido accounts"));
-        };
-
-        self.update_state(state_data)?;
-        self.update_validator_list(validator_list_data)?;
-
-        Ok(())
+    fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+        match ty {
+            PoolUpdateType::WithdrawStake => {
+                *self = Self::init(accounts)?;
+                Ok(())
+            }
+            _ => Err(unsupported_update(ty, &STSOL_MINT_ADDR)),
+        }
     }
 }
 

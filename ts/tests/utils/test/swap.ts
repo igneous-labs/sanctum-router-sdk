@@ -29,6 +29,7 @@ export async function simTokenSwapAssertQuoteMatches(
       out,
       // TODO: we might want to test that the collected fee matches too.
       // Probably just pass poolFeeTokenAcc as an arg to this fn
+      // and then assert balance changes match fee here
       fee: _,
     },
     routerFee,

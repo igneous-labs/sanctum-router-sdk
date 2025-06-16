@@ -6,7 +6,7 @@ import {
   type DepositStakeSwapParams,
   type Instruction,
 } from "@sanctumso/sanctum-router";
-import { routerForMints } from "../router";
+import { routerForSwaps } from "../router";
 import { fetchAccountMap, localRpc } from "../rpc";
 import { testFixturesStakeAcc } from "../stake";
 import { testFixturesTokenAcc, tokenAccBalance } from "../token";
@@ -27,7 +27,8 @@ export async function depositStakeFixturesTest({
   inp: string;
   out: string;
 }) {
-  const { addr: outTokenAcc, mint } = testFixturesTokenAcc(outTokenAccName);
+  const { addr: outTokenAcc, mint: outMint } =
+    testFixturesTokenAcc(outTokenAccName);
   const {
     addr: inpStakeAcc,
     vote,
@@ -36,7 +37,9 @@ export async function depositStakeFixturesTest({
     withdrawer,
   } = testFixturesStakeAcc(inpStakeAccName);
   const rpc = localRpc();
-  const router = await routerForMints(rpc, [mint]);
+  const router = await routerForSwaps(rpc, [
+    { depositStake: { out: outMint } },
+  ]);
 
   const inpStake = {
     staked: stakedLamports,
@@ -44,12 +47,12 @@ export async function depositStakeFixturesTest({
   };
   const quote = quoteDepositStake(router, {
     vote,
-    out: mint,
+    out: outMint,
     inp: inpStake,
   });
   const params: DepositStakeSwapParams = {
     inp: vote,
-    out: mint,
+    out: outMint,
     signerInp: inpStakeAcc,
     signerOut: outTokenAcc,
     signer: withdrawer,
@@ -66,7 +69,8 @@ async function simDepositStakeAssertQuoteMatches(
     quote: {
       out,
       // TODO: we might want to test that the collected fee matches too.
-      // Probably just pass poolFeeTokenAcc as an arg to this fn
+      // Probably just pass poolFeeTokenAcc as an arg to this fn,
+      // and then assert balance changes match fee here
       fee: _,
     },
     routerFee,

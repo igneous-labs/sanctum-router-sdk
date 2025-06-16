@@ -5,13 +5,27 @@ use sanctum_router_core::{
 use sanctum_spl_stake_pool_core::{
     StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo, SYSVAR_CLOCK,
 };
+use serde::{Deserialize, Serialize};
+use tsify_next::Tsify;
 use wasm_bindgen::JsError;
 
 use crate::{
-    interface::{get_account, get_account_data, AccountMap},
-    pda::spl::find_validator_stake_account_pda_internal,
-    update::Update,
+    err::{account_missing_err, invalid_pda_err},
+    interface::{get_account, get_account_data, AccountMap, B58PK},
+    pda::spl::{
+        find_deposit_auth_pda_internal, find_validator_stake_account_pda_internal,
+        find_withdraw_auth_pda_internal,
+    },
+    update::{PoolUpdateType, Update},
 };
+
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+#[serde(rename_all = "camelCase")]
+pub struct SplPoolAccounts {
+    pub pool: B58PK,
+    pub validator_list: B58PK,
+}
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SplStakePoolRouterOwned {
@@ -22,6 +36,53 @@ pub struct SplStakePoolRouterOwned {
     pub deposit_authority_program_address: [u8; 32],
     pub withdraw_authority_program_address: [u8; 32],
     pub reserve_stake_lamports: u64,
+}
+
+/// Init
+impl SplStakePoolRouterOwned {
+    /// Need to `update()` one more time to fetch reserves for WithdrawSol.
+    /// Otherwise, other swap types do not require one more update.
+    pub fn init(
+        SplPoolAccounts {
+            pool,
+            validator_list,
+        }: &SplPoolAccounts,
+        accounts: &AccountMap,
+    ) -> Result<Self, JsError> {
+        let pool_account = accounts
+            .0
+            .get(pool)
+            .ok_or_else(|| account_missing_err(&pool.0))?;
+        let stake_pool_addr = pool.0;
+        let program_addr = pool_account.owner.0;
+
+        let mut res = SplStakePoolRouterOwned {
+            stake_pool_addr,
+            stake_pool_program: program_addr,
+            deposit_authority_program_address: find_deposit_auth_pda_internal(
+                &program_addr,
+                &stake_pool_addr,
+            )
+            .ok_or_else(invalid_pda_err)?
+            .0,
+            withdraw_authority_program_address: find_withdraw_auth_pda_internal(
+                &program_addr,
+                &stake_pool_addr,
+            )
+            .ok_or_else(invalid_pda_err)?
+            .0,
+            stake_pool: Default::default(),
+            validator_list: Default::default(),
+            reserve_stake_lamports: Default::default(),
+        };
+
+        res.update_stake_pool(&pool_account.data)?;
+
+        let validator_list_data = get_account_data(accounts, validator_list.0)?;
+        res.update_validator_list(validator_list_data)?;
+
+        Ok(res)
+    }
 }
 
 /// DepositSol + WithdrawSol common
@@ -148,29 +209,45 @@ impl SplStakePoolRouterOwned {
 }
 
 impl Update for SplStakePoolRouterOwned {
-    fn get_accounts_to_update(&self) -> impl Iterator<Item = [u8; 32]> {
-        [
-            self.stake_pool_addr,
-            self.stake_pool.validator_list,
-            self.stake_pool.reserve_stake,
-            SYSVAR_CLOCK,
-        ]
+    fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
+        match ty {
+            PoolUpdateType::DepositSol => {
+                [Some(SYSVAR_CLOCK), Some(self.stake_pool_addr), None, None]
+            }
+            PoolUpdateType::WithdrawSol => [
+                Some(SYSVAR_CLOCK),
+                Some(self.stake_pool_addr),
+                Some(self.stake_pool.reserve_stake),
+                None,
+            ],
+            PoolUpdateType::DepositStake | PoolUpdateType::WithdrawStake => [
+                Some(SYSVAR_CLOCK),
+                Some(self.stake_pool_addr),
+                Some(self.stake_pool.validator_list),
+                None,
+            ],
+        }
         .into_iter()
+        .flatten()
     }
 
-    fn update(&mut self, accounts: &AccountMap) -> Result<(), JsError> {
-        let keys = [self.stake_pool_addr, self.stake_pool.validator_list];
-        let [Ok(stake_pool_data), Ok(validator_list_data)] =
-            keys.map(|pk| get_account_data(accounts, pk))
-        else {
-            return Err(JsError::new("Failed to fetch stake pool accounts"));
-        };
-
+    fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+        let stake_pool_data = get_account_data(accounts, self.stake_pool_addr)?;
         self.update_stake_pool(stake_pool_data)?;
-        self.update_validator_list(validator_list_data)?;
 
-        self.reserve_stake_lamports =
-            get_account(accounts, self.stake_pool.reserve_stake)?.lamports;
+        match ty {
+            PoolUpdateType::DepositSol => (),
+            PoolUpdateType::WithdrawSol => {
+                self.reserve_stake_lamports =
+                    get_account(accounts, self.stake_pool.reserve_stake)?.lamports;
+            }
+            PoolUpdateType::DepositStake | PoolUpdateType::WithdrawStake => {
+                let validator_list_data =
+                    get_account_data(accounts, self.stake_pool.validator_list)?;
+                self.update_validator_list(validator_list_data)?;
+            }
+        }
+
         Ok(())
     }
 }
