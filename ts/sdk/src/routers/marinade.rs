@@ -21,6 +21,39 @@ pub struct MarinadeRouterOwned {
     pub msol_leg_balance: u64,
 }
 
+/// Init
+impl MarinadeRouterOwned {
+    pub const fn init_accounts() -> [[u8; 32]; 3] {
+        [
+            sanctum_marinade_liquid_staking_core::STATE_PUBKEY,
+            sanctum_marinade_liquid_staking_core::LIQ_POOL_MSOL_LEG_PUBKEY,
+            sanctum_marinade_liquid_staking_core::VALIDATOR_LIST_PUBKEY,
+        ]
+    }
+
+    pub fn init(accounts: &AccountMap) -> Result<Self, JsError> {
+        let [s, m, v] = Self::init_accounts().map(|k| get_account_data(accounts, k));
+        let state_data = s?;
+        let msol_leg_data = m?;
+        let validator_records_data = v?;
+
+        // TODO: impl Default for MarinadeState in
+        // sanctum_marinade_liquid_staking_core
+        let mut res = Self {
+            state: MarinadeState::borsh_de(state_data)?,
+            validator_records: Default::default(),
+            msol_leg_balance: Default::default(),
+        };
+        res.update_msol_leg_balance(msol_leg_data)?;
+        res.update_validator_records(
+            validator_records_data,
+            res.state.validator_system.validator_list.len() as usize,
+        )?;
+
+        Ok(res)
+    }
+}
+
 /// DepositSol
 impl MarinadeRouterOwned {
     pub fn deposit_sol_quoter(&self) -> MarinadeDepositSolQuoter {
@@ -74,6 +107,11 @@ impl MarinadeRouterOwned {
         self.validator_records = validator_list.0.to_vec();
         Ok(())
     }
+
+    pub fn update_msol_leg_balance(&mut self, msol_leg_data: &[u8]) -> Result<(), JsError> {
+        self.msol_leg_balance = try_token_acc_amt(msol_leg_data)?;
+        Ok(())
+    }
 }
 
 impl Update for MarinadeRouterOwned {
@@ -108,13 +146,7 @@ impl Update for MarinadeRouterOwned {
                 let msol_leg_data = m?;
 
                 self.update_state(state_data)?;
-                // This is a token account, reading `amount`
-                self.msol_leg_balance = u64::from_le_bytes(
-                    *msol_leg_data
-                        .get(..72)
-                        .and_then(|s| s.last_chunk::<8>())
-                        .ok_or_else(invalid_data_err)?,
-                );
+                self.update_msol_leg_balance(msol_leg_data)?;
 
                 if matches!(ty, PoolUpdateType::DepositStake) {
                     let validator_records_data = get_account_data(
@@ -134,4 +166,12 @@ impl Update for MarinadeRouterOwned {
             }
         }
     }
+}
+
+fn try_token_acc_amt(d: &[u8]) -> Result<u64, JsError> {
+    Ok(u64::from_le_bytes(
+        *d.get(..72)
+            .and_then(|s| s.last_chunk())
+            .ok_or_else(invalid_data_err)?,
+    ))
 }

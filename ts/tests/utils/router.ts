@@ -1,7 +1,7 @@
 import {
   fromFetchedAccounts,
   accountsToUpdate,
-  getInitAccounts,
+  initAccounts,
   update,
   type B58PK,
   type SanctumRouterHandle,
@@ -31,8 +31,8 @@ export async function routerForSwaps(
   // May need to add to this list in the future if we add more.
   spls: SplPoolAccounts[] = [BSOL_ACCS, PICOSOL_ACCS]
 ): Promise<SanctumRouterHandle> {
-  const initAccounts = getInitAccounts(spls);
-  const accounts = await fetchAccountMap(rpc, initAccounts);
+  const initAccs = initAccounts(spls);
+  const accounts = await fetchAccountMap(rpc, initAccs);
   const sanctumRouter = fromFetchedAccounts(spls, accounts);
 
   const accs = accountsToUpdate(sanctumRouter, swapMints);

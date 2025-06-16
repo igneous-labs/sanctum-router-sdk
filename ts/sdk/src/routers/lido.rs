@@ -11,10 +11,38 @@ use crate::{
     update::{PoolUpdateType, Update},
 };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct LidoRouterOwned {
     pub state: Lido,
     pub validator_list: LidoValidatorListOwned,
+}
+
+/// Init
+impl LidoRouterOwned {
+    pub const fn init_accounts() -> [[u8; 32]; 2] {
+        [
+            solido_legacy_core::LIDO_STATE_ADDR,
+            solido_legacy_core::VALIDATOR_LIST_ADDR,
+        ]
+    }
+
+    pub fn init(accounts: &AccountMap) -> Result<Self, JsError> {
+        let [s, v] = Self::init_accounts().map(|k| get_account_data(accounts, k));
+        let state_data = s?;
+        let validator_list_data = v?;
+
+        let state = Lido::borsh_de(state_data)?;
+        let ValidatorList { header, entries } = ValidatorList::deserialize(validator_list_data)?;
+        let validator_list = LidoValidatorListOwned {
+            header,
+            validators: entries.to_vec(),
+        };
+
+        Ok(Self {
+            state,
+            validator_list,
+        })
+    }
 }
 
 /// WithdrawStake
@@ -46,23 +74,6 @@ impl LidoRouterOwned {
     }
 }
 
-/// Update helpers
-impl LidoRouterOwned {
-    pub fn update_state(&mut self, state_data: &[u8]) -> Result<(), JsError> {
-        self.state = Lido::borsh_de(state_data)?;
-        Ok(())
-    }
-
-    pub fn update_validator_list(&mut self, validator_list_data: &[u8]) -> Result<(), JsError> {
-        let validator_list = ValidatorList::deserialize(validator_list_data)?;
-        self.validator_list = LidoValidatorListOwned {
-            header: validator_list.header,
-            validators: validator_list.entries.to_vec(),
-        };
-        Ok(())
-    }
-}
-
 impl Update for LidoRouterOwned {
     fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
         match ty {
@@ -81,17 +92,7 @@ impl Update for LidoRouterOwned {
     fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
         match ty {
             PoolUpdateType::WithdrawStake => {
-                let [s, v] = [
-                    solido_legacy_core::LIDO_STATE_ADDR,
-                    solido_legacy_core::VALIDATOR_LIST_ADDR,
-                ]
-                .map(|k| get_account_data(accounts, k));
-                let state_data = s?;
-                let validator_list_data = v?;
-
-                self.update_state(state_data)?;
-                self.update_validator_list(validator_list_data)?;
-
+                *self = Self::init(accounts)?;
                 Ok(())
             }
             _ => Err(unsupported_update(ty, &STSOL_MINT_ADDR)),
