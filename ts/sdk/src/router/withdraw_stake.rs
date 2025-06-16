@@ -6,6 +6,7 @@ use sanctum_router_core::{
     SYSVAR_CLOCK,
 };
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use solido_legacy_core::LidoError;
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
@@ -167,7 +168,7 @@ pub fn prefund_withdraw_stake_ix(
     let ix = Instruction {
         program_address: B58PK::new(SANCTUM_ROUTER_PROGRAM),
         accounts: metas,
-        data: Box::new(data.to_buf()),
+        data: ByteBuf::from(data.to_buf()),
     };
 
     Ok(ix)

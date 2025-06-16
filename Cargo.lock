@@ -75,16 +75,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "console_error_panic_hook"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
-dependencies = [
- "cfg-if",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "const-crypto"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -265,7 +255,6 @@ version = "0.0.1-dev-1"
 dependencies = [
  "bs58-fixed",
  "bs58-fixed-wasm",
- "console_error_panic_hook",
  "ed25519-compact",
  "hmac-sha256",
  "sanctum-marinade-liquid-staking-core",
@@ -273,6 +262,7 @@ dependencies = [
  "sanctum-router-core",
  "sanctum-spl-stake-pool-core",
  "serde",
+ "serde_bytes",
  "solido-legacy-core",
  "tsify-next",
  "wasm-bindgen",
@@ -332,6 +322,15 @@ dependencies = [
  "js-sys",
  "serde",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "serde_bytes"
+version = "0.11.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8437fd221bde2d4ca316d61b90e337e9e702b3820b87d63caa9ba6c02bd06d96"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

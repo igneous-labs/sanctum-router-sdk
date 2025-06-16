@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use bs58_fixed::Bs58String;
 use bs58_fixed_wasm::Bs58Array;
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use tsify_next::Tsify;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
@@ -81,7 +82,7 @@ pub fn keys_signer_writer_to_account_metas<const N: usize>(
 #[tsify(into_wasm_abi, from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
 pub struct Instruction {
-    pub data: Box<[u8]>,
+    pub data: ByteBuf,
     pub accounts: Box<[AccountMeta]>,
     pub program_address: B58PK,
 }
@@ -89,12 +90,9 @@ pub struct Instruction {
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountMap(pub HashMap<B58PK, OwnedAccount>);
+pub struct AccountMap(pub HashMap<B58PK, Account>);
 
-pub(crate) fn get_account(
-    accounts: &AccountMap,
-    pubkey: [u8; 32],
-) -> Result<&OwnedAccount, JsError> {
+pub(crate) fn get_account(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&Account, JsError> {
     accounts
         .0
         .get(&B58PK::new(pubkey))
@@ -108,9 +106,8 @@ pub(crate) fn get_account_data(accounts: &AccountMap, pubkey: [u8; 32]) -> Resul
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
-pub struct OwnedAccount {
+pub struct Account {
     pub owner: B58PK,
-    #[tsify(type = "Uint8Array")] // Instead of number[]
-    pub data: Box<[u8]>,
+    pub data: ByteBuf,
     pub lamports: u64,
 }
