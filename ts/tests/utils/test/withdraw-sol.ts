@@ -11,12 +11,11 @@ import { simTokenSwapAssertQuoteMatches } from "./swap";
 
 export async function withdrawSolFixturesTest(
   amt: bigint,
-  mint: string,
   tokenAccFixtures: { inp: string; out: string }
 ) {
   const { inp: inpTokenAccName, out: outTokenAccName } = tokenAccFixtures;
   const [
-    { addr: inpTokenAcc, owner: inpTokenAccOwner },
+    { addr: inpTokenAcc, owner: inpTokenAccOwner, mint },
     { addr: outTokenAcc },
   ] = mapTup([inpTokenAccName, outTokenAccName], testFixturesTokenAcc);
   const rpc = localRpc();

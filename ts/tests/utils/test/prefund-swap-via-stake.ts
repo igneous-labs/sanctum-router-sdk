@@ -14,14 +14,12 @@ const BRIDGE_STAKE_SEED = 0;
 
 export async function prefundSwapViaStakeFixturesTest(
   amt: bigint,
-  mints: { inp: string; out: string },
   tokenAccFixtures: { inp: string; out: string }
 ) {
-  const { inp: inpMint, out: outMint } = mints;
   const { inp: inpTokenAccName, out: outTokenAccName } = tokenAccFixtures;
   const [
-    { addr: inpTokenAcc, owner: inpTokenAccOwner },
-    { addr: outTokenAcc },
+    { addr: inpTokenAcc, owner: inpTokenAccOwner, mint: inpMint },
+    { addr: outTokenAcc, mint: outMint },
   ] = mapTup([inpTokenAccName, outTokenAccName], testFixturesTokenAcc);
   const rpc = localRpc();
 

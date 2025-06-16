@@ -30,12 +30,14 @@ const BRIDGE_STAKE_SEED = 0;
 
 export async function prefundWithdrawStakeFixturesTest(
   amt: bigint,
-  inpMint: string,
   inpTokenAccName: string,
   outVote?: string | undefined
 ) {
-  const { addr: inpTokenAcc, owner: signer } =
-    testFixturesTokenAcc(inpTokenAccName);
+  const {
+    addr: inpTokenAcc,
+    owner: signer,
+    mint: inpMint,
+  } = testFixturesTokenAcc(inpTokenAccName);
   const rpc = localRpc();
 
   // TODO: this API is very ass bec we need to remember to include NATIVE_MINT
