@@ -90,12 +90,9 @@ pub struct Instruction {
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountMap(pub HashMap<B58PK, OwnedAccount>);
+pub struct AccountMap(pub HashMap<B58PK, Account>);
 
-pub(crate) fn get_account(
-    accounts: &AccountMap,
-    pubkey: [u8; 32],
-) -> Result<&OwnedAccount, JsError> {
+pub(crate) fn get_account(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&Account, JsError> {
     accounts
         .0
         .get(&B58PK::new(pubkey))
@@ -109,7 +106,7 @@ pub(crate) fn get_account_data(accounts: &AccountMap, pubkey: [u8; 32]) -> Resul
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
 #[serde(rename_all = "camelCase")]
-pub struct OwnedAccount {
+pub struct Account {
     pub owner: B58PK,
     pub data: ByteBuf,
     pub lamports: u64,
