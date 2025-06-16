@@ -111,7 +111,6 @@ pub(crate) fn get_account_data(accounts: &AccountMap, pubkey: [u8; 32]) -> Resul
 #[serde(rename_all = "camelCase")]
 pub struct OwnedAccount {
     pub owner: B58PK,
-    #[tsify(type = "Uint8Array")] // Instead of number[]
-    pub data: Box<[u8]>,
+    pub data: ByteBuf,
     pub lamports: u64,
 }
