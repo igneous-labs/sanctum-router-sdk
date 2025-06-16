@@ -3,7 +3,7 @@ use sanctum_router_core::{
     SplWithdrawSolQuoter, SplWithdrawStakeQuoter, SplWithdrawStakeSufAccs,
 };
 use sanctum_spl_stake_pool_core::{
-    StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo,
+    StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo, SYSVAR_CLOCK,
 };
 use wasm_bindgen::JsError;
 
@@ -153,6 +153,7 @@ impl Update for SplStakePoolRouterOwned {
             self.stake_pool_addr,
             self.stake_pool.validator_list,
             self.stake_pool.reserve_stake,
+            SYSVAR_CLOCK,
         ]
         .into_iter()
     }

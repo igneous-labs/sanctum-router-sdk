@@ -1,5 +1,5 @@
 use sanctum_router_core::{LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs};
-use solido_legacy_core::{Lido, ListHeader, Validator, ValidatorList};
+use solido_legacy_core::{Lido, ListHeader, Validator, ValidatorList, SYSVAR_CLOCK};
 use wasm_bindgen::JsError;
 
 use crate::{
@@ -65,6 +65,7 @@ impl Update for LidoRouterOwned {
         [
             solido_legacy_core::LIDO_STATE_ADDR,
             solido_legacy_core::VALIDATOR_LIST_ADDR,
+            SYSVAR_CLOCK,
         ]
         .into_iter()
     }

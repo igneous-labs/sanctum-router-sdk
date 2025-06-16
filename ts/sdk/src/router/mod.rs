@@ -8,6 +8,7 @@ use crate::{
     routers::{LidoRouterOwned, MarinadeRouterOwned, ReserveRouterOwned, SplStakePoolRouterOwned},
 };
 
+mod clock;
 mod deposit_sol;
 mod deposit_stake;
 mod init;

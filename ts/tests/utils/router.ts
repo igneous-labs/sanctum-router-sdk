@@ -28,12 +28,11 @@ export async function routerForMints(
   mints: B58PK[],
   // TODO: bsol and picosol are currently the only SPL pools being tested.
   // May need to add to this list in the future if we add more.
-  spls: SplPoolAccounts[] = [BSOL_ACCS, PICOSOL_ACCS],
-  currEpoch: bigint = 0n
+  spls: SplPoolAccounts[] = [BSOL_ACCS, PICOSOL_ACCS]
 ): Promise<SanctumRouterHandle> {
   const initAccounts = getInitAccounts(spls);
   const accounts = await fetchAccountMap(rpc, initAccounts);
-  const sanctumRouter = fromFetchedAccounts(spls, accounts, currEpoch);
+  const sanctumRouter = fromFetchedAccounts(spls, accounts);
 
   const accountsToUpdate = getAccountsToUpdate(sanctumRouter, mints);
   const accountsToUpdateMap = await fetchAccountMap(rpc, accountsToUpdate);

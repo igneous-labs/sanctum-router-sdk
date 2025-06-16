@@ -1,5 +1,8 @@
+use std::iter::once;
+
 use sanctum_marinade_liquid_staking_core::State as MarinadeState;
 use sanctum_reserve_core::{Fee, Pool, ProtocolFee};
+use sanctum_router_core::SYSVAR_CLOCK;
 use sanctum_spl_stake_pool_core::StakePool;
 use serde::{Deserialize, Serialize};
 use solido_legacy_core::Lido;
@@ -10,7 +13,7 @@ use crate::{
     err::{account_missing_err, invalid_pda_err},
     interface::{get_account_data, AccountMap, B58PK},
     pda::spl::{find_deposit_auth_pda_internal, find_withdraw_auth_pda_internal},
-    router::{SanctumRouter, SanctumRouterHandle},
+    router::{clock::try_clock_acc_data_epoch, SanctumRouter, SanctumRouterHandle},
     routers::{
         LidoRouterOwned, LidoValidatorListOwned, MarinadeRouterOwned, ReserveRouterOwned,
         SplStakePoolRouterOwned,
@@ -44,6 +47,7 @@ pub fn get_init_accounts(spl_lsts: Vec<SplPoolAccounts>) -> Box<[B58PK]> {
             B58PK::new(sanctum_marinade_liquid_staking_core::STATE_PUBKEY),
             B58PK::new(sanctum_marinade_liquid_staking_core::VALIDATOR_LIST_PUBKEY),
         ])
+        .chain(once(B58PK::new(SYSVAR_CLOCK))) // for current epoch
         .collect()
 }
 
@@ -51,15 +55,16 @@ pub fn get_init_accounts(spl_lsts: Vec<SplPoolAccounts>) -> Box<[B58PK]> {
 #[wasm_bindgen(js_name = fromFetchedAccounts)]
 pub fn from_fetched_accounts(
     spl_lsts: Vec<SplPoolAccounts>,
-    accounts: AccountMap,
-    curr_epoch: u64,
+    accounts: &AccountMap,
 ) -> Result<SanctumRouterHandle, JsError> {
+    let curr_epoch = get_account_data(accounts, SYSVAR_CLOCK).and_then(try_clock_acc_data_epoch)?;
+
     // Lido
     let [Ok(state_data), Ok(validator_list_data)] = [
         solido_legacy_core::LIDO_STATE_ADDR,
         solido_legacy_core::VALIDATOR_LIST_ADDR,
     ]
-    .map(|k| get_account_data(&accounts, k)) else {
+    .map(|k| get_account_data(accounts, k)) else {
         return Err(JsError::new("Failed to fetch lido accounts"));
     };
 
@@ -75,7 +80,7 @@ pub fn from_fetched_accounts(
         sanctum_marinade_liquid_staking_core::STATE_PUBKEY,
         sanctum_marinade_liquid_staking_core::VALIDATOR_LIST_PUBKEY,
     ]
-    .map(|pk| get_account_data(&accounts, pk)) else {
+    .map(|pk| get_account_data(accounts, pk)) else {
         return Err(JsError::new("Failed to fetch marinade accounts"));
     };
 
@@ -97,7 +102,7 @@ pub fn from_fetched_accounts(
         sanctum_reserve_core::FEE,
         sanctum_reserve_core::PROTOCOL_FEE,
     ]
-    .map(|pk| get_account_data(&accounts, pk)) else {
+    .map(|pk| get_account_data(accounts, pk)) else {
         return Err(JsError::new("Failed to fetch reserve accounts"));
     };
 
@@ -140,7 +145,7 @@ pub fn from_fetched_accounts(
                 ..Default::default()
             };
 
-            let validator_list_data = get_account_data(&accounts, lst.validator_list.0)?;
+            let validator_list_data = get_account_data(accounts, lst.validator_list.0)?;
 
             router.update_validator_list(validator_list_data)?;
             Ok(router)
