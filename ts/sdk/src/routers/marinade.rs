@@ -99,12 +99,13 @@ impl Update for MarinadeRouterOwned {
     fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
         match ty {
             PoolUpdateType::DepositSol | PoolUpdateType::DepositStake => {
-                let state_data =
-                    get_account_data(accounts, sanctum_marinade_liquid_staking_core::STATE_PUBKEY)?;
-                let msol_leg_data = get_account_data(
-                    accounts,
+                let [s, m] = [
+                    sanctum_marinade_liquid_staking_core::STATE_PUBKEY,
                     sanctum_marinade_liquid_staking_core::LIQ_POOL_MSOL_LEG_PUBKEY,
-                )?;
+                ]
+                .map(|k| get_account_data(accounts, k));
+                let state_data = s?;
+                let msol_leg_data = m?;
 
                 self.update_state(state_data)?;
                 // This is a token account, reading `amount`

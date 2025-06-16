@@ -89,14 +89,15 @@ impl Update for ReserveRouterOwned {
     fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
         match ty {
             PoolUpdateType::DepositStake => {
-                let [Ok(pool_data), Ok(fee_data), Ok(protocol_fee_data)] = [
+                let [p, f, pf] = [
                     sanctum_reserve_core::POOL,
                     sanctum_reserve_core::FEE,
                     sanctum_reserve_core::PROTOCOL_FEE,
                 ]
-                .map(|pk| get_account_data(accounts, pk)) else {
-                    return Err(JsError::new("Failed to fetch reserve accounts"));
-                };
+                .map(|pk| get_account_data(accounts, pk));
+                let pool_data = p?;
+                let fee_data = f?;
+                let protocol_fee_data = pf?;
 
                 self.update_pool(pool_data)?;
                 self.update_fee(fee_data)?;

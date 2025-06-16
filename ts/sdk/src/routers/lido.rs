@@ -81,13 +81,13 @@ impl Update for LidoRouterOwned {
     fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
         match ty {
             PoolUpdateType::WithdrawStake => {
-                let [Ok(state_data), Ok(validator_list_data)] = [
+                let [s, v] = [
                     solido_legacy_core::LIDO_STATE_ADDR,
                     solido_legacy_core::VALIDATOR_LIST_ADDR,
                 ]
-                .map(|k| get_account_data(accounts, k)) else {
-                    return Err(JsError::new("Failed to fetch lido accounts"));
-                };
+                .map(|k| get_account_data(accounts, k));
+                let state_data = s?;
+                let validator_list_data = v?;
 
                 self.update_state(state_data)?;
                 self.update_validator_list(validator_list_data)?;
