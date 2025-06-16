@@ -39,6 +39,8 @@ impl MarinadeRouterOwned {
 
         // TODO: impl Default for MarinadeState in
         // sanctum_marinade_liquid_staking_core
+        // so that we can just do Self::default()
+        // then update_state() here
         let mut res = Self {
             state: MarinadeState::borsh_de(state_data)?,
             validator_records: Default::default(),

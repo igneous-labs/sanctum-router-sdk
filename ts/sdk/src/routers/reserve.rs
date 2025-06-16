@@ -95,13 +95,7 @@ impl ReserveRouterOwned {
 impl Update for ReserveRouterOwned {
     fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
         match ty {
-            PoolUpdateType::DepositStake => [
-                sanctum_reserve_core::POOL,
-                sanctum_reserve_core::FEE,
-                sanctum_reserve_core::PROTOCOL_FEE,
-                sanctum_reserve_core::POOL_SOL_RESERVES,
-            ]
-            .map(Some),
+            PoolUpdateType::DepositStake => Self::init_accounts().map(Some),
             _ => [None; 4],
         }
         .into_iter()
