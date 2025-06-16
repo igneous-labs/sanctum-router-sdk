@@ -12,18 +12,13 @@ use crate::{
 pub struct LidoRouterOwned {
     pub state: Lido,
     pub validator_list: LidoValidatorListOwned,
-    pub curr_epoch: u64,
 }
 
 /// WithdrawStake
 impl LidoRouterOwned {
     /// Lido only allows withdrawing from max stake validator
-    pub fn withdraw_stake_quoter(&self) -> Option<LidoWithdrawStakeQuoter> {
-        LidoWithdrawStakeQuoter::new(
-            &self.state,
-            &self.validator_list.validators,
-            self.curr_epoch,
-        )
+    pub fn withdraw_stake_quoter(&self, curr_epoch: u64) -> Option<LidoWithdrawStakeQuoter> {
+        LidoWithdrawStakeQuoter::new(&self.state, &self.validator_list.validators, curr_epoch)
     }
 
     /// Lido only allows withdrawing from max stake validator

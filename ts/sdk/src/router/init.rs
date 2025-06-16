@@ -66,7 +66,6 @@ pub fn from_fetched_accounts(
     let mut lido_router = LidoRouterOwned {
         state: Lido::borsh_de(state_data)?,
         validator_list: LidoValidatorListOwned::default(),
-        curr_epoch,
     };
 
     lido_router.update_validator_list(validator_list_data)?;
@@ -138,7 +137,6 @@ pub fn from_fetched_accounts(
                 )
                 .ok_or_else(invalid_pda_err)?
                 .0,
-                curr_epoch,
                 ..Default::default()
             };
 
@@ -150,6 +148,7 @@ pub fn from_fetched_accounts(
         .collect::<Result<Vec<_>, JsError>>()?;
 
     Ok(SanctumRouterHandle(SanctumRouter {
+        curr_epoch,
         spl_routers,
         lido_router,
         marinade_router,

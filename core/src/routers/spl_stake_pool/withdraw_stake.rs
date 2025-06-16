@@ -16,7 +16,7 @@ use crate::{
 #[derive(Debug, Clone, Copy)]
 pub struct SplWithdrawStakeQuoter<'a> {
     pub stake_pool: &'a StakePool,
-    pub current_epoch: u64,
+    pub curr_epoch: u64,
     pub validator_list: &'a [ValidatorStakeInfo],
 }
 
@@ -72,7 +72,7 @@ impl WithdrawStakeQuoter for SplWithdrawStakeQuoter<'_> {
         let quote = self.stake_pool.quote_withdraw_stake(
             tokens,
             WithdrawStakeQuoteArgs {
-                current_epoch: self.current_epoch,
+                current_epoch: self.curr_epoch,
             },
         )?;
         conv_quote(quote, vsi)

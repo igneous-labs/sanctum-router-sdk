@@ -76,14 +76,14 @@ pub fn quote_prefund_withdraw_stake(
         solido_legacy_core::STSOL_MINT_ADDR => this
             .0
             .lido_router
-            .withdraw_stake_quoter()
+            .withdraw_stake_quoter(this.0.curr_epoch)
             .ok_or_else(|| account_missing_err(&solido_legacy_core::VALIDATOR_LIST_ADDR))?
             .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
             .map_err(generic_err),
         mint => {
             let router = this.0.try_find_spl_by_mint(&mint)?;
             router
-                .withdraw_stake_quoter()
+                .withdraw_stake_quoter(this.0.curr_epoch)
                 .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
                 .map_err(generic_err)
         }

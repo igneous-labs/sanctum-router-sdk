@@ -43,7 +43,7 @@ pub fn quote_deposit_sol(
         mint => this
             .0
             .try_find_spl_by_mint(&mint)?
-            .deposit_sol_quoter()
+            .deposit_sol_quoter(this.0.curr_epoch)
             .quote_deposit_sol(params.amt)
             .map_err(generic_err),
     }

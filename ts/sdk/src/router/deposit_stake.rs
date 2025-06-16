@@ -87,7 +87,7 @@ pub fn quote_deposit_stake(
         mint => {
             let router = this.0.try_find_spl_by_mint(&mint)?;
             router
-                .deposit_stake_quoter()
+                .deposit_stake_quoter(this.0.curr_epoch)
                 .quote_deposit_stake(active_stake_params)
                 .map_err(generic_err)
         }

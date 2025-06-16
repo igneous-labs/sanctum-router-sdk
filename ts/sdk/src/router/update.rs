@@ -9,7 +9,7 @@ use crate::{
 
 /// Returns the accounts needed to update a specific routers according to the mint addresses.
 ///
-/// Dedups returned pubkey list
+/// Dedups returned pubkey list; all pubkeys in returned list guaranteed to be unique.
 #[wasm_bindgen(js_name = getAccountsToUpdate)]
 pub fn get_accounts_to_update(
     this: &SanctumRouterHandle,
