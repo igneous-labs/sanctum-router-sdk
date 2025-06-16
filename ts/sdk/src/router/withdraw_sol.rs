@@ -36,7 +36,7 @@ pub fn quote_withdraw_sol(
     let inp_mint = params.inp.0;
     this.0
         .try_find_spl_by_mint(&inp_mint)?
-        .withdraw_sol_quoter()
+        .withdraw_sol_quoter(this.0.curr_epoch)
         .quote_withdraw_sol(params.amt)
         .map(|q| TokenQuoteWithRouterFee(q.withdraw_sol_with_router_fee()))
         .map_err(generic_err)

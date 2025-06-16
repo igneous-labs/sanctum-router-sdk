@@ -16,7 +16,7 @@ use crate::{
 #[derive(Debug, Clone, Copy)]
 pub struct SplWithdrawStakeQuoter<'a> {
     pub stake_pool: &'a StakePool,
-    pub current_epoch: u64,
+    pub curr_epoch: u64,
     pub validator_list: &'a [ValidatorStakeInfo],
 }
 
@@ -72,7 +72,7 @@ impl WithdrawStakeQuoter for SplWithdrawStakeQuoter<'_> {
         let quote = self.stake_pool.quote_withdraw_stake(
             tokens,
             WithdrawStakeQuoteArgs {
-                current_epoch: self.current_epoch,
+                current_epoch: self.curr_epoch,
             },
         )?;
         conv_quote(quote, vsi)
@@ -88,7 +88,7 @@ impl WithdrawStakeQuoter for SplWithdrawStakeQuoter<'_> {
 #[derive(Debug, Clone, Copy)]
 pub struct SplWithdrawStakeValQuoter<'a> {
     pub stake_pool: &'a StakePool,
-    pub current_epoch: u64,
+    pub curr_epoch: u64,
     pub validator: &'a ValidatorStakeInfo,
 }
 
@@ -109,7 +109,7 @@ impl WithdrawStakeQuoter for SplWithdrawStakeValQuoter<'_> {
         let quote = self.stake_pool.quote_withdraw_stake(
             tokens,
             WithdrawStakeQuoteArgs {
-                current_epoch: self.current_epoch,
+                current_epoch: self.curr_epoch,
             },
         )?;
         conv_quote(quote, self.validator)
@@ -133,7 +133,7 @@ impl<'a> SplWithdrawStakeValQuoter<'a> {
     pub fn all<'parent: 'a>(
         stake_pool: &'parent StakePool,
         validator_list: &'parent [ValidatorStakeInfo],
-        current_epoch: u64,
+        curr_epoch: u64,
     ) -> Result<
         SplWithdrawStakeValQuoterItr<'a, impl Fn(&'a ValidatorStakeInfo) -> Self>,
         SplStakePoolError,
@@ -161,7 +161,7 @@ impl<'a> SplWithdrawStakeValQuoter<'a> {
         let ctor = move |validator| Self {
             validator,
             stake_pool,
-            current_epoch,
+            curr_epoch,
         };
         Ok(s1.iter().map(ctor).chain(s2.iter().map(ctor)))
     }

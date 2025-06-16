@@ -3,7 +3,7 @@ use sanctum_router_core::{
     SplWithdrawSolQuoter, SplWithdrawStakeQuoter, SplWithdrawStakeSufAccs,
 };
 use sanctum_spl_stake_pool_core::{
-    StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo,
+    StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo, SYSVAR_CLOCK,
 };
 use wasm_bindgen::JsError;
 
@@ -19,7 +19,6 @@ pub struct SplStakePoolRouterOwned {
     pub stake_pool_program: [u8; 32],
     pub stake_pool: StakePool,
     pub validator_list: ValidatorListOwned,
-    pub curr_epoch: u64,
     pub deposit_authority_program_address: [u8; 32],
     pub withdraw_authority_program_address: [u8; 32],
     pub reserve_stake_lamports: u64,
@@ -39,31 +38,31 @@ impl SplStakePoolRouterOwned {
 
 /// DepositSol
 impl SplStakePoolRouterOwned {
-    pub fn deposit_sol_quoter(&self) -> SplDepositSolQuoter {
+    pub fn deposit_sol_quoter(&self, curr_epoch: u64) -> SplDepositSolQuoter {
         SplDepositSolQuoter {
             stake_pool: &self.stake_pool,
-            curr_epoch: self.curr_epoch,
+            curr_epoch,
         }
     }
 }
 
 /// WithdrawSol
 impl SplStakePoolRouterOwned {
-    pub fn withdraw_sol_quoter(&self) -> SplWithdrawSolQuoter {
+    pub fn withdraw_sol_quoter(&self, curr_epoch: u64) -> SplWithdrawSolQuoter {
         SplWithdrawSolQuoter {
             stake_pool: &self.stake_pool,
             reserve_stake_lamports: self.reserve_stake_lamports,
-            curr_epoch: self.curr_epoch,
+            curr_epoch,
         }
     }
 }
 
 /// DepositStake
 impl SplStakePoolRouterOwned {
-    pub fn deposit_stake_quoter(&self) -> SplDepositStakeQuoter {
+    pub fn deposit_stake_quoter(&self, curr_epoch: u64) -> SplDepositStakeQuoter {
         SplDepositStakeQuoter {
             stake_pool: &self.stake_pool,
-            current_epoch: self.curr_epoch,
+            curr_epoch,
             validator_list: &self.validator_list.validators,
             default_stake_deposit_authority: &self.deposit_authority_program_address,
         }
@@ -97,10 +96,10 @@ impl SplStakePoolRouterOwned {
 
 /// WithdrawStake
 impl SplStakePoolRouterOwned {
-    pub fn withdraw_stake_quoter(&self) -> SplWithdrawStakeQuoter {
+    pub fn withdraw_stake_quoter(&self, curr_epoch: u64) -> SplWithdrawStakeQuoter {
         SplWithdrawStakeQuoter {
             stake_pool: &self.stake_pool,
-            current_epoch: self.curr_epoch,
+            curr_epoch,
             validator_list: &self.validator_list.validators,
         }
     }
@@ -154,6 +153,7 @@ impl Update for SplStakePoolRouterOwned {
             self.stake_pool_addr,
             self.stake_pool.validator_list,
             self.stake_pool.reserve_stake,
+            SYSVAR_CLOCK,
         ]
         .into_iter()
     }

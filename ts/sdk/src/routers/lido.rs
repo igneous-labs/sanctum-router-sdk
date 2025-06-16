@@ -1,5 +1,5 @@
 use sanctum_router_core::{LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs};
-use solido_legacy_core::{Lido, ListHeader, Validator, ValidatorList};
+use solido_legacy_core::{Lido, ListHeader, Validator, ValidatorList, SYSVAR_CLOCK};
 use wasm_bindgen::JsError;
 
 use crate::{
@@ -12,18 +12,13 @@ use crate::{
 pub struct LidoRouterOwned {
     pub state: Lido,
     pub validator_list: LidoValidatorListOwned,
-    pub curr_epoch: u64,
 }
 
 /// WithdrawStake
 impl LidoRouterOwned {
     /// Lido only allows withdrawing from max stake validator
-    pub fn withdraw_stake_quoter(&self) -> Option<LidoWithdrawStakeQuoter> {
-        LidoWithdrawStakeQuoter::new(
-            &self.state,
-            &self.validator_list.validators,
-            self.curr_epoch,
-        )
+    pub fn withdraw_stake_quoter(&self, curr_epoch: u64) -> Option<LidoWithdrawStakeQuoter> {
+        LidoWithdrawStakeQuoter::new(&self.state, &self.validator_list.validators, curr_epoch)
     }
 
     /// Lido only allows withdrawing from max stake validator
@@ -70,6 +65,7 @@ impl Update for LidoRouterOwned {
         [
             solido_legacy_core::LIDO_STATE_ADDR,
             solido_legacy_core::VALIDATOR_LIST_ADDR,
+            SYSVAR_CLOCK,
         ]
         .into_iter()
     }

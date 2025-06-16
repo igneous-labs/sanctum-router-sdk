@@ -132,7 +132,9 @@ fn quote_prefund_swap_via_stake_inner(
                     core_quote($w_itr, d, amt, &reserves_balance, reserves_fee).map_err(generic_err)
                 }
                 out => {
-                    let d = this.try_find_spl_by_mint(&out)?.deposit_stake_quoter();
+                    let d = this
+                        .try_find_spl_by_mint(&out)?
+                        .deposit_stake_quoter(this.curr_epoch);
                     core_quote($w_itr, d, amt, &reserves_balance, reserves_fee).map_err(generic_err)
                 }
             }
@@ -141,7 +143,7 @@ fn quote_prefund_swap_via_stake_inner(
 
     match *inp_mint {
         STSOL_MINT_ADDR => {
-            let w_itr = this.lido_router.withdraw_stake_quoter();
+            let w_itr = this.lido_router.withdraw_stake_quoter(this.curr_epoch);
             match_deposit_stake!(w_itr)
         }
         inp => {
@@ -149,7 +151,7 @@ fn quote_prefund_swap_via_stake_inner(
             let w_itr = SplWithdrawStakeValQuoter::all(
                 &router.stake_pool,
                 &router.validator_list.validators,
-                router.curr_epoch,
+                this.curr_epoch,
             )?;
             match_deposit_stake!(w_itr)
         }

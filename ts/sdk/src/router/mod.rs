@@ -8,6 +8,7 @@ use crate::{
     routers::{LidoRouterOwned, MarinadeRouterOwned, ReserveRouterOwned, SplStakePoolRouterOwned},
 };
 
+mod clock;
 mod deposit_sol;
 mod deposit_stake;
 mod init;
@@ -23,6 +24,7 @@ pub struct SanctumRouterHandle(pub(crate) SanctumRouter);
 
 #[derive(Clone, Debug)]
 pub struct SanctumRouter {
+    pub curr_epoch: u64,
     pub spl_routers: Vec<SplStakePoolRouterOwned>,
     pub lido_router: LidoRouterOwned,
     pub marinade_router: MarinadeRouterOwned,

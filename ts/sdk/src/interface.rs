@@ -92,6 +92,7 @@ pub struct Instruction {
 #[serde(rename_all = "camelCase")]
 pub struct AccountMap(pub HashMap<B58PK, Account>);
 
+// pass pubkey by value instead of ref to accomodate B58PK::new
 pub(crate) fn get_account(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&Account, JsError> {
     accounts
         .0

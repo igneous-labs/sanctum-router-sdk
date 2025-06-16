@@ -11,7 +11,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct SplDepositStakeQuoter<'a> {
     pub stake_pool: &'a StakePool,
-    pub current_epoch: u64,
+    pub curr_epoch: u64,
     pub validator_list: &'a [ValidatorStakeInfo],
 
     /// The pool's default stake deposit authority PDA
@@ -43,7 +43,7 @@ impl DepositStakeQuoter for SplDepositStakeQuoter<'_> {
                     staked: stake.lamports.staked,
                     unstaked: stake.lamports.unstaked,
                 },
-                &DepositStakeQuoteArgs::new(vsi, self.current_epoch),
+                &DepositStakeQuoteArgs::new(vsi, self.curr_epoch),
             )
             .map(
                 |sanctum_spl_stake_pool_core::DepositStakeQuote {
