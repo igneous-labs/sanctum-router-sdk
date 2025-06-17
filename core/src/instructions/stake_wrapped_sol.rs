@@ -7,12 +7,6 @@ use super::INSTRUCTION_IDX_STAKE_WRAPPED_SOL;
 #[generic_array_struct(pub)]
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    feature = "wasm",
-    derive(tsify_next::Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
 pub struct StakeWrappedSolPrefixAccs<T> {
     pub user: T,
     pub inp_wsol: T,

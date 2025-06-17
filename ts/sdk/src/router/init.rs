@@ -29,19 +29,20 @@ pub fn init_accounts(
 }
 
 /// Creates a new router from the fetched init accounts.
-#[wasm_bindgen(js_name = fromFetchedAccounts)]
-pub fn from_fetched_accounts(
+#[wasm_bindgen(js_name = init)]
+pub fn init(
     // Clippy complains, needed for wasm_bindgen
     #[allow(clippy::boxed_local)] spl_lsts: Box<[SplPoolAccounts]>,
-    accounts: &AccountMap,
+    init_accounts: &AccountMap,
 ) -> Result<SanctumRouterHandle, JsError> {
-    let curr_epoch = get_account_data(accounts, SYSVAR_CLOCK).and_then(try_clock_acc_data_epoch)?;
-    let lido_router = LidoRouterOwned::init(accounts)?;
-    let marinade_router = MarinadeRouterOwned::init(accounts)?;
-    let reserve_router = ReserveRouterOwned::init(accounts)?;
+    let curr_epoch =
+        get_account_data(init_accounts, SYSVAR_CLOCK).and_then(try_clock_acc_data_epoch)?;
+    let lido_router = LidoRouterOwned::init(init_accounts)?;
+    let marinade_router = MarinadeRouterOwned::init(init_accounts)?;
+    let reserve_router = ReserveRouterOwned::init(init_accounts)?;
     let spl_routers = spl_lsts
         .iter()
-        .map(|lst| SplStakePoolRouterOwned::init(lst, accounts))
+        .map(|lst| SplStakePoolRouterOwned::init(lst, init_accounts))
         .collect::<Result<Vec<_>, JsError>>()?;
 
     Ok(SanctumRouterHandle(SanctumRouter {

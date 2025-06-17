@@ -5,12 +5,6 @@ use super::INSTRUCTION_IDX_PREFUND_SWAP_VIA_STAKE;
 #[generic_array_struct(builder pub)]
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    feature = "wasm",
-    derive(tsify_next::Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
 pub struct PrefundSwapViaStakePrefixAccs<T> {
     pub user: T,
     pub inp_token: T,

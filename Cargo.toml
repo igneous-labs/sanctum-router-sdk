@@ -8,6 +8,7 @@ members = [
 
 [workspace.package]
 edition = "2021"
+license-file = "LICENSE"
 
 [workspace.dependencies]
 # In general, keep default-features = false in workspace

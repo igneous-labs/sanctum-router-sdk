@@ -1,9 +1,8 @@
 import {
-  fromFetchedAccounts,
   accountsToUpdate,
+  init,
   initAccounts,
   update,
-  type B58PK,
   type SanctumRouterHandle,
   type SplPoolAccounts,
   type SwapMints,
@@ -33,7 +32,7 @@ export async function routerForSwaps(
 ): Promise<SanctumRouterHandle> {
   const initAccs = initAccounts(spls);
   const accounts = await fetchAccountMap(rpc, initAccs);
-  const sanctumRouter = fromFetchedAccounts(spls, accounts);
+  const sanctumRouter = init(spls, accounts);
 
   const accs = accountsToUpdate(sanctumRouter, swapMints);
   const accountsToUpdateMap = await fetchAccountMap(rpc, accs);

@@ -5,7 +5,7 @@ import {
 } from "@sanctumso/sanctum-router";
 import { mapTup } from "../ops";
 import { routerForSwaps } from "../router";
-import { NATIVE_MINT, testFixturesTokenAcc } from "../token";
+import { testFixturesTokenAcc } from "../token";
 import { localRpc } from "../rpc";
 import { simTokenSwapAssertQuoteMatches } from "./swap";
 
