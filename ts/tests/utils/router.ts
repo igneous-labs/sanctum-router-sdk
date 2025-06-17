@@ -1,5 +1,5 @@
 import {
-  fromFetchedAccounts,
+  init,
   accountsToUpdate,
   initAccounts,
   update,
@@ -33,7 +33,7 @@ export async function routerForSwaps(
 ): Promise<SanctumRouterHandle> {
   const initAccs = initAccounts(spls);
   const accounts = await fetchAccountMap(rpc, initAccs);
-  const sanctumRouter = fromFetchedAccounts(spls, accounts);
+  const sanctumRouter = init(spls, accounts);
 
   const accs = accountsToUpdate(sanctumRouter, swapMints);
   const accountsToUpdateMap = await fetchAccountMap(rpc, accs);

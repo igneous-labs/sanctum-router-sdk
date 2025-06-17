@@ -5,12 +5,6 @@ use super::INSTRUCTION_IDX_PREFUND_WITHDRAW_STAKE;
 #[generic_array_struct(builder pub)]
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    feature = "wasm",
-    derive(tsify_next::Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
 pub struct PrefundWithdrawStakePrefixAccs<T> {
     /// The withdraw authority of stake_account. Needs to be mutable and system account to receive slumlord flash loan.
     pub user: T,

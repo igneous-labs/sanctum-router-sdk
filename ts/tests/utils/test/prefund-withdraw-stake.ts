@@ -9,7 +9,7 @@ import {
 } from "@sanctumso/sanctum-router";
 import { routerForSwaps } from "../router";
 import { fetchAccountMap, localRpc } from "../rpc";
-import { NATIVE_MINT, testFixturesTokenAcc, tokenAccBalance } from "../token";
+import { testFixturesTokenAcc, tokenAccBalance } from "../token";
 import {
   address,
   getBase64Encoder,

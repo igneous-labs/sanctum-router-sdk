@@ -1,4 +1,4 @@
-import type { OwnedAccount } from "@sanctumso/sanctum-router";
+import type { Account } from "@sanctumso/sanctum-router";
 import {
   getBase64Encoder,
   type Address,
@@ -14,8 +14,8 @@ export function localRpc(): Rpc<SolanaRpcApi> {
 export async function fetchAccountMap(
   rpc: Rpc<SolanaRpcApi>,
   accounts: string[]
-): Promise<Map<string, OwnedAccount>> {
-  let map = new Map<string, OwnedAccount>();
+): Promise<Map<string, Account>> {
+  let map = new Map<string, Account>();
   await Promise.all(
     accounts.map(async (account) => {
       const accountInfo = await rpc
