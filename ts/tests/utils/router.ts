@@ -1,9 +1,8 @@
 import {
-  init,
   accountsToUpdate,
+  init,
   initAccounts,
   update,
-  type B58PK,
   type SanctumRouterHandle,
   type SplPoolAccounts,
   type SwapMints,
