@@ -6,6 +6,7 @@ import {
   type SanctumRouterHandle,
   type SplPoolAccounts,
   type SwapMints,
+  initSyncEmbed,
 } from "@sanctumso/sanctum-router";
 import type { Rpc, SolanaRpcApi } from "@solana/kit";
 import { fetchAccountMap } from "./rpc";
@@ -30,6 +31,8 @@ export async function routerForSwaps(
   // May need to add to this list in the future if we add more.
   spls: SplPoolAccounts[] = [BSOL_ACCS, PICOSOL_ACCS]
 ): Promise<SanctumRouterHandle> {
+  initSyncEmbed();
+
   const initAccs = initAccounts(spls);
   const accounts = await fetchAccountMap(rpc, initAccs);
   const sanctumRouter = init(spls, accounts);

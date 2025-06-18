@@ -22,6 +22,13 @@ import {
   update,
   type SplPoolAccounts,
 } from "@sanctumso/sanctum-router";
+import initSdk from "@sanctumso/sanctum-router";
+
+// The SDK needs to be initialized once globally before it can be used (idempotent).
+// For nodejs environments, use
+// `import { initSyncEmbed } from "@sanctumso/sanctum-router"; initSyncEmbed();`
+// instead
+await initSdk();
 
 // SPL stake pools (all 3 deploys) must have their stake pool and validator list
 // addresses known beforehand and explicitly passed in at initialization time
@@ -127,9 +134,21 @@ const ixUncasted = prefundSwapViaStakeIx(sanctumRouter, {
 const ix = ixUncasted as unknown as IInstruction;
 ```
 
+## Cloudflare Workers
+
+In Cloudflare Workers and other restricted environments, the default export async init function fails without any args due to path issues of the wasm file, while `initSyncEmbed()` fails due to security restrictions disallowing generation of untrusted wasm code at runtime. The workaround is to copy out the `.wasm` file included in this package into somewhere accessible by these restricted environments, and import it as a module.
+
+```ts
+import { initSync } from "@sanctumso/sanctum-router-sdk";
+import wasm from "../libs/sanctum_router_sdk_index_bg.wasm";
+
+// or use the package's default export async init function
+initSync({ module: wasm });
+```
+
 ## Build
 
 ### Prerequisites
 
 - [`wasm-pack`](https://rustwasm.github.io/wasm-pack/)
-- `make` (optional, you can just run the `wasm-pack` commands manually)
+- `make`
