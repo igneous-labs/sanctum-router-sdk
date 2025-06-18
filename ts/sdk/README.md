@@ -22,6 +22,13 @@ import {
   update,
   type SplPoolAccounts,
 } from "@sanctumso/sanctum-router";
+import initSdk from "@sanctumso/sanctum-router";
+
+// The SDK needs to be initialized once globally before it can be used (idempotent).
+// For nodejs environments, use
+// `import { initSyncEmbed } from "@sanctumso/sanctum-router"; initSyncEmbed();`
+// instead
+await initSdk();
 
 // SPL stake pools (all 3 deploys) must have their stake pool and validator list
 // addresses known beforehand and explicitly passed in at initialization time
