@@ -3,14 +3,17 @@ use sanctum_router_core::{ReserveDepositStakeQuoter, ReserveDepositStakeSufAccs,
 use wasm_bindgen::JsError;
 
 use crate::{
-    err::unsupported_update,
+    err::{account_missing_err, invalid_pda_err, unsupported_update},
     interface::{get_account, get_account_data, AccountMap},
     pda::reserve::find_reserve_stake_account_record_pda_internal,
-    update::{PoolUpdateType, Update},
+    update::PoolUpdateType,
 };
 
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ReserveRouterOwned(pub Option<ReserveRouterInner>);
+
 #[derive(Clone, Debug, PartialEq)]
-pub struct ReserveRouterOwned {
+pub struct ReserveRouterInner {
     pub pool: Pool,
     pub fee_account: Fee,
     pub protocol_fee_account: ProtocolFee,
@@ -45,35 +48,46 @@ impl ReserveRouterOwned {
         let pool_sol_reserves =
             get_account(accounts, sanctum_reserve_core::POOL_SOL_RESERVES)?.lamports;
 
-        Ok(Self {
+        Ok(Self(Some(ReserveRouterInner {
             pool,
             fee_account,
             protocol_fee_account,
             pool_sol_reserves,
-        })
+        })))
+    }
+}
+
+/// Getters
+impl ReserveRouterOwned {
+    pub fn try_inner(&self) -> Result<&ReserveRouterInner, JsError> {
+        self.0
+            .as_ref()
+            .ok_or_else(|| account_missing_err(&sanctum_reserve_core::POOL))
     }
 }
 
 /// DepositStake
 impl ReserveRouterOwned {
-    pub fn deposit_stake_quoter(&self) -> ReserveDepositStakeQuoter {
-        ReserveDepositStakeQuoter {
-            pool_incoming_stake: self.pool.incoming_stake,
-            fee_account: &self.fee_account.0,
-            protocol_fee_account: &self.protocol_fee_account,
-            pool_sol_reserves: self.pool_sol_reserves,
-        }
+    pub fn deposit_stake_quoter(&self) -> Result<ReserveDepositStakeQuoter, JsError> {
+        let inner = self.try_inner()?;
+        Ok(ReserveDepositStakeQuoter {
+            pool_incoming_stake: inner.pool.incoming_stake,
+            fee_account: &inner.fee_account.0,
+            protocol_fee_account: &inner.protocol_fee_account,
+            pool_sol_reserves: inner.pool_sol_reserves,
+        })
     }
 
     /// Returns `None` if stake acc record PDA invalid
     pub fn deposit_stake_suf_accs(
         &self,
         stake_account_addr: &[u8; 32],
-    ) -> Option<ReserveDepositStakeSufAccs> {
-        Some(ReserveDepositStakeSufAccs {
+    ) -> Result<ReserveDepositStakeSufAccs, JsError> {
+        Ok(ReserveDepositStakeSufAccs {
             stake_acc_record_addr: find_reserve_stake_account_record_pda_internal(
                 stake_account_addr,
-            )?
+            )
+            .ok_or_else(invalid_pda_err)?
             .0,
         })
     }
@@ -81,19 +95,21 @@ impl ReserveRouterOwned {
 
 /// Prefund
 impl ReserveRouterOwned {
-    pub const fn prefund_params(&self) -> (PoolBalance, &FeeEnum) {
-        (
+    pub fn prefund_params(&self) -> Result<(PoolBalance, &FeeEnum), JsError> {
+        let inner = self.try_inner()?;
+        Ok((
             PoolBalance {
-                pool_incoming_stake: self.pool.incoming_stake,
-                sol_reserves_lamports: self.pool_sol_reserves,
+                pool_incoming_stake: inner.pool.incoming_stake,
+                sol_reserves_lamports: inner.pool_sol_reserves,
             },
-            &self.fee_account.0,
-        )
+            &inner.fee_account.0,
+        ))
     }
 }
 
-impl Update for ReserveRouterOwned {
-    fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
+/// Update
+impl ReserveRouterOwned {
+    pub fn accounts_to_update(ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
         match ty {
             PoolUpdateType::DepositStake => Self::init_accounts().map(Some),
             _ => [None; 4],
@@ -102,7 +118,7 @@ impl Update for ReserveRouterOwned {
         .flatten()
     }
 
-    fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+    pub fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
         match ty {
             PoolUpdateType::DepositStake => {
                 *self = Self::init(accounts)?;

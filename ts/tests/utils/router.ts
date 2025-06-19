@@ -1,16 +1,16 @@
 import {
   accountsToUpdate,
   init,
-  initAccounts,
+  newSanctumRouter,
   update,
   type SanctumRouterHandle,
-  type SplPoolAccounts,
+  type InitMint,
   type SwapMints,
   initSyncEmbed,
 } from "@sanctumso/sanctum-router";
 import type { Rpc, SolanaRpcApi } from "@solana/kit";
 import { fetchAccountMap } from "./rpc";
-import { BSOL_ACCS, PICOSOL_ACCS } from "./spl";
+import { SPL_INIT_HARDCODES } from "./spl";
 
 /**
  * Initializes, updates and returns `SanctumRouterHandle` that is ready for quoting
@@ -26,16 +26,14 @@ import { BSOL_ACCS, PICOSOL_ACCS } from "./spl";
  */
 export async function routerForSwaps(
   rpc: Rpc<SolanaRpcApi>,
-  swapMints: SwapMints[],
-  // TODO: bsol and picosol are currently the only SPL pools being tested.
-  // May need to add to this list in the future if we add more.
-  spls: SplPoolAccounts[] = [BSOL_ACCS, PICOSOL_ACCS]
+  swapMints: SwapMints[]
 ): Promise<SanctumRouterHandle> {
   initSyncEmbed();
 
-  const initAccs = initAccounts(spls);
-  const accounts = await fetchAccountMap(rpc, initAccs);
-  const sanctumRouter = init(spls, accounts);
+  const sanctumRouter = newSanctumRouter();
+
+  // TODO
+  const initMints = swapMints.flatMap((mint) => {});
 
   const accs = accountsToUpdate(sanctumRouter, swapMints);
   const accountsToUpdateMap = await fetchAccountMap(rpc, accs);

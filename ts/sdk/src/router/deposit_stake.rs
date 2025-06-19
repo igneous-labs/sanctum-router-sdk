@@ -10,7 +10,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_pda_err, router_missing_err},
+    err::{generic_err, invalid_pda_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::router::find_fee_token_account_pda_internal,
     router::SanctumRouterHandle,
@@ -75,19 +75,19 @@ pub fn quote_deposit_stake(
         sanctum_router_core::NATIVE_MINT => this
             .0
             .reserve_router
-            .deposit_stake_quoter()
+            .deposit_stake_quoter()?
             .quote_deposit_stake(active_stake_params)
             .map_err(generic_err),
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
             .marinade_router
-            .deposit_stake_quoter()
+            .deposit_stake_quoter()?
             .quote_deposit_stake(active_stake_params)
             .map_err(generic_err),
         mint => {
             let router = this.0.try_find_spl_by_mint(&mint)?;
             router
-                .deposit_stake_quoter(this.0.curr_epoch)
+                .deposit_stake_quoter(this.0.try_curr_epoch()?)?
                 .quote_deposit_stake(active_stake_params)
                 .map_err(generic_err)
         }
@@ -140,8 +140,7 @@ pub fn deposit_stake_ix(
             let router = this
                 .0
                 .reserve_router
-                .deposit_stake_suf_accs(&stake_account)
-                .ok_or_else(router_missing_err)?;
+                .deposit_stake_suf_accs(&stake_account)?;
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,
@@ -157,8 +156,7 @@ pub fn deposit_stake_ix(
             let router = this
                 .0
                 .marinade_router
-                .deposit_stake_suf_accs(&vote_account)
-                .ok_or_else(router_missing_err)?;
+                .deposit_stake_suf_accs(&vote_account)?;
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,
@@ -174,8 +172,7 @@ pub fn deposit_stake_ix(
             let router = this
                 .0
                 .try_find_spl_by_mint(&mint)?
-                .deposit_stake_suf_accs(&vote_account)
-                .ok_or_else(router_missing_err)?;
+                .deposit_stake_suf_accs(&vote_account)?;
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,

@@ -12,7 +12,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{account_missing_err, generic_err, invalid_pda_err, router_missing_err},
+    err::{generic_err, invalid_pda_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::{
         reserve::find_reserve_stake_account_record_pda_internal,
@@ -71,19 +71,18 @@ pub fn quote_prefund_withdraw_stake(
     let inp_mint = params.inp.0;
     let out_vote = params.out.map(|pk| pk.0);
     let out_vote = out_vote.as_ref();
-    let (reserves_balance, reserves_fee) = this.0.reserve_router.prefund_params();
+    let (reserves_balance, reserves_fee) = this.0.reserve_router.prefund_params()?;
     let quote = match inp_mint {
         solido_legacy_core::STSOL_MINT_ADDR => this
             .0
             .lido_router
-            .withdraw_stake_quoter(this.0.curr_epoch)
-            .ok_or_else(|| account_missing_err(&solido_legacy_core::VALIDATOR_LIST_ADDR))?
+            .withdraw_stake_quoter(this.0.try_curr_epoch()?)?
             .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
             .map_err(generic_err),
         mint => {
             let router = this.0.try_find_spl_by_mint(&mint)?;
             router
-                .withdraw_stake_quoter(this.0.curr_epoch)
+                .withdraw_stake_quoter(this.0.try_curr_epoch()?)?
                 .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
                 .map_err(generic_err)
         }
@@ -126,11 +125,7 @@ pub fn prefund_withdraw_stake_ix(
 
     let metas: Box<[AccountMeta]> = match inp_mint {
         solido_legacy_core::STSOL_MINT_ADDR => {
-            let router = this
-                .0
-                .lido_router
-                .withdraw_stake_suf_accs()
-                .ok_or_else(router_missing_err)?;
+            let router = this.0.lido_router.withdraw_stake_suf_accs()?;
 
             if *router.largest_stake_vote != vote {
                 return Err(LidoError::ValidatorWithMoreStakeExists.into());
@@ -150,8 +145,7 @@ pub fn prefund_withdraw_stake_ix(
             let router = this
                 .0
                 .try_find_spl_by_mint(&mint)?
-                .withdraw_stake_suf_accs(&vote)
-                .ok_or_else(router_missing_err)?;
+                .withdraw_stake_suf_accs(&vote)?;
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,

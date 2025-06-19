@@ -19,6 +19,7 @@ pub fn invalid_data_err() -> JsError {
     JsError::new(intern("Invalid data"))
 }
 
+// TODO: mint as arg
 pub fn router_missing_err() -> JsError {
     JsError::new(intern("Router missing from Sanctum Router"))
 }

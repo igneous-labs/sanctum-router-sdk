@@ -1,19 +1,8 @@
 use sanctum_router_core::NATIVE_MINT;
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
-use wasm_bindgen::JsError;
 
-use crate::interface::{AccountMap, B58PK};
-
-pub trait Update {
-    /// Returns empty iterator for [`PoolUpdateType`]s not supported by the pool
-    fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]>;
-
-    /// Returns error if
-    /// - [`PoolUpdateType`] `ty` not supported by the pool
-    /// - update procedure failed (e.g. account requested in [`accounts_to_update`] not present)
-    fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError>;
-}
+use crate::interface::B58PK;
 
 /// - `inp` input mint
 /// - `out` output mint

@@ -36,7 +36,7 @@ pub fn quote_withdraw_sol(
     let inp_mint = params.inp.0;
     this.0
         .try_find_spl_by_mint(&inp_mint)?
-        .withdraw_sol_quoter(this.0.curr_epoch)
+        .withdraw_sol_quoter(this.0.try_curr_epoch()?)?
         .quote_withdraw_sol(params.amt)
         .map(|q| TokenQuoteWithRouterFee(q.withdraw_sol_with_router_fee()))
         .map_err(generic_err)
@@ -69,7 +69,7 @@ pub fn withdraw_sol_ix(
     params: WithdrawSolSwapParams,
 ) -> Result<Instruction, JsError> {
     let inp_mint = params.inp.0;
-    let router = this.0.try_find_spl_by_mint(&inp_mint)?.sol_suf_accs();
+    let router = this.0.try_find_spl_by_mint(&inp_mint)?.sol_suf_accs()?;
 
     let (prefix_metas, data) = withdraw_wrapped_sol_prefix_metas_and_data(&params)?;
 
