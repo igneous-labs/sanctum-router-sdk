@@ -11,6 +11,7 @@ import {
 import type { Rpc, SolanaRpcApi } from "@solana/kit";
 import { fetchAccountMap } from "./rpc";
 import { SPL_INIT_HARDCODES } from "./spl";
+import { NATIVE_MINT } from "./token";
 
 /**
  * Initializes, updates and returns `SanctumRouterHandle` that is ready for quoting
@@ -32,8 +33,30 @@ export async function routerForSwaps(
 
   const sanctumRouter = newSanctumRouter();
 
-  // TODO
-  const initMints = swapMints.flatMap((mint) => {});
+  const initMints: InitMint[] = swapMints
+    .flatMap((swapMint) => {
+      switch (swapMint.swap) {
+        case "depositSol":
+          return [swapMint.out];
+        case "depositStake":
+          return [swapMint.out];
+        case "withdrawSol":
+          return [swapMint.inp];
+        case "prefundWithdrawStake":
+          return [swapMint.inp, NATIVE_MINT];
+        case "prefundSwapViaStake":
+          return [swapMint.inp, swapMint.out, NATIVE_MINT];
+      }
+    })
+    .map((mint) => {
+      const splInitOpt = SPL_INIT_HARDCODES[mint];
+      if (splInitOpt) {
+        return { mint, init: { pool: "spl", ...splInitOpt } };
+      } else {
+        return { mint };
+      }
+    });
+  init(sanctumRouter, initMints);
 
   const accs = accountsToUpdate(sanctumRouter, swapMints);
   const accountsToUpdateMap = await fetchAccountMap(rpc, accs);

@@ -24,7 +24,7 @@ export async function prefundSwapViaStakeFixturesTest(
   const rpc = localRpc();
 
   const router = await routerForSwaps(rpc, [
-    { prefundSwapViaStake: { inp: inpMint, out: outMint } },
+    { swap: "prefundSwapViaStake", inp: inpMint, out: outMint },
   ]);
 
   const {

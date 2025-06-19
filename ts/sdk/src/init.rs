@@ -5,7 +5,7 @@ use crate::interface::B58PK;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", tag = "pool")]
 pub enum InitData {
     Spl(SplInitData),
 }

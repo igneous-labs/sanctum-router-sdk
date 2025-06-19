@@ -8,7 +8,7 @@ use crate::interface::B58PK;
 /// - `out` output mint
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", tag = "swap")]
 pub enum SwapMints {
     DepositSol { out: B58PK },
     DepositStake { out: B58PK },

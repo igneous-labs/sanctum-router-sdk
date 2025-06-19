@@ -19,7 +19,9 @@ export async function withdrawSolFixturesTest(
     { addr: outTokenAcc },
   ] = mapTup([inpTokenAccName, outTokenAccName], testFixturesTokenAcc);
   const rpc = localRpc();
-  const router = await routerForSwaps(rpc, [{ withdrawSol: { inp: inpMint } }]);
+  const router = await routerForSwaps(rpc, [
+    { swap: "withdrawSol", inp: inpMint },
+  ]);
 
   const quote = quoteWithdrawSol(router, {
     amt,
