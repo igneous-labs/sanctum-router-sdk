@@ -37,13 +37,13 @@ pub fn quote_deposit_sol(
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
             .marinade_router
-            .deposit_sol_quoter()
+            .deposit_sol_quoter()?
             .quote_deposit_sol(params.amt)
             .map_err(generic_err),
         mint => this
             .0
             .try_find_spl_by_mint(&mint)?
-            .deposit_sol_quoter(this.0.curr_epoch)
+            .deposit_sol_quoter(this.0.try_curr_epoch()?)?
             .quote_deposit_sol(params.amt)
             .map_err(generic_err),
     }
@@ -81,7 +81,7 @@ pub fn deposit_sol_ix(
 
     let metas: Box<[AccountMeta]> = match out_mint {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {
-            let router = this.0.marinade_router.deposit_sol_suf_accs();
+            let router = this.0.marinade_router.deposit_sol_suf_accs()?;
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,
@@ -94,7 +94,7 @@ pub fn deposit_sol_ix(
                 .into()
         }
         mint => {
-            let router = this.0.try_find_spl_by_mint(&mint)?.sol_suf_accs();
+            let router = this.0.try_find_spl_by_mint(&mint)?.sol_suf_accs()?;
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
                 &router.suffix_accounts().as_borrowed().0,

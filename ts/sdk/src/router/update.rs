@@ -7,7 +7,8 @@ use crate::{
     err::router_missing_err,
     interface::{get_account_data, AccountMap, B58PK},
     router::{clock::try_clock_acc_data_epoch, SanctumRouterHandle},
-    update::{PoolUpdate, SwapMints, Update},
+    routers::{LidoRouterOwned, MarinadeRouterOwned, ReserveRouterOwned},
+    update::{PoolUpdate, SwapMints},
 };
 
 /// Returns the accounts needed to update specific pools for given swap routes.
@@ -30,18 +31,13 @@ pub fn accounts_to_update(
     for PoolUpdate { mint, ty } in pool_updates.into_iter() {
         match mint {
             sanctum_router_core::NATIVE_MINT => {
-                accounts.extend(this.0.reserve_router.accounts_to_update(ty).map(B58PK::new));
+                accounts.extend(ReserveRouterOwned::accounts_to_update(ty).map(B58PK::new));
             }
             sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {
-                accounts.extend(
-                    this.0
-                        .marinade_router
-                        .accounts_to_update(ty)
-                        .map(B58PK::new),
-                );
+                accounts.extend(MarinadeRouterOwned::accounts_to_update(ty).map(B58PK::new));
             }
             solido_legacy_core::STSOL_MINT_ADDR => {
-                accounts.extend(this.0.lido_router.accounts_to_update(ty).map(B58PK::new));
+                accounts.extend(LidoRouterOwned::accounts_to_update(ty).map(B58PK::new));
             }
             mint => accounts.extend(
                 this.0
@@ -92,8 +88,7 @@ pub fn update(
             mint => {
                 this.0
                     .spl_routers
-                    .iter_mut()
-                    .find(|r| r.stake_pool.pool_mint == mint)
+                    .get_mut(&mint)
                     .ok_or_else(router_missing_err)?
                     .update(ty, accounts)?;
                 require_clock_update = true;
@@ -104,7 +99,7 @@ pub fn update(
     if require_clock_update {
         let curr_epoch =
             get_account_data(accounts, SYSVAR_CLOCK).and_then(try_clock_acc_data_epoch)?;
-        this.0.curr_epoch = curr_epoch;
+        this.0.curr_epoch = Some(curr_epoch);
     }
 
     Ok(())

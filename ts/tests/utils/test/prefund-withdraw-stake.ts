@@ -41,7 +41,7 @@ export async function prefundWithdrawStakeFixturesTest(
   const rpc = localRpc();
 
   const router = await routerForSwaps(rpc, [
-    { prefundWithdrawStake: { inp: inpMint } },
+    { swap: "prefundWithdrawStake", inp: inpMint },
   ]);
 
   const quote = quotePrefundWithdrawStake(router, {

@@ -38,7 +38,7 @@ export async function depositStakeFixturesTest({
   } = testFixturesStakeAcc(inpStakeAccName);
   const rpc = localRpc();
   const router = await routerForSwaps(rpc, [
-    { depositStake: { out: outMint } },
+    { swap: "depositStake", out: outMint },
   ]);
 
   const inpStake = {

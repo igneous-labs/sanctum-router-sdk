@@ -1,153 +1,173 @@
+use bs58_fixed_wasm::Bs58Array;
 use sanctum_router_core::{
     SplDepositSolQuoter, SplDepositStakeQuoter, SplDepositStakeSufAccs, SplSolSufAccs,
     SplWithdrawSolQuoter, SplWithdrawStakeQuoter, SplWithdrawStakeSufAccs,
 };
 use sanctum_spl_stake_pool_core::{
-    StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo, SYSVAR_CLOCK,
+    SplStakePoolError, StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo,
+    SYSVAR_CLOCK,
 };
-use serde::{Deserialize, Serialize};
-use tsify_next::Tsify;
 use wasm_bindgen::JsError;
 
 use crate::{
-    err::{account_missing_err, invalid_pda_err},
-    interface::{get_account, get_account_data, AccountMap, B58PK},
+    err::{account_missing_err, generic_err, invalid_pda_err},
+    init::{InitData, SplInitData},
+    interface::{get_account, get_account_data, AccountMap},
     pda::spl::{
         find_deposit_auth_pda_internal, find_validator_stake_account_pda_internal,
         find_withdraw_auth_pda_internal,
     },
-    update::{PoolUpdateType, Update},
+    update::PoolUpdateType,
 };
-
-#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi)]
-#[serde(rename_all = "camelCase")]
-pub struct SplPoolAccounts {
-    pub pool: B58PK,
-    pub validator_list: B58PK,
-}
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SplStakePoolRouterOwned {
-    pub stake_pool_addr: [u8; 32],
     pub stake_pool_program: [u8; 32],
-    pub stake_pool: StakePool,
-    pub validator_list: ValidatorListOwned,
+    pub stake_pool_addr: [u8; 32],
+
+    // Below 2 keys are duplicated in stake_pool data but
+    // we set them at init time to make init() not require any
+    // account data input and for update() to be immediately
+    // ready after init, as opposed to needing to update()
+    // twice in a row
+    pub validator_list_addr: [u8; 32],
+    pub reserve_stake_addr: [u8; 32],
+
+    // PDAs
     pub deposit_authority_program_address: [u8; 32],
     pub withdraw_authority_program_address: [u8; 32],
-    pub reserve_stake_lamports: u64,
+
+    // Accounts
+    pub stake_pool: Option<StakePool>,
+    pub validator_list: Option<ValidatorListOwned>,
+    pub reserve_stake_lamports: Option<u64>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ValidatorListOwned {
+    pub header: ValidatorListHeader,
+    pub validators: Vec<ValidatorStakeInfo>,
 }
 
 /// Init
 impl SplStakePoolRouterOwned {
-    /// Need to `update()` one more time to fetch reserves for WithdrawSol.
-    /// Otherwise, other swap types do not require one more update.
     pub fn init(
-        SplPoolAccounts {
-            pool,
-            validator_list,
-        }: &SplPoolAccounts,
-        accounts: &AccountMap,
+        InitData::Spl(SplInitData {
+            stake_pool_program_addr: Bs58Array(stake_pool_program_addr),
+            stake_pool_addr: Bs58Array(stake_pool_addr),
+            validator_list_addr: Bs58Array(validator_list_addr),
+            reserve_stake_addr: Bs58Array(reserve_stake_addr),
+        }): &InitData,
     ) -> Result<Self, JsError> {
-        let pool_account = accounts
-            .0
-            .get(pool)
-            .ok_or_else(|| account_missing_err(&pool.0))?;
-        let stake_pool_addr = pool.0;
-        let program_addr = pool_account.owner.0;
-
-        let mut res = SplStakePoolRouterOwned {
-            stake_pool_addr,
-            stake_pool_program: program_addr,
+        Ok(SplStakePoolRouterOwned {
+            stake_pool_program: *stake_pool_program_addr,
+            stake_pool_addr: *stake_pool_addr,
+            validator_list_addr: *validator_list_addr,
+            reserve_stake_addr: *reserve_stake_addr,
             deposit_authority_program_address: find_deposit_auth_pda_internal(
-                &program_addr,
-                &stake_pool_addr,
+                stake_pool_program_addr,
+                stake_pool_addr,
             )
             .ok_or_else(invalid_pda_err)?
             .0,
             withdraw_authority_program_address: find_withdraw_auth_pda_internal(
-                &program_addr,
-                &stake_pool_addr,
+                stake_pool_program_addr,
+                stake_pool_addr,
             )
             .ok_or_else(invalid_pda_err)?
             .0,
             stake_pool: Default::default(),
             validator_list: Default::default(),
             reserve_stake_lamports: Default::default(),
-        };
+        })
+    }
+}
 
-        res.update_stake_pool(&pool_account.data)?;
+/// Getters
+impl SplStakePoolRouterOwned {
+    pub fn try_stake_pool(&self) -> Result<&StakePool, JsError> {
+        self.stake_pool
+            .as_ref()
+            .ok_or_else(|| account_missing_err(&self.stake_pool_addr))
+    }
 
-        let validator_list_data = get_account_data(accounts, validator_list.0)?;
-        res.update_validator_list(validator_list_data)?;
+    pub fn try_validator_list(&self) -> Result<&[ValidatorStakeInfo], JsError> {
+        self.validator_list
+            .as_ref()
+            .ok_or_else(|| account_missing_err(&self.validator_list_addr))
+            .map(|vl| vl.validators.as_slice())
+    }
 
-        Ok(res)
+    pub fn try_reserve_stake_lamports(&self) -> Result<u64, JsError> {
+        self.reserve_stake_lamports
+            .ok_or_else(|| account_missing_err(&self.reserve_stake_addr))
     }
 }
 
 /// DepositSol + WithdrawSol common
 impl SplStakePoolRouterOwned {
-    pub fn sol_suf_accs(&self) -> SplSolSufAccs {
-        SplSolSufAccs {
-            stake_pool: &self.stake_pool,
+    pub fn sol_suf_accs(&self) -> Result<SplSolSufAccs, JsError> {
+        Ok(SplSolSufAccs {
+            stake_pool: self.try_stake_pool()?,
             stake_pool_program: &self.stake_pool_program,
             stake_pool_addr: &self.stake_pool_addr,
             withdraw_authority_program_address: &self.withdraw_authority_program_address,
-        }
+        })
     }
 }
 
 /// DepositSol
 impl SplStakePoolRouterOwned {
-    pub fn deposit_sol_quoter(&self, curr_epoch: u64) -> SplDepositSolQuoter {
-        SplDepositSolQuoter {
-            stake_pool: &self.stake_pool,
+    pub fn deposit_sol_quoter(&self, curr_epoch: u64) -> Result<SplDepositSolQuoter, JsError> {
+        Ok(SplDepositSolQuoter {
+            stake_pool: self.try_stake_pool()?,
             curr_epoch,
-        }
+        })
     }
 }
 
 /// WithdrawSol
 impl SplStakePoolRouterOwned {
-    pub fn withdraw_sol_quoter(&self, curr_epoch: u64) -> SplWithdrawSolQuoter {
-        SplWithdrawSolQuoter {
-            stake_pool: &self.stake_pool,
-            reserve_stake_lamports: self.reserve_stake_lamports,
+    pub fn withdraw_sol_quoter(&self, curr_epoch: u64) -> Result<SplWithdrawSolQuoter, JsError> {
+        Ok(SplWithdrawSolQuoter {
+            stake_pool: self.try_stake_pool()?,
+            reserve_stake_lamports: self.try_reserve_stake_lamports()?,
             curr_epoch,
-        }
+        })
     }
 }
 
 /// DepositStake
 impl SplStakePoolRouterOwned {
-    pub fn deposit_stake_quoter(&self, curr_epoch: u64) -> SplDepositStakeQuoter {
-        SplDepositStakeQuoter {
-            stake_pool: &self.stake_pool,
+    pub fn deposit_stake_quoter(&self, curr_epoch: u64) -> Result<SplDepositStakeQuoter, JsError> {
+        Ok(SplDepositStakeQuoter {
+            stake_pool: self.try_stake_pool()?,
             curr_epoch,
-            validator_list: &self.validator_list.validators,
+            validator_list: self.try_validator_list()?,
             default_stake_deposit_authority: &self.deposit_authority_program_address,
-        }
+        })
     }
 
     pub fn deposit_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],
-    ) -> Option<SplDepositStakeSufAccs> {
+    ) -> Result<SplDepositStakeSufAccs, JsError> {
         let validator_stake_info = self
-            .validator_list
-            .validators
+            .try_validator_list()?
             .iter()
-            .find(|v| v.vote_account_address() == vote_account)?;
-        Some(SplDepositStakeSufAccs {
+            .find(|v| v.vote_account_address() == vote_account)
+            .ok_or_else(|| generic_err(SplStakePoolError::ValidatorNotFound))?;
+        Ok(SplDepositStakeSufAccs {
             stake_pool_addr: &self.stake_pool_addr,
             stake_pool_program: &self.stake_pool_program,
-            stake_pool: &self.stake_pool,
+            stake_pool: self.try_stake_pool()?,
             validator_stake: find_validator_stake_account_pda_internal(
                 &self.stake_pool_program,
                 validator_stake_info.vote_account_address(),
                 &self.stake_pool_addr,
                 validator_stake_info.validator_seed_suffix(),
-            )?
+            )
+            .ok_or_else(invalid_pda_err)?
             .0,
             stake_deposit_authority: &self.deposit_authority_program_address,
             stake_withdraw_authority: &self.withdraw_authority_program_address,
@@ -157,59 +177,61 @@ impl SplStakePoolRouterOwned {
 
 /// WithdrawStake
 impl SplStakePoolRouterOwned {
-    pub fn withdraw_stake_quoter(&self, curr_epoch: u64) -> SplWithdrawStakeQuoter {
-        SplWithdrawStakeQuoter {
-            stake_pool: &self.stake_pool,
+    pub fn withdraw_stake_quoter(
+        &self,
+        curr_epoch: u64,
+    ) -> Result<SplWithdrawStakeQuoter, JsError> {
+        Ok(SplWithdrawStakeQuoter {
+            stake_pool: self.try_stake_pool()?,
             curr_epoch,
-            validator_list: &self.validator_list.validators,
-        }
+            validator_list: self.try_validator_list()?,
+        })
     }
 
     /// Returns `None` if vote acc not on validator list or validator stake acc PDA invalid
     pub fn withdraw_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],
-    ) -> Option<SplWithdrawStakeSufAccs> {
+    ) -> Result<SplWithdrawStakeSufAccs, JsError> {
         let validator_stake_info = self
-            .validator_list
-            .validators
+            .try_validator_list()?
             .iter()
-            .find(|v| v.vote_account_address() == vote_account)?;
-        Some(SplWithdrawStakeSufAccs {
+            .find(|v| v.vote_account_address() == vote_account)
+            .ok_or_else(|| generic_err(SplStakePoolError::ValidatorNotFound))?;
+        Ok(SplWithdrawStakeSufAccs {
             stake_pool_addr: &self.stake_pool_addr,
             stake_pool_program: &self.stake_pool_program,
-            stake_pool: &self.stake_pool,
+            stake_pool: self.try_stake_pool()?,
             validator_stake: find_validator_stake_account_pda_internal(
                 &self.stake_pool_program,
                 validator_stake_info.vote_account_address(),
                 &self.stake_pool_addr,
                 validator_stake_info.validator_seed_suffix(),
-            )?
+            )
+            .ok_or_else(invalid_pda_err)?
             .0,
             stake_withdraw_authority: &self.withdraw_authority_program_address,
         })
     }
 }
 
-/// Update helpers
+/// Update
 impl SplStakePoolRouterOwned {
     pub fn update_stake_pool(&mut self, stake_pool_data: &[u8]) -> Result<(), JsError> {
-        self.stake_pool = StakePool::borsh_de(stake_pool_data)?;
+        self.stake_pool = Some(StakePool::borsh_de(stake_pool_data)?);
         Ok(())
     }
 
     pub fn update_validator_list(&mut self, validator_list_data: &[u8]) -> Result<(), JsError> {
         let validator_list = ValidatorList::deserialize(validator_list_data)?;
-        self.validator_list = ValidatorListOwned {
+        self.validator_list = Some(ValidatorListOwned {
             header: validator_list.header,
             validators: validator_list.validators.to_vec(),
-        };
+        });
         Ok(())
     }
-}
 
-impl Update for SplStakePoolRouterOwned {
-    fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
+    pub fn accounts_to_update(&self, ty: PoolUpdateType) -> impl Iterator<Item = [u8; 32]> {
         match ty {
             PoolUpdateType::DepositSol => {
                 [Some(SYSVAR_CLOCK), Some(self.stake_pool_addr), None, None]
@@ -217,13 +239,13 @@ impl Update for SplStakePoolRouterOwned {
             PoolUpdateType::WithdrawSol => [
                 Some(SYSVAR_CLOCK),
                 Some(self.stake_pool_addr),
-                Some(self.stake_pool.reserve_stake),
+                Some(self.reserve_stake_addr),
                 None,
             ],
             PoolUpdateType::DepositStake | PoolUpdateType::WithdrawStake => [
                 Some(SYSVAR_CLOCK),
                 Some(self.stake_pool_addr),
-                Some(self.stake_pool.validator_list),
+                Some(self.validator_list_addr),
                 None,
             ],
         }
@@ -231,29 +253,21 @@ impl Update for SplStakePoolRouterOwned {
         .flatten()
     }
 
-    fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+    pub fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
         let stake_pool_data = get_account_data(accounts, self.stake_pool_addr)?;
         self.update_stake_pool(stake_pool_data)?;
 
         match ty {
-            PoolUpdateType::DepositSol => (),
+            PoolUpdateType::DepositSol => Ok(()),
             PoolUpdateType::WithdrawSol => {
                 self.reserve_stake_lamports =
-                    get_account(accounts, self.stake_pool.reserve_stake)?.lamports;
+                    Some(get_account(accounts, self.reserve_stake_addr)?.lamports);
+                Ok(())
             }
             PoolUpdateType::DepositStake | PoolUpdateType::WithdrawStake => {
-                let validator_list_data =
-                    get_account_data(accounts, self.stake_pool.validator_list)?;
-                self.update_validator_list(validator_list_data)?;
+                let validator_list_data = get_account_data(accounts, self.validator_list_addr)?;
+                self.update_validator_list(validator_list_data)
             }
         }
-
-        Ok(())
     }
-}
-
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct ValidatorListOwned {
-    pub header: ValidatorListHeader,
-    pub validators: Vec<ValidatorStakeInfo>,
 }

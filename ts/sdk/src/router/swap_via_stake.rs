@@ -16,7 +16,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_data_err, invalid_pda_err, router_missing_err},
+    err::{generic_err, invalid_pda_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::{
         reserve::find_reserve_stake_account_record_pda_internal,
@@ -115,7 +115,7 @@ fn quote_prefund_swap_via_stake_inner(
     inp_mint: &[u8; 32],
     out_mint: &[u8; 32],
 ) -> Result<(Prefund<WithdrawStakeQuote>, DepositStakeQuote), JsError> {
-    let (reserves_balance, reserves_fee) = this.reserve_router.prefund_params();
+    let (reserves_balance, reserves_fee) = this.reserve_router.prefund_params()?;
 
     // TODO: if we used dyn or some other means we could reduce
     // number of total match arms (Withdraw + Deposit) from n^2 to n
@@ -124,17 +124,20 @@ fn quote_prefund_swap_via_stake_inner(
         ($w_itr:expr) => {
             match *out_mint {
                 NATIVE_MINT => {
-                    let d = this.reserve_router.deposit_stake_quoter().after_prefund()?;
+                    let d = this
+                        .reserve_router
+                        .deposit_stake_quoter()?
+                        .after_prefund()?;
                     core_quote($w_itr, d, amt, &reserves_balance, reserves_fee).map_err(generic_err)
                 }
                 MSOL_MINT_ADDR => {
-                    let d = this.marinade_router.deposit_stake_quoter();
+                    let d = this.marinade_router.deposit_stake_quoter()?;
                     core_quote($w_itr, d, amt, &reserves_balance, reserves_fee).map_err(generic_err)
                 }
                 out => {
                     let d = this
                         .try_find_spl_by_mint(&out)?
-                        .deposit_stake_quoter(this.curr_epoch);
+                        .deposit_stake_quoter(this.try_curr_epoch()?)?;
                     core_quote($w_itr, d, amt, &reserves_balance, reserves_fee).map_err(generic_err)
                 }
             }
@@ -143,15 +146,18 @@ fn quote_prefund_swap_via_stake_inner(
 
     match *inp_mint {
         STSOL_MINT_ADDR => {
-            let w_itr = this.lido_router.withdraw_stake_quoter(this.curr_epoch);
+            let w_itr = std::iter::once(
+                this.lido_router
+                    .withdraw_stake_quoter(this.try_curr_epoch()?)?,
+            );
             match_deposit_stake!(w_itr)
         }
         inp => {
             let router = this.try_find_spl_by_mint(&inp)?;
             let w_itr = SplWithdrawStakeValQuoter::all(
-                &router.stake_pool,
-                &router.validator_list.validators,
-                this.curr_epoch,
+                router.try_stake_pool()?,
+                router.try_validator_list()?,
+                this.try_curr_epoch()?,
             )?;
             match_deposit_stake!(w_itr)
         }
@@ -205,11 +211,7 @@ pub fn prefund_swap_via_stake_ix(
 
     match inp_mint {
         STSOL_MINT_ADDR => {
-            let w_router = this
-                .0
-                .lido_router
-                .withdraw_stake_suf_accs()
-                .ok_or_else(invalid_data_err)?;
+            let w_router = this.0.lido_router.withdraw_stake_suf_accs()?;
             let w_suf = keys_signer_writer_to_account_metas(
                 &w_router.suffix_accounts().as_borrowed().0,
                 &w_router.suffix_is_signer().0,
@@ -221,8 +223,7 @@ pub fn prefund_swap_via_stake_ix(
             let w_router = this
                 .0
                 .try_find_spl_by_mint(&inp)?
-                .withdraw_stake_suf_accs(&vote)
-                .ok_or_else(invalid_data_err)?;
+                .withdraw_stake_suf_accs(&vote)?;
             let w_suf = keys_signer_writer_to_account_metas(
                 &w_router.suffix_accounts().as_borrowed().0,
                 &w_router.suffix_is_signer().0,
@@ -237,8 +238,7 @@ pub fn prefund_swap_via_stake_ix(
             let d_router = this
                 .0
                 .reserve_router
-                .deposit_stake_suf_accs(&bridge_stake)
-                .ok_or_else(invalid_pda_err)?;
+                .deposit_stake_suf_accs(&bridge_stake)?;
             let d_suf = keys_signer_writer_to_account_metas(
                 &d_router.suffix_accounts().as_borrowed().0,
                 &d_router.suffix_is_signer().0,
@@ -247,11 +247,7 @@ pub fn prefund_swap_via_stake_ix(
             metas.extend(d_suf);
         }
         MSOL_MINT_ADDR => {
-            let d_router = this
-                .0
-                .marinade_router
-                .deposit_stake_suf_accs(&vote)
-                .ok_or_else(invalid_pda_err)?;
+            let d_router = this.0.marinade_router.deposit_stake_suf_accs(&vote)?;
             let d_suf = keys_signer_writer_to_account_metas(
                 &d_router.suffix_accounts().as_borrowed().0,
                 &d_router.suffix_is_signer().0,
@@ -263,8 +259,7 @@ pub fn prefund_swap_via_stake_ix(
             let d_router = this
                 .0
                 .try_find_spl_by_mint(&out)?
-                .deposit_stake_suf_accs(&vote)
-                .ok_or_else(router_missing_err)?;
+                .deposit_stake_suf_accs(&vote)?;
             let d_suf = keys_signer_writer_to_account_metas(
                 &d_router.suffix_accounts().as_borrowed().0,
                 &d_router.suffix_is_signer().0,

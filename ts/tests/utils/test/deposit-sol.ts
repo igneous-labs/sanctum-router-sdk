@@ -19,7 +19,9 @@ export async function depositSolFixturesTest(
     { addr: outTokenAcc, mint: outMint },
   ] = mapTup([inpTokenAccName, outTokenAccName], testFixturesTokenAcc);
   const rpc = localRpc();
-  const router = await routerForSwaps(rpc, [{ depositSol: { out: outMint } }]);
+  const router = await routerForSwaps(rpc, [
+    { swap: "depositSol", out: outMint },
+  ]);
 
   const quote = quoteDepositSol(router, {
     amt,

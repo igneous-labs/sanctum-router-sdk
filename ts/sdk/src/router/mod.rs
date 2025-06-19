@@ -1,10 +1,13 @@
 // since this should be the top-level module with only #[wasm_bindgen] exports,
 // all its modules can be private
 
+use std::collections::HashMap;
+
+use sanctum_router_core::SYSVAR_CLOCK;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::router_missing_err,
+    err::{account_missing_err, router_missing_err},
     routers::{LidoRouterOwned, MarinadeRouterOwned, ReserveRouterOwned, SplStakePoolRouterOwned},
 };
 
@@ -22,20 +25,22 @@ mod withdraw_stake;
 #[wasm_bindgen]
 pub struct SanctumRouterHandle(pub(crate) SanctumRouter);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct SanctumRouter {
-    pub curr_epoch: u64,
-    pub spl_routers: Vec<SplStakePoolRouterOwned>,
     pub lido_router: LidoRouterOwned,
     pub marinade_router: MarinadeRouterOwned,
     pub reserve_router: ReserveRouterOwned,
+
+    /// Fetched from sysvar clock
+    pub curr_epoch: Option<u64>,
+
+    /// Key is LST mint
+    pub spl_routers: HashMap<[u8; 32], SplStakePoolRouterOwned>,
 }
 
 impl SanctumRouter {
     pub(crate) fn find_spl_by_mint(&self, mint: &[u8; 32]) -> Option<&SplStakePoolRouterOwned> {
-        self.spl_routers
-            .iter()
-            .find(|r| r.stake_pool.pool_mint == *mint)
+        self.spl_routers.get(mint)
     }
 
     pub(crate) fn try_find_spl_by_mint(
@@ -43,5 +48,10 @@ impl SanctumRouter {
         mint: &[u8; 32],
     ) -> Result<&SplStakePoolRouterOwned, JsError> {
         self.find_spl_by_mint(mint).ok_or_else(router_missing_err)
+    }
+
+    pub(crate) fn try_curr_epoch(&self) -> Result<u64, JsError> {
+        self.curr_epoch
+            .ok_or_else(|| account_missing_err(&SYSVAR_CLOCK))
     }
 }

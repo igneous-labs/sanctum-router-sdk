@@ -16,10 +16,11 @@ import {
 import {
   accountsToUpdate,
   init,
-  initAccounts,
+  newSanctumRouter,
   prefundSwapViaStakeIx,
   quotePrefundSwapViaStake,
   update,
+  type InitData,
   type SplPoolAccounts,
 } from "@sanctumso/sanctum-router";
 import initSdk from "@sanctumso/sanctum-router";
@@ -30,21 +31,18 @@ import initSdk from "@sanctumso/sanctum-router";
 // instead
 await initSdk();
 
-// SPL stake pools (all 3 deploys) must have their stake pool and validator list
-// addresses known beforehand and explicitly passed in at initialization time
-const SPL_POOL_ACCOUNTS: SplPoolAccounts[] = [
-  {
-    pool: "8Dv3hNYcEWEaa4qVx9BTN1Wfvtha1z8cWDUXb7KVACVe",
-    validatorList: "46A5KjX8J6FAUTXwcE8iJkmM7igK3v8vy1MD74cZNWVE",
-  },
-  {
-    pool: "stk9ApL5HeVAwPLr3TLhDXdZS8ptVu7zp6ov8HFDuMi",
-    validatorList: "1istpXjy8BM7Vd5vPfA485frrV7SRJhgq5vs3sskWmc",
-  },
-];
+// SPL stake pools (all 3 deploys) must have the following data known beforehand
+// and explicitly passed in at initialization time
+const PICOSOL_INIT_DATA: InitData = {
+  pool: "spl",
+  stakePoolAddr: "8Dv3hNYcEWEaa4qVx9BTN1Wfvtha1z8cWDUXb7KVACVe",
+  stakePoolProgramAddr: "SP12tWFxD9oJsVWNavTTBZvMbA6gkAmxtVgxdqvyvhY",
+  validatorListAddr: "46A5KjX8J6FAUTXwcE8iJkmM7igK3v8vy1MD74cZNWVE",
+  reserveStakeAddr: "2ArodFTZhNqVWJT92qEGDxigAvouSo1kfgfEcC3KEWUK",
+};
 
-const BSOL_MINT = "bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1";
 const PICOSOL_MINT = "picobAEvs6w7QEknPce34wAE4gknZA9v5tTonnmHYdX";
+const MSOL_MINT = "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So";
 
 async function fetchAccountMap(
   rpc: Rpc<SolanaRpcApi>,
@@ -71,17 +69,23 @@ async function fetchAccountMap(
 const rpc = createSolanaRpc("https://api.mainnet-beta.solana.com");
 
 // init
-const initAccs = initAccounts(spls);
-const accounts = await fetchAccountMap(rpc, initAccs);
-const sanctumRouter = init(spls, accounts);
+const sanctumRouter = newSanctumRouter();
+init(sanctumRouter, [
+  {
+    mint: PICOSOL_MINT,
+    init: PICOSOL_INIT_DATA,
+  },
+  {
+    mint: MSOL_MINT,
+  },
+]);
 
 // update
 const swapMints = [
   {
-    prefundSwapViaStake: {
-      inp: PICOSOL,
-      out: BSOL,
-    }
+    swap: "prefundSwapViaStake",
+    inp: PICOSOL_MINT,
+    out: MSOL_MINT,
   }
 ];
 const accs = accountsToUpdate(sanctumRouter, swapMints);
@@ -103,8 +107,8 @@ const {
   },
 } = quotePrefundSwapViaStake(sanctumRouter, {
   amt,
-  inp: PICOSOL,
-  out: BSOL,
+  inp: PICOSOL_MINT,
+  out: MSOL_MINT,
 });
 
 // create transaction instruction
@@ -122,8 +126,8 @@ const bridgeStakedSeed = ...;
 
 const ixUncasted = prefundSwapViaStakeIx(sanctumRouter, {
   amt,
-  inp: PICOSOL,
-  out: BSOL,
+  inp: PICOSOL_MINT,
+  out: MSOL_MINT,
   signerInp: inpTokenAcc,
   signerOut: outTokenAcc,
   signer,
@@ -142,8 +146,9 @@ In Cloudflare Workers and other restricted environments, the default export asyn
 import { initSync } from "@sanctumso/sanctum-router-sdk";
 import wasm from "../libs/sanctum_router_sdk_index_bg.wasm";
 
-// or use the package's default export async init function
 initSync({ module: wasm });
+// or use the package's default export async init function
+// instead of `initSync()`
 ```
 
 ## Build
