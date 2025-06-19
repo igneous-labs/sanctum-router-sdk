@@ -63,6 +63,31 @@ pub fn init(
     )
 }
 
+/// Returns if the given mints have already been {@link init}.
+///
+/// Returns a byte array where ret[i] corresponds to the result for `mints[i]`.
+/// 0 - false, 1 - true.
+///
+/// This fn returns a byte array instead of `boolean` array because wasm_bindgen's type
+/// conversion doesnt work with bool arrays.
+#[wasm_bindgen(js_name = isInit)]
+pub fn is_init(
+    SanctumRouterHandle(this): &mut SanctumRouterHandle,
+    // Clippy complains, needed for wasm_bindgen
+    #[allow(clippy::boxed_local)] mints: Box<[B58PK]>,
+) -> Box<[u8]> {
+    mints
+        .iter()
+        .map(|Bs58Array(mint)| {
+            u8::from(match *mint {
+                // everything other than spl does not need init() to be called
+                NATIVE_MINT | MSOL_MINT_ADDR | STSOL_MINT_ADDR => true,
+                spl_mint => this.spl_routers.contains_key(&spl_mint),
+            })
+        })
+        .collect()
+}
+
 /// Creates a new empty router that needs to have individual mints
 /// init and updated for the specific swap
 /// before it can start operating for it.
