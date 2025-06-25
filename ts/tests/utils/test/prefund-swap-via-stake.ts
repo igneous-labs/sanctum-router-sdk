@@ -12,10 +12,16 @@ import { simTokenSwapAssertQuoteMatches } from "./swap";
 // Assume bridge stake seed 0 is always unused
 const BRIDGE_STAKE_SEED = 0;
 
+interface PrefundSwapViaStakeFixturesTestOpts {
+  useBridgeVote: boolean;
+}
+
 export async function prefundSwapViaStakeFixturesTest(
   amt: bigint,
-  tokenAccFixtures: { inp: string; out: string }
+  tokenAccFixtures: { inp: string; out: string },
+  opts: PrefundSwapViaStakeFixturesTestOpts = { useBridgeVote: false }
 ) {
+  const { useBridgeVote } = opts;
   const { inp: inpTokenAccName, out: outTokenAccName } = tokenAccFixtures;
   const [
     { addr: inpTokenAcc, owner: inpTokenAccOwner, mint: inpMint },
@@ -43,6 +49,9 @@ export async function prefundSwapViaStakeFixturesTest(
     signer: inpTokenAccOwner,
     bridgeStakeSeed: BRIDGE_STAKE_SEED,
   };
+  if (useBridgeVote) {
+    params.bridgeVote = quote.bridge.vote;
+  }
   const ix = prefundSwapViaStakeIx(router, params);
 
   // TODO: replace this fn with a custom fn that further
