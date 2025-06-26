@@ -47,7 +47,8 @@ impl SanctumRouter {
         &self,
         mint: &[u8; 32],
     ) -> Result<&SplStakePoolRouterOwned, JsError> {
-        self.find_spl_by_mint(mint).ok_or_else(router_missing_err)
+        self.find_spl_by_mint(mint)
+            .ok_or_else(|| router_missing_err(mint))
     }
 
     pub(crate) fn try_curr_epoch(&self) -> Result<u64, JsError> {

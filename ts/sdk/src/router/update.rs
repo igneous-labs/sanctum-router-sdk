@@ -89,7 +89,7 @@ pub fn update(
                 this.0
                     .spl_routers
                     .get_mut(&mint)
-                    .ok_or_else(router_missing_err)?
+                    .ok_or_else(|| router_missing_err(&mint))?
                     .update(ty, accounts)?;
                 require_clock_update = true;
             }

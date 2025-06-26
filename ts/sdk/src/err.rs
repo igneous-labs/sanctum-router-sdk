@@ -84,9 +84,11 @@ pub fn invalid_data_err() -> JsError {
     JsError::new(intern(formatcp!("{INVALID_DATA_ERR}{ERR_CODE_MSG_SEP}")))
 }
 
-// TODO: mint as arg
-pub fn router_missing_err() -> JsError {
-    JsError::new(intern(formatcp!("{ROUTER_MISSING_ERR}{ERR_CODE_MSG_SEP}")))
+pub fn router_missing_err(mint: &[u8; 32]) -> JsError {
+    let b58mintstr = Bs58PkString::encode(mint);
+    JsError::new(&format!(
+        "{ROUTER_MISSING_ERR}{ERR_CODE_MSG_SEP}router missing for mint {b58mintstr}"
+    ))
 }
 
 pub fn account_missing_err(pubkey: &[u8; 32]) -> JsError {
