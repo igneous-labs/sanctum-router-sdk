@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use const_format::formatcp;
+use sanctum_marinade_liquid_staking_core::MarinadeError;
 use wasm_bindgen::{intern, prelude::*};
 
 use crate::{interface::Bs58PkString, update::PoolUpdateType};
@@ -58,7 +59,10 @@ def_errconsts!(
     INVALID_PDA_ERR,
     INVALID_DATA_ERR,
     ROUTER_MISSING_ERR,
-    UNSUPPORTED_UPDATE_ERR
+    UNSUPPORTED_UPDATE_ERR,
+    USER_ERR,
+    POOL_ERR,
+    INTERNAL_ERR
 );
 
 const ERR_CODE_MSG_SEP: &str = ":";
@@ -85,6 +89,27 @@ pub fn router_missing_err() -> JsError {
 
 pub fn generic_err(e: impl Display) -> JsError {
     JsError::new(&format!("{e}"))
+}
+
+pub fn marinade_err(e: MarinadeError) -> JsError {
+    let s = match e {
+        MarinadeError::DepositAmountIsTooLow
+        | MarinadeError::TooLowDelegationInDepositingStake
+        | MarinadeError::WithdrawStakeLamportsIsTooLow
+        | MarinadeError::SelectedStakeAccountHasNotEnoughFunds
+        | MarinadeError::StakeAccountRemainderTooLow
+        | MarinadeError::WrongValidatorAccountOrIndex => {
+            format!("{USER_ERR}{ERR_CODE_MSG_SEP}{e}")
+        }
+        MarinadeError::ProgramIsPaused
+        | MarinadeError::StakingIsCapped
+        | MarinadeError::WithdrawStakeAccountIsNotEnabled
+        | MarinadeError::StakeAccountIsEmergencyUnstaking => {
+            format!("{POOL_ERR}{ERR_CODE_MSG_SEP}{e}")
+        }
+        MarinadeError::CalculationFailure => format!("{INTERNAL_ERR}{ERR_CODE_MSG_SEP}{e}"),
+    };
+    JsError::new(&s)
 }
 
 pub fn unsupported_update_err(ty: PoolUpdateType, mint: &[u8; 32]) -> JsError {

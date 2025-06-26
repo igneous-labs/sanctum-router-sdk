@@ -10,7 +10,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_pda_err},
+    err::{generic_err, invalid_pda_err, marinade_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::router::find_fee_token_account_pda_internal,
     router::SanctumRouterHandle,
@@ -83,7 +83,7 @@ pub fn quote_deposit_stake(
             .marinade_router
             .deposit_stake_quoter()?
             .quote_deposit_stake(active_stake_params)
-            .map_err(generic_err),
+            .map_err(marinade_err),
         mint => {
             let router = this.0.try_find_spl_by_mint(&mint)?;
             router

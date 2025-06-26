@@ -9,7 +9,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_pda_err},
+    err::{generic_err, invalid_pda_err, marinade_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::router::find_fee_token_account_pda_internal,
     router::{token_pair::TokenQuoteWithRouterFee, SanctumRouterHandle},
@@ -39,7 +39,7 @@ pub fn quote_deposit_sol(
             .marinade_router
             .deposit_sol_quoter()?
             .quote_deposit_sol(params.amt)
-            .map_err(generic_err),
+            .map_err(marinade_err),
         mint => this
             .0
             .try_find_spl_by_mint(&mint)?
