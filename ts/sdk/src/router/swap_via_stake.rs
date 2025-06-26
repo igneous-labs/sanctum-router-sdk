@@ -3,8 +3,8 @@ use sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR;
 use sanctum_router_core::{
     quote_prefund_swap_via_stake as core_quote, DepositStakeQuote, DepositStakeSufAccs, Prefund,
     PrefundSwapViaStakeIxData, PrefundSwapViaStakePrefixAccsBuilder, SplWithdrawStakeValQuoter,
-    WithRouterFee, WithdrawStakeQuote, WithdrawStakeSufAccs, NATIVE_MINT, PREFUNDER,
-    PREFUND_SWAP_VIA_STAKE_PREFIX_ACCS_LEN, PREFUND_SWAP_VIA_STAKE_PREFIX_IS_SIGNER,
+    StakeAccountLamports, WithRouterFee, WithdrawStakeQuote, WithdrawStakeSufAccs, NATIVE_MINT,
+    PREFUNDER, PREFUND_SWAP_VIA_STAKE_PREFIX_ACCS_LEN, PREFUND_SWAP_VIA_STAKE_PREFIX_IS_SIGNER,
     PREFUND_SWAP_VIA_STAKE_PREFIX_IS_WRITER_NON_WSOL_OUT,
     PREFUND_SWAP_VIA_STAKE_PREFIX_IS_WRITER_WSOL_OUT, SANCTUM_ROUTER_PROGRAM, STAKE_PROGRAM,
     SYSTEM_PROGRAM, SYSVAR_CLOCK,
@@ -28,6 +28,18 @@ use crate::{
     router::{token_pair::TokenQuoteParams, SanctumRouter, SanctumRouterHandle},
 };
 
+/// Select parameters of an active stake account
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Tsify)]
+#[serde(rename_all = "camelCase")]
+#[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
+pub struct ActiveStakeParams {
+    /// Vote account of the validator this stake account is delegated to
+    pub vote: B58PK,
+
+    /// This stake account's lamport balances
+    pub lamports: StakeAccountLamports,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Tsify)]
 #[serde(rename_all = "camelCase")]
 #[tsify(into_wasm_abi, from_wasm_abi, large_number_types_as_bigints)]
@@ -43,6 +55,16 @@ pub struct SwapViaStakeQuote {
 
     /// Fee charged on deposit stake leg, in terms of output tokens
     pub out_fee: u64,
+
+    /// Info about the bridge stake account used.
+    ///
+    /// This is the state of the stake account right before it is deposited
+    /// to mint the out LST, not right after it is withdrawn from redeeming the inp LST.
+    ///
+    /// This means for PrefundSwapViaStake's case, the `StakeAccountLamports` of the
+    /// stake account that was withdrawn from redeeming the inp LST `= this.lamports
+    /// + prefund fee in active stake`
+    pub bridge: ActiveStakeParams,
 }
 
 // need to use a simple newtype here instead of type alias
@@ -81,9 +103,17 @@ fn map_quote(
     dsq: DepositStakeQuote,
 ) -> PrefundSwapViaStakeQuoteWithRouterFee {
     let WithRouterFee {
-        quote: DepositStakeQuote {
-            out, fee: out_fee, ..
-        },
+        quote:
+            DepositStakeQuote {
+                inp:
+                    sanctum_router_core::ActiveStakeParams {
+                        vote: bridge_vote,
+                        lamports: bridge_lamports_bef_deposit,
+                    },
+                out,
+                fee: out_fee,
+                ..
+            },
         router_fee,
     } = if *out_mint != sanctum_router_core::NATIVE_MINT {
         dsq.with_router_fee()
@@ -97,6 +127,10 @@ fn map_quote(
                 out,
                 inp_fee,
                 out_fee,
+                bridge: ActiveStakeParams {
+                    vote: B58PK::new(bridge_vote),
+                    lamports: bridge_lamports_bef_deposit,
+                },
             },
             router_fee,
         },
@@ -188,6 +222,11 @@ pub struct SwapViaStakeSwapParams {
 
     /// Signing authority of `self.signer_inp`; user making the swap.
     pub signer: B58PK,
+
+    /// Obtained from {@link SwapViaStakeQuote}.bridge.vote.
+    /// Optional, makes instruction formation faster if provided
+    #[tsify(optional)]
+    pub bridge_vote: Option<B58PK>,
 }
 
 /// Requires `update()` to be called before calling this function
@@ -203,9 +242,14 @@ pub fn prefund_swap_via_stake_ix(
     let out_mint = params.out.0;
 
     let (prefix_metas, data, bridge_stake) = prefund_swap_via_stake_prefix(&params)?;
-    let (_wsq, dsq) =
-        quote_prefund_swap_via_stake_inner(&this.0, params.amt, &inp_mint, &out_mint)?;
-    let vote = dsq.inp.vote;
+    let vote = match params.bridge_vote {
+        Some(Bs58Array(vote)) => vote,
+        None => {
+            let (_wsq, dsq) =
+                quote_prefund_swap_via_stake_inner(&this.0, params.amt, &inp_mint, &out_mint)?;
+            dsq.inp.vote
+        }
+    };
 
     let mut metas = Vec::from(prefix_metas);
 

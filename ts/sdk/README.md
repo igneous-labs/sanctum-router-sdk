@@ -103,6 +103,7 @@ const {
       out,
       inpFee,
       outFee,
+      bridge,
     },
   },
 } = quotePrefundSwapViaStake(sanctumRouter, {
@@ -132,6 +133,10 @@ const ixUncasted = prefundSwapViaStakeIx(sanctumRouter, {
   signerOut: outTokenAcc,
   signer,
   bridgeStakeSeed,
+
+  // optional, this fn runs faster if provided with the
+  // bridge stake account's delegated voter that was found beforehand
+  bridgeVote: bridge.vote,
 });
 // return type is compatible with kit,
 // but needs to be casted explicitly
