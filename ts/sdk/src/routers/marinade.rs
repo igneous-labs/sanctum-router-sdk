@@ -9,7 +9,7 @@ use sanctum_router_core::{
 use wasm_bindgen::JsError;
 
 use crate::{
-    err::{account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update},
+    err::{account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update_err},
     interface::{get_account_data, AccountMap},
     pda::marinade::find_marinade_duplication_flag_pda_internal,
     update::PoolUpdateType,
@@ -154,7 +154,7 @@ impl MarinadeRouterOwned {
                 Ok(())
             }
             PoolUpdateType::WithdrawSol | PoolUpdateType::WithdrawStake => {
-                Err(unsupported_update(ty, &MSOL_MINT_ADDR))
+                Err(unsupported_update_err(ty, &MSOL_MINT_ADDR))
             }
         }
     }

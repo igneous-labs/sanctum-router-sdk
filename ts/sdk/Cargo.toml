@@ -13,7 +13,8 @@ default = []
 
 [dependencies]
 bs58-fixed = { workspace = true }
-bs58-fixed-wasm = { workspace = true, features = ["js"]}
+bs58-fixed-wasm = { workspace = true, features = ["js"] }
+const_format = { workspace = true }
 ed25519-compact = { workspace = true }
 hmac-sha256 = { workspace = true }
 sanctum-router-core = { workspace = true , features = ["wasm"] }

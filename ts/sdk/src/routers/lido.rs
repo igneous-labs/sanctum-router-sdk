@@ -5,7 +5,7 @@ use solido_legacy_core::{
 use wasm_bindgen::JsError;
 
 use crate::{
-    err::{account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update},
+    err::{account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update_err},
     interface::{get_account_data, AccountMap},
     pda::lido::find_lido_validator_stake_account_pda_internal,
     update::PoolUpdateType,
@@ -122,7 +122,7 @@ impl LidoRouterOwned {
                 *self = Self::init(accounts)?;
                 Ok(())
             }
-            _ => Err(unsupported_update(ty, &STSOL_MINT_ADDR)),
+            _ => Err(unsupported_update_err(ty, &STSOL_MINT_ADDR)),
         }
     }
 }

@@ -3,7 +3,7 @@ use sanctum_router_core::{ReserveDepositStakeQuoter, ReserveDepositStakeSufAccs,
 use wasm_bindgen::JsError;
 
 use crate::{
-    err::{account_missing_err, invalid_pda_err, unsupported_update},
+    err::{account_missing_err, invalid_pda_err, unsupported_update_err},
     interface::{get_account, get_account_data, AccountMap},
     pda::reserve::find_reserve_stake_account_record_pda_internal,
     update::PoolUpdateType,
@@ -124,7 +124,7 @@ impl ReserveRouterOwned {
                 *self = Self::init(accounts)?;
                 Ok(())
             }
-            _ => Err(unsupported_update(ty, &NATIVE_MINT)),
+            _ => Err(unsupported_update_err(ty, &NATIVE_MINT)),
         }
     }
 }
