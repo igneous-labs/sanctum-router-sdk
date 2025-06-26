@@ -10,7 +10,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{invalid_pda_err, marinade_err, reserve_err, spl_err},
+    err::{invalid_pda_err, marinade_err, reserve_err, spl_err, SanctumRouterError},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::router::find_fee_token_account_pda_internal,
     router::SanctumRouterHandle,
@@ -68,7 +68,7 @@ pub struct DepositStakeQuoteWithRouterFee(pub(crate) WithRouterFee<DepositStakeQ
 pub fn quote_deposit_stake(
     this: &SanctumRouterHandle,
     params: DepositStakeQuoteParams,
-) -> Result<DepositStakeQuoteWithRouterFee, JsError> {
+) -> Result<DepositStakeQuoteWithRouterFee, SanctumRouterError> {
     let active_stake_params = params.to_active_stake_params();
     let out_mint = params.out.0;
     match out_mint {
@@ -129,7 +129,7 @@ pub struct DepositStakeSwapParams {
 pub fn deposit_stake_ix(
     this: &SanctumRouterHandle,
     params: DepositStakeSwapParams,
-) -> Result<Instruction, JsError> {
+) -> Result<Instruction, SanctumRouterError> {
     let out_mint = params.out.0;
     let vote_account = params.inp.0;
     let stake_account = params.signer_inp.0;
@@ -214,7 +214,7 @@ fn conv_quote(
 
 fn deposit_stake_prefix_metas_and_data(
     swap_params: &DepositStakeSwapParams,
-) -> Result<([AccountMeta; DEPOSIT_STAKE_IX_ACCS_LEN], DepositStakeIxData), JsError> {
+) -> Result<([AccountMeta; DEPOSIT_STAKE_IX_ACCS_LEN], DepositStakeIxData), SanctumRouterError> {
     let metas = keys_signer_writer_to_account_metas(
         &DepositStakeIxAccsBuilder::start()
             .with_user(swap_params.signer.0)

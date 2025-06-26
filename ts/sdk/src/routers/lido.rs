@@ -2,10 +2,12 @@ use sanctum_router_core::{LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs};
 use solido_legacy_core::{
     Lido, ListHeader, Validator, ValidatorList, STSOL_MINT_ADDR, SYSVAR_CLOCK,
 };
-use wasm_bindgen::JsError;
 
 use crate::{
-    err::{account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update_err},
+    err::{
+        account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update_err,
+        SanctumRouterError,
+    },
     interface::{get_account_data, AccountMap},
     pda::lido::find_lido_validator_stake_account_pda_internal,
     update::PoolUpdateType,
@@ -35,13 +37,14 @@ impl LidoRouterOwned {
         ]
     }
 
-    pub fn init(accounts: &AccountMap) -> Result<Self, JsError> {
+    pub fn init(accounts: &AccountMap) -> Result<Self, SanctumRouterError> {
         let [s, v] = Self::init_accounts().map(|k| get_account_data(accounts, k));
         let state_data = s?;
         let validator_list_data = v?;
 
-        let state = Lido::borsh_de(state_data)?;
-        let ValidatorList { header, entries } = ValidatorList::deserialize(validator_list_data)?;
+        let state = Lido::borsh_de(state_data).map_err(|_e| invalid_data_err())?;
+        let ValidatorList { header, entries } =
+            ValidatorList::deserialize(validator_list_data).map_err(|_e| invalid_data_err())?;
         let validator_list = LidoValidatorListOwned {
             header,
             validators: entries.to_vec(),
@@ -56,7 +59,7 @@ impl LidoRouterOwned {
 
 /// Getters
 impl LidoRouterOwned {
-    pub fn try_inner(&self) -> Result<&LidoRouterInner, JsError> {
+    pub fn try_inner(&self) -> Result<&LidoRouterInner, SanctumRouterError> {
         self.0
             .as_ref()
             .ok_or_else(|| account_missing_err(&solido_legacy_core::LIDO_STATE_ADDR))
@@ -69,7 +72,7 @@ impl LidoRouterOwned {
     pub fn withdraw_stake_quoter(
         &self,
         curr_epoch: u64,
-    ) -> Result<LidoWithdrawStakeQuoter, JsError> {
+    ) -> Result<LidoWithdrawStakeQuoter, SanctumRouterError> {
         let inner = self.try_inner()?;
         LidoWithdrawStakeQuoter::new(&inner.state, &inner.validator_list.validators, curr_epoch)
             .ok_or_else(invalid_data_err)
@@ -78,7 +81,7 @@ impl LidoRouterOwned {
     /// Lido only allows withdrawing from max stake validator
     ///
     /// Returns `None` if data missing or validator stake acc PDA invalid
-    pub fn withdraw_stake_suf_accs(&self) -> Result<LidoWithdrawStakeSufAccs, JsError> {
+    pub fn withdraw_stake_suf_accs(&self) -> Result<LidoWithdrawStakeSufAccs, SanctumRouterError> {
         let inner = self.try_inner()?;
         let max_validator = inner
             .validator_list
@@ -116,7 +119,11 @@ impl LidoRouterOwned {
         .flatten()
     }
 
-    pub fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+    pub fn update(
+        &mut self,
+        ty: PoolUpdateType,
+        accounts: &AccountMap,
+    ) -> Result<(), SanctumRouterError> {
         match ty {
             PoolUpdateType::WithdrawStake => {
                 *self = Self::init(accounts)?;

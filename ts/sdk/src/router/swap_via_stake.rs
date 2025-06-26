@@ -16,7 +16,10 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{invalid_pda_err, lido_err, marinade_err, prefund_svsq_err, reserve_err, spl_err},
+    err::{
+        invalid_pda_err, lido_err, marinade_err, prefund_svsq_err, reserve_err, spl_err,
+        SanctumRouterError,
+    },
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::{
         reserve::find_reserve_stake_account_record_pda_internal,
@@ -86,7 +89,7 @@ pub fn quote_prefund_swap_via_stake(
         inp: Bs58Array(inp_mint),
         out: Bs58Array(out_mint),
     }: TokenQuoteParams,
-) -> Result<PrefundSwapViaStakeQuoteWithRouterFee, JsError> {
+) -> Result<PrefundSwapViaStakeQuoteWithRouterFee, SanctumRouterError> {
     quote_prefund_swap_via_stake_inner(&this.0, amt, &inp_mint, &out_mint)
         .map(|(wsq, dsq)| map_quote(&out_mint, wsq, dsq))
 }
@@ -148,7 +151,7 @@ fn quote_prefund_swap_via_stake_inner(
     amt: u64,
     inp_mint: &[u8; 32],
     out_mint: &[u8; 32],
-) -> Result<(Prefund<WithdrawStakeQuote>, DepositStakeQuote), JsError> {
+) -> Result<(Prefund<WithdrawStakeQuote>, DepositStakeQuote), SanctumRouterError> {
     let (reserves_balance, reserves_fee) = this.reserve_router.prefund_params()?;
 
     // TODO: if we used dyn or some other means we could reduce
@@ -161,7 +164,8 @@ fn quote_prefund_swap_via_stake_inner(
                     let d = this
                         .reserve_router
                         .deposit_stake_quoter()?
-                        .after_prefund()?;
+                        .after_prefund()
+                        .map_err(reserve_err)?;
                     core_quote($w_itr, d, amt, &reserves_balance, reserves_fee)
                         .map_err(|e| prefund_svsq_err(e, $handle_w, reserve_err))
                 }
@@ -195,7 +199,8 @@ fn quote_prefund_swap_via_stake_inner(
                 router.try_stake_pool()?,
                 router.try_validator_list()?,
                 this.try_curr_epoch()?,
-            )?;
+            )
+            .map_err(spl_err)?;
             match_deposit_stake!(w_itr, spl_err)
         }
     }
@@ -240,7 +245,7 @@ pub struct SwapViaStakeSwapParams {
 pub fn prefund_swap_via_stake_ix(
     this: &SanctumRouterHandle,
     params: SwapViaStakeSwapParams,
-) -> Result<Instruction, JsError> {
+) -> Result<Instruction, SanctumRouterError> {
     let inp_mint = params.inp.0;
     let out_mint = params.out.0;
 
@@ -334,7 +339,7 @@ fn prefund_swap_via_stake_prefix(
         PrefundSwapViaStakeIxData,
         [u8; 32],
     ),
-    JsError,
+    SanctumRouterError,
 > {
     let (bridge_stake, _bump) =
         find_bridge_stake_acc_internal(&swap_params.signer.0, swap_params.bridge_stake_seed)

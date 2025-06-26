@@ -1,4 +1,5 @@
 import {
+  address,
   getAddressDecoder,
   getBase64Encoder,
   getU64Decoder,
@@ -14,6 +15,10 @@ const STAKE_ACC_VOTE_OFFSET = 124;
 export const STAKE_ACC_STAKE_OFFSET = 156;
 export const STAKE_ACC_ACTIVATION_EPOCH_OFFSET = 164;
 const STAKE_ACC_DEACTIVATION_EPOCH_OFFSET = 172;
+
+export const PICO_VOTE_ACC = address(
+  "3xjfK9C9YNcta8MvK1US4sQ3bc6DEjoJoR3qLExGf9xE"
+);
 
 export const STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS = 2282880n;
 

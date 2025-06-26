@@ -9,7 +9,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{invalid_pda_err, marinade_err, spl_err},
+    err::{invalid_pda_err, marinade_err, spl_err, SanctumRouterError},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::router::find_fee_token_account_pda_internal,
     router::{token_pair::TokenQuoteWithRouterFee, SanctumRouterHandle},
@@ -31,7 +31,7 @@ pub struct DepositSolQuoteParams {
 pub fn quote_deposit_sol(
     this: &SanctumRouterHandle,
     params: DepositSolQuoteParams,
-) -> Result<TokenQuoteWithRouterFee, JsError> {
+) -> Result<TokenQuoteWithRouterFee, SanctumRouterError> {
     let out_mint = params.out.0;
     match out_mint {
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
@@ -75,7 +75,7 @@ pub struct DepositSolSwapParams {
 pub fn deposit_sol_ix(
     this: &SanctumRouterHandle,
     params: DepositSolSwapParams,
-) -> Result<Instruction, JsError> {
+) -> Result<Instruction, SanctumRouterError> {
     let out_mint = params.out.0;
     let (prefix_metas, data) = deposit_sol_prefix_metas_and_data(&params)?;
 
@@ -124,7 +124,7 @@ fn deposit_sol_prefix_metas_and_data(
         [AccountMeta; STAKE_WRAPPED_SOL_PREFIX_ACCS_LEN],
         StakeWrappedSolIxData,
     ),
-    JsError,
+    SanctumRouterError,
 > {
     let metas = keys_signer_writer_to_account_metas(
         &StakeWrappedSolPrefixKeysOwned::default()

@@ -6,10 +6,12 @@ use sanctum_router_core::{
     MarinadeDepositSolQuoter, MarinadeDepositSolSufAccs, MarinadeDepositStakeQuoter,
     MarinadeDepositStakeSufAccs,
 };
-use wasm_bindgen::JsError;
 
 use crate::{
-    err::{account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update_err},
+    err::{
+        account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update_err,
+        SanctumRouterError,
+    },
     interface::{get_account_data, AccountMap},
     pda::marinade::find_marinade_duplication_flag_pda_internal,
     update::PoolUpdateType,
@@ -24,20 +26,20 @@ pub struct MarinadeRouterOwned {
 
 /// Getters
 impl MarinadeRouterOwned {
-    pub fn try_state(&self) -> Result<&MarinadeState, JsError> {
+    pub fn try_state(&self) -> Result<&MarinadeState, SanctumRouterError> {
         self.state
             .as_ref()
             .ok_or_else(|| account_missing_err(&STATE_PUBKEY))
     }
 
-    pub fn try_validator_records(&self) -> Result<&[ValidatorRecord], JsError> {
+    pub fn try_validator_records(&self) -> Result<&[ValidatorRecord], SanctumRouterError> {
         self.validator_records
             .as_ref()
             .ok_or_else(|| account_missing_err(&VALIDATOR_LIST_PUBKEY))
             .map(|v| v.as_slice())
     }
 
-    pub fn try_msol_leg_balance(&self) -> Result<u64, JsError> {
+    pub fn try_msol_leg_balance(&self) -> Result<u64, SanctumRouterError> {
         self.msol_leg_balance
             .ok_or_else(|| account_missing_err(&LIQ_POOL_MSOL_LEG_PUBKEY))
     }
@@ -45,21 +47,21 @@ impl MarinadeRouterOwned {
 
 /// DepositSol
 impl MarinadeRouterOwned {
-    pub fn deposit_sol_quoter(&self) -> Result<MarinadeDepositSolQuoter, JsError> {
+    pub fn deposit_sol_quoter(&self) -> Result<MarinadeDepositSolQuoter, SanctumRouterError> {
         Ok(MarinadeDepositSolQuoter {
             state: self.try_state()?,
             msol_leg_balance: self.try_msol_leg_balance()?,
         })
     }
 
-    pub fn deposit_sol_suf_accs(&self) -> Result<MarinadeDepositSolSufAccs, JsError> {
+    pub fn deposit_sol_suf_accs(&self) -> Result<MarinadeDepositSolSufAccs, SanctumRouterError> {
         self.try_state().map(MarinadeDepositSolSufAccs::from_state)
     }
 }
 
 /// DepositStake
 impl MarinadeRouterOwned {
-    pub fn deposit_stake_quoter(&self) -> Result<MarinadeDepositStakeQuoter, JsError> {
+    pub fn deposit_stake_quoter(&self) -> Result<MarinadeDepositStakeQuoter, SanctumRouterError> {
         Ok(MarinadeDepositStakeQuoter {
             state: self.try_state()?,
             msol_leg_balance: self.try_msol_leg_balance()?,
@@ -70,7 +72,7 @@ impl MarinadeRouterOwned {
     pub fn deposit_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],
-    ) -> Result<MarinadeDepositStakeSufAccs, JsError> {
+    ) -> Result<MarinadeDepositStakeSufAccs, SanctumRouterError> {
         Ok(MarinadeDepositStakeSufAccs {
             state: self.try_state()?,
             duplication_flag: find_marinade_duplication_flag_pda_internal(vote_account)
@@ -82,8 +84,8 @@ impl MarinadeRouterOwned {
 
 /// Update
 impl MarinadeRouterOwned {
-    pub fn update_state(&mut self, data: &[u8]) -> Result<(), JsError> {
-        self.state = Some(MarinadeState::borsh_de(data)?);
+    pub fn update_state(&mut self, data: &[u8]) -> Result<(), SanctumRouterError> {
+        self.state = Some(MarinadeState::borsh_de(data).map_err(|_e| invalid_data_err())?);
         Ok(())
     }
 
@@ -91,7 +93,7 @@ impl MarinadeRouterOwned {
         &mut self,
         validator_list_data: &[u8],
         count: usize,
-    ) -> Result<(), JsError> {
+    ) -> Result<(), SanctumRouterError> {
         let validator_list = ValidatorList::try_from_acc_data(validator_list_data, count)
             .ok_or_else(invalid_data_err)?;
 
@@ -99,7 +101,10 @@ impl MarinadeRouterOwned {
         Ok(())
     }
 
-    pub fn update_msol_leg_balance(&mut self, msol_leg_data: &[u8]) -> Result<(), JsError> {
+    pub fn update_msol_leg_balance(
+        &mut self,
+        msol_leg_data: &[u8],
+    ) -> Result<(), SanctumRouterError> {
         self.msol_leg_balance = Some(try_token_acc_amt(msol_leg_data)?);
         Ok(())
     }
@@ -121,7 +126,11 @@ impl MarinadeRouterOwned {
         .flatten()
     }
 
-    pub fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+    pub fn update(
+        &mut self,
+        ty: PoolUpdateType,
+        accounts: &AccountMap,
+    ) -> Result<(), SanctumRouterError> {
         match ty {
             PoolUpdateType::DepositSol | PoolUpdateType::DepositStake => {
                 let [s, m] = [
@@ -160,7 +169,7 @@ impl MarinadeRouterOwned {
     }
 }
 
-fn try_token_acc_amt(d: &[u8]) -> Result<u64, JsError> {
+fn try_token_acc_amt(d: &[u8]) -> Result<u64, SanctumRouterError> {
     Ok(u64::from_le_bytes(
         *d.get(..72)
             .and_then(|s| s.last_chunk())

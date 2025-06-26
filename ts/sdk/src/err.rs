@@ -1,186 +1,207 @@
-use const_format::formatcp;
 use sanctum_marinade_liquid_staking_core::MarinadeError;
 use sanctum_reserve_core::ReserveError;
 use sanctum_router_core::{PrefundSwapViaStakeQuoteErr, PrefundWithdrawStakeQuoteErr};
 use sanctum_spl_stake_pool_core::SplStakePoolError;
+use serde::{Deserialize, Serialize};
 use solido_legacy_core::LidoError;
-use wasm_bindgen::{intern, prelude::*};
+use tsify_next::Tsify;
+use wasm_bindgen::prelude::*;
 
 use crate::{interface::Bs58PkString, update::PoolUpdateType};
 
-macro_rules! def_errconst {
-    ($NAME:ident) => {
-        #[allow(unused)]
-        pub const $NAME: &str = stringify!($NAME);
-
-        // isolate the export in a module
-        // so we can use the same ident for the const
-        // because you cant create new idents in macro_rules!
-        #[allow(non_snake_case, unused)]
-        mod $NAME {
-            use super::$NAME as name;
-
-            #[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
-            const _EXPORT: &str = const_format::formatcp!(r#"export const {name} = "{name}";"#);
-        }
-    };
+/// All {@link Error} objects thrown by SDK functions will start with
+/// `{SanctumRouterErr}:`, so that the `SanctumRouterErr` error code can be
+/// extracted by splitting on the first colon `:`
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+#[allow(clippy::enum_variant_names)] // we want all the ts consts to have `Err` suffix
+pub enum SanctumRouterErr {
+    AccountMissingErr,
+    InvalidPdaErr,
+    InvalidDataErr,
+    RouterMissingErr,
+    UnsupportedUpdateErr,
+    UserErr,
+    PoolErr,
+    InternalErr,
 }
 
-// No trailing commas allowed
-macro_rules! def_errconsts {
-    // base-case: (msut be placed above recursive-case for match priority)
-    //
-    // - expand individual using def_errconst!()
-    // - appends `typeof $NAME` to ts_union expr, but omits trailing ` | `, since this is the last one,
-    //   then puts the `ts_union` expr into the proper `typescript_custom_section` export
-    (@ts_union $ts_union:expr; $NAME:ident) => {
-        def_errconst!($NAME);
+/// Top level error, all fallible functions should
+/// have this as Result's err type to throw the appropriate `JsError`
+#[derive(Debug)]
+pub struct SanctumRouterError {
+    pub code: SanctumRouterErr,
 
-        const _FINAL_ERR_TS_UNION: &str = concat!($ts_union, "typeof ", stringify!($NAME));
-
-        #[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
-        const _ERR_TS_UNION: &str = const_format::formatcp!(r#"
-/**
- * All {{@link Error}} objects thrown by SDK functions will start with
- * `{{SanctumRouterErr}}:`, so that the `SanctumRouterErr` error code can be
- * extracted by splitting on the first colon `:`
- */
-export type SanctumRouterErr = {_FINAL_ERR_TS_UNION};
-"#);
-    };
-
-    // recursive-case:
-    //
-    // - expand individual using def_errconst!()
-    // - appends `typeof $NAME | ` to ts_union expr
-    (@ts_union $ts_union:expr; $NAME:ident $(, $($tail:tt)*)?) => {
-        def_errconst!($NAME);
-
-        def_errconsts!(@ts_union concat!($ts_union, "typeof ", stringify!($NAME), " | ");  $($($tail)*)?);
-    };
-
-    // start
-    ($($tail:tt)*) => { def_errconsts!(@ts_union ""; $($tail)*); };
+    pub cause: Option<String>,
 }
 
-def_errconsts!(
-    ACCOUNT_MISSING_ERR,
-    INVALID_PDA_ERR,
-    INVALID_DATA_ERR,
-    ROUTER_MISSING_ERR,
-    UNSUPPORTED_UPDATE_ERR,
-    USER_ERR,
-    POOL_ERR,
-    INTERNAL_ERR
-);
+impl From<SanctumRouterError> for JsValue {
+    fn from(SanctumRouterError { code, cause }: SanctumRouterError) -> Self {
+        let suf = cause.unwrap_or_default();
+        JsError::new(&format!("{code:?}{ERR_CODE_MSG_SEP}{suf}")).into()
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct AllSanctumRouterErrs(#[tsify(type = "SanctumRouterErr[]")] pub [SanctumRouterErr; 8]);
+
+/// Returns the array of all possible {@link SanctumRouterErr}s
+#[wasm_bindgen(js_name = allSanctumRouterErrs)]
+pub fn all_sanctum_router_errs() -> AllSanctumRouterErrs {
+    use SanctumRouterErr::*;
+
+    AllSanctumRouterErrs([
+        AccountMissingErr,
+        InvalidPdaErr,
+        InvalidDataErr,
+        RouterMissingErr,
+        UnsupportedUpdateErr,
+        UserErr,
+        PoolErr,
+        InternalErr,
+    ])
+}
 
 const ERR_CODE_MSG_SEP: &str = ":";
 
-pub fn invalid_pda_err() -> JsError {
-    JsError::new(intern(formatcp!("{INVALID_PDA_ERR}{ERR_CODE_MSG_SEP}")))
+pub fn invalid_pda_err() -> SanctumRouterError {
+    SanctumRouterError {
+        code: SanctumRouterErr::InvalidPdaErr,
+        cause: None,
+    }
 }
 
-pub fn invalid_data_err() -> JsError {
-    JsError::new(intern(formatcp!("{INVALID_DATA_ERR}{ERR_CODE_MSG_SEP}")))
+// TODO: maybe add more details here
+pub fn invalid_data_err() -> SanctumRouterError {
+    SanctumRouterError {
+        code: SanctumRouterErr::InvalidDataErr,
+        cause: None,
+    }
 }
 
-pub fn router_missing_err(mint: &[u8; 32]) -> JsError {
+pub fn router_missing_err(mint: &[u8; 32]) -> SanctumRouterError {
     let b58mintstr = Bs58PkString::encode(mint);
-    JsError::new(&format!(
-        "{ROUTER_MISSING_ERR}{ERR_CODE_MSG_SEP}router missing for mint {b58mintstr}"
-    ))
+    SanctumRouterError {
+        code: SanctumRouterErr::RouterMissingErr,
+        cause: Some(format!("router missing for mint {b58mintstr}")),
+    }
 }
 
-pub fn account_missing_err(pubkey: &[u8; 32]) -> JsError {
+pub fn account_missing_err(pubkey: &[u8; 32]) -> SanctumRouterError {
     let b58pkstr = Bs58PkString::encode(pubkey);
-    JsError::new(&format!(
-        "{ACCOUNT_MISSING_ERR}{ERR_CODE_MSG_SEP}{b58pkstr} missing from AccountMap"
-    ))
+    SanctumRouterError {
+        code: SanctumRouterErr::AccountMissingErr,
+        cause: Some(format!("{b58pkstr} missing from AccountMap")),
+    }
 }
 
-pub fn marinade_err(e: MarinadeError) -> JsError {
+pub fn marinade_err(e: MarinadeError) -> SanctumRouterError {
     const MARINADE_ERR_PREFIX: &str = "MarinadeError::";
 
-    let s = match e {
+    let (code, cause) = match e {
         MarinadeError::DepositAmountIsTooLow
         | MarinadeError::TooLowDelegationInDepositingStake
         | MarinadeError::WithdrawStakeLamportsIsTooLow
         | MarinadeError::SelectedStakeAccountHasNotEnoughFunds
         | MarinadeError::StakeAccountRemainderTooLow
-        | MarinadeError::WrongValidatorAccountOrIndex => {
-            format!("{USER_ERR}{ERR_CODE_MSG_SEP}{MARINADE_ERR_PREFIX}{e}")
-        }
+        | MarinadeError::WrongValidatorAccountOrIndex => (
+            SanctumRouterErr::UserErr,
+            format!("{MARINADE_ERR_PREFIX}{e}"),
+        ),
         MarinadeError::ProgramIsPaused
         | MarinadeError::StakingIsCapped
         | MarinadeError::WithdrawStakeAccountIsNotEnabled
-        | MarinadeError::StakeAccountIsEmergencyUnstaking => {
-            format!("{POOL_ERR}{ERR_CODE_MSG_SEP}{MARINADE_ERR_PREFIX}{e}")
-        }
-        MarinadeError::CalculationFailure => {
-            format!("{INTERNAL_ERR}{ERR_CODE_MSG_SEP}{MARINADE_ERR_PREFIX}{e}")
-        }
+        | MarinadeError::StakeAccountIsEmergencyUnstaking => (
+            SanctumRouterErr::PoolErr,
+            format!("{MARINADE_ERR_PREFIX}{e}"),
+        ),
+        MarinadeError::CalculationFailure => (
+            SanctumRouterErr::InternalErr,
+            format!("{MARINADE_ERR_PREFIX}{e}"),
+        ),
     };
-    JsError::new(&s)
+    SanctumRouterError {
+        code,
+        cause: Some(cause),
+    }
 }
 
-pub fn spl_err(e: SplStakePoolError) -> JsError {
+pub fn spl_err(e: SplStakePoolError) -> SanctumRouterError {
     const SPL_ERR_PREFIX: &str = "SplStakePoolError::";
 
-    let s = match e {
+    let (code, cause) = match e {
         SplStakePoolError::IncorrectDepositVoteAddress
         | SplStakePoolError::IncorrectWithdrawVoteAddress
         | SplStakePoolError::InvalidSolDepositAuthority
         | SplStakePoolError::InvalidStakeDepositAuthority
-        | SplStakePoolError::SolWithdrawalTooLarge
-        | SplStakePoolError::StakeLamportsNotEqualToMinimum
         | SplStakePoolError::ValidatorNotFound => {
-            format!("{USER_ERR}{ERR_CODE_MSG_SEP}{SPL_ERR_PREFIX}{e}")
+            (SanctumRouterErr::UserErr, format!("{SPL_ERR_PREFIX}{e}"))
         }
-        SplStakePoolError::InvalidState | SplStakePoolError::StakeListAndPoolOutOfDate => {
-            format!("{POOL_ERR}{ERR_CODE_MSG_SEP}{SPL_ERR_PREFIX}{e}")
+        SplStakePoolError::InvalidState
+        | SplStakePoolError::StakeListAndPoolOutOfDate
+        | SplStakePoolError::SolWithdrawalTooLarge
+        | SplStakePoolError::StakeLamportsNotEqualToMinimum => {
+            (SanctumRouterErr::PoolErr, format!("{SPL_ERR_PREFIX}{e}"))
         }
-        SplStakePoolError::CalculationFailure => {
-            format!("{INTERNAL_ERR}{ERR_CODE_MSG_SEP}{SPL_ERR_PREFIX}{e}")
-        }
+        SplStakePoolError::CalculationFailure => (
+            SanctumRouterErr::InternalErr,
+            format!("{SPL_ERR_PREFIX}{e}"),
+        ),
     };
-    JsError::new(&s)
+
+    SanctumRouterError {
+        code,
+        cause: Some(cause),
+    }
 }
 
-pub fn lido_err(e: LidoError) -> JsError {
+pub fn lido_err(e: LidoError) -> SanctumRouterError {
     const LIDO_ERR_PREFIX: &str = "LidoError::";
 
-    let s = match e {
-        LidoError::InvalidAmount | LidoError::ValidatorWithMoreStakeExists => {
-            format!("{USER_ERR}{ERR_CODE_MSG_SEP}{LIDO_ERR_PREFIX}{e}")
+    let (code, cause) = match e {
+        LidoError::ValidatorWithMoreStakeExists => {
+            (SanctumRouterErr::UserErr, format!("{LIDO_ERR_PREFIX}{e}"))
         }
-        LidoError::ExchangeRateNotUpdatedInThisEpoch => {
-            format!("{POOL_ERR}{ERR_CODE_MSG_SEP}{LIDO_ERR_PREFIX}{e}")
+        LidoError::InvalidAmount | LidoError::ExchangeRateNotUpdatedInThisEpoch => {
+            (SanctumRouterErr::PoolErr, format!("{LIDO_ERR_PREFIX}{e}"))
         }
-        LidoError::CalculationFailure => {
-            format!("{INTERNAL_ERR}{ERR_CODE_MSG_SEP}{LIDO_ERR_PREFIX}{e}")
-        }
+        LidoError::CalculationFailure => (
+            SanctumRouterErr::InternalErr,
+            format!("{LIDO_ERR_PREFIX}{e}"),
+        ),
     };
-    JsError::new(&s)
+
+    SanctumRouterError {
+        code,
+        cause: Some(cause),
+    }
 }
 
-pub fn reserve_err(e: ReserveError) -> JsError {
+pub fn reserve_err(e: ReserveError) -> SanctumRouterError {
     const RESERVE_ERR_PREFIX: &str = "ReserveError::";
 
-    let s = match e {
-        ReserveError::NotEnoughLiquidity => {
-            format!("{POOL_ERR}{ERR_CODE_MSG_SEP}{RESERVE_ERR_PREFIX}{e}")
-        }
-        ReserveError::InternalError => {
-            format!("{INTERNAL_ERR}{ERR_CODE_MSG_SEP}{RESERVE_ERR_PREFIX}{e}")
-        }
+    let (code, cause) = match e {
+        ReserveError::NotEnoughLiquidity => (
+            SanctumRouterErr::PoolErr,
+            format!("{RESERVE_ERR_PREFIX}{e}"),
+        ),
+        ReserveError::InternalError => (
+            SanctumRouterErr::InternalErr,
+            format!("{RESERVE_ERR_PREFIX}{e}"),
+        ),
     };
-    JsError::new(&s)
+
+    SanctumRouterError {
+        code,
+        cause: Some(cause),
+    }
 }
 
 pub fn prefund_wsq_err<E>(
     e: PrefundWithdrawStakeQuoteErr<E>,
-    handle_pool: fn(E) -> JsError,
-) -> JsError {
+    handle_pool: fn(E) -> SanctumRouterError,
+) -> SanctumRouterError {
     match e {
         PrefundWithdrawStakeQuoteErr::Reserve(e) => reserve_err(e),
         PrefundWithdrawStakeQuoteErr::Pool(e) => handle_pool(e),
@@ -189,22 +210,24 @@ pub fn prefund_wsq_err<E>(
 
 pub fn prefund_svsq_err<W, D>(
     e: PrefundSwapViaStakeQuoteErr<W, D>,
-    handle_w: fn(W) -> JsError,
-    handle_d: fn(D) -> JsError,
-) -> JsError {
+    handle_w: fn(W) -> SanctumRouterError,
+    handle_d: fn(D) -> SanctumRouterError,
+) -> SanctumRouterError {
     match e {
-        PrefundSwapViaStakeQuoteErr::NoMatch => {
-            JsError::new(&format!("{POOL_ERR}{ERR_CODE_MSG_SEP}NoMatch"))
-        }
+        PrefundSwapViaStakeQuoteErr::NoMatch => SanctumRouterError {
+            code: SanctumRouterErr::PoolErr,
+            cause: Some("NoMatch".to_owned()),
+        },
         PrefundSwapViaStakeQuoteErr::Reserve(e) => reserve_err(e),
         PrefundSwapViaStakeQuoteErr::WithdrawStake(e) => handle_w(e),
         PrefundSwapViaStakeQuoteErr::DepositStake(e) => handle_d(e),
     }
 }
 
-pub fn unsupported_update_err(ty: PoolUpdateType, mint: &[u8; 32]) -> JsError {
+pub fn unsupported_update_err(ty: PoolUpdateType, mint: &[u8; 32]) -> SanctumRouterError {
     let b58mintstr = Bs58PkString::encode(mint);
-    JsError::new(&format!(
-        "{UNSUPPORTED_UPDATE_ERR}{ERR_CODE_MSG_SEP}{ty:?} not supported by pool of mint {b58mintstr}"
-    ))
+    SanctumRouterError {
+        code: SanctumRouterErr::UnsupportedUpdateErr,
+        cause: Some(format!("{ty:?} not supported by pool of mint {b58mintstr}")),
+    }
 }

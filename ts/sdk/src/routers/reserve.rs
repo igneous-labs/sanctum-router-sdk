@@ -1,9 +1,11 @@
 use sanctum_reserve_core::{Fee, FeeEnum, Pool, PoolBalance, ProtocolFee};
 use sanctum_router_core::{ReserveDepositStakeQuoter, ReserveDepositStakeSufAccs, NATIVE_MINT};
-use wasm_bindgen::JsError;
 
 use crate::{
-    err::{account_missing_err, invalid_pda_err, unsupported_update_err},
+    err::{
+        account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update_err,
+        SanctumRouterError,
+    },
     interface::{get_account, get_account_data, AccountMap},
     pda::reserve::find_reserve_stake_account_record_pda_internal,
     update::PoolUpdateType,
@@ -31,7 +33,7 @@ impl ReserveRouterOwned {
         ]
     }
 
-    pub fn init(accounts: &AccountMap) -> Result<Self, JsError> {
+    pub fn init(accounts: &AccountMap) -> Result<Self, SanctumRouterError> {
         let [p, f, pf] = [
             sanctum_reserve_core::POOL,
             sanctum_reserve_core::FEE,
@@ -42,9 +44,10 @@ impl ReserveRouterOwned {
         let fee_data = f?;
         let protocol_fee_data = pf?;
 
-        let pool = Pool::anchor_de(pool_data)?;
-        let fee_account = Fee::anchor_de(fee_data)?;
-        let protocol_fee_account = ProtocolFee::anchor_de(protocol_fee_data)?;
+        let pool = Pool::anchor_de(pool_data).map_err(|_e| invalid_data_err())?;
+        let fee_account = Fee::anchor_de(fee_data).map_err(|_e| invalid_data_err())?;
+        let protocol_fee_account =
+            ProtocolFee::anchor_de(protocol_fee_data).map_err(|_e| invalid_data_err())?;
         let pool_sol_reserves =
             get_account(accounts, sanctum_reserve_core::POOL_SOL_RESERVES)?.lamports;
 
@@ -59,7 +62,7 @@ impl ReserveRouterOwned {
 
 /// Getters
 impl ReserveRouterOwned {
-    pub fn try_inner(&self) -> Result<&ReserveRouterInner, JsError> {
+    pub fn try_inner(&self) -> Result<&ReserveRouterInner, SanctumRouterError> {
         self.0
             .as_ref()
             .ok_or_else(|| account_missing_err(&sanctum_reserve_core::POOL))
@@ -68,7 +71,7 @@ impl ReserveRouterOwned {
 
 /// DepositStake
 impl ReserveRouterOwned {
-    pub fn deposit_stake_quoter(&self) -> Result<ReserveDepositStakeQuoter, JsError> {
+    pub fn deposit_stake_quoter(&self) -> Result<ReserveDepositStakeQuoter, SanctumRouterError> {
         let inner = self.try_inner()?;
         Ok(ReserveDepositStakeQuoter {
             pool_incoming_stake: inner.pool.incoming_stake,
@@ -82,7 +85,7 @@ impl ReserveRouterOwned {
     pub fn deposit_stake_suf_accs(
         &self,
         stake_account_addr: &[u8; 32],
-    ) -> Result<ReserveDepositStakeSufAccs, JsError> {
+    ) -> Result<ReserveDepositStakeSufAccs, SanctumRouterError> {
         Ok(ReserveDepositStakeSufAccs {
             stake_acc_record_addr: find_reserve_stake_account_record_pda_internal(
                 stake_account_addr,
@@ -95,7 +98,7 @@ impl ReserveRouterOwned {
 
 /// Prefund
 impl ReserveRouterOwned {
-    pub fn prefund_params(&self) -> Result<(PoolBalance, &FeeEnum), JsError> {
+    pub fn prefund_params(&self) -> Result<(PoolBalance, &FeeEnum), SanctumRouterError> {
         let inner = self.try_inner()?;
         Ok((
             PoolBalance {
@@ -118,7 +121,11 @@ impl ReserveRouterOwned {
         .flatten()
     }
 
-    pub fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+    pub fn update(
+        &mut self,
+        ty: PoolUpdateType,
+        accounts: &AccountMap,
+    ) -> Result<(), SanctumRouterError> {
         match ty {
             PoolUpdateType::DepositStake => {
                 *self = Self::init(accounts)?;

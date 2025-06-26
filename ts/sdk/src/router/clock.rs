@@ -1,10 +1,8 @@
-use wasm_bindgen::JsError;
-
-use crate::err::invalid_data_err;
+use crate::err::{invalid_data_err, SanctumRouterError};
 
 const CLOCK_EPOCH_OFFSET: usize = 16;
 
-pub(crate) fn try_clock_acc_data_epoch(d: &[u8]) -> Result<u64, JsError> {
+pub(crate) fn try_clock_acc_data_epoch(d: &[u8]) -> Result<u64, SanctumRouterError> {
     clock_acc_data_epoch(d).ok_or_else(invalid_data_err)
 }
 

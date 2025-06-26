@@ -5,7 +5,7 @@ use sanctum_router_core::{
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::invalid_pda_err,
+    err::{invalid_pda_err, SanctumRouterError},
     interface::B58PK,
     pda::{find_pda, pk_create_with_seed, FoundPda},
 };
@@ -17,7 +17,7 @@ pub fn find_fee_token_account_pda_internal(mint: &[u8; 32]) -> Option<([u8; 32],
 
 /// @param {B58PK} arg0 mint pubkey
 #[wasm_bindgen(js_name = findFeeTokenAccountPda)]
-pub fn find_fee_token_account_pda(Bs58Array(mint): &B58PK) -> Result<FoundPda, JsError> {
+pub fn find_fee_token_account_pda(Bs58Array(mint): &B58PK) -> Result<FoundPda, SanctumRouterError> {
     find_fee_token_account_pda_internal(mint)
         .ok_or_else(invalid_pda_err)
         .map(|(p, b)| FoundPda(B58PK::new(p), b))
@@ -40,7 +40,7 @@ pub fn find_bridge_stake_acc_internal(
 pub fn find_bridge_stake_acc_pda(
     Bs58Array(user): &B58PK,
     bridge_stake_seed: u32,
-) -> Result<FoundPda, JsError> {
+) -> Result<FoundPda, SanctumRouterError> {
     find_bridge_stake_acc_internal(user, bridge_stake_seed)
         .ok_or_else(invalid_pda_err)
         .map(|(p, b)| FoundPda(B58PK::new(p), b))
