@@ -10,7 +10,7 @@ use sanctum_spl_stake_pool_core::{
 use wasm_bindgen::JsError;
 
 use crate::{
-    err::{account_missing_err, generic_err, invalid_pda_err},
+    err::{account_missing_err, invalid_pda_err, spl_err},
     init::{InitData, SplInitData},
     interface::{get_account, get_account_data, AccountMap},
     pda::spl::{
@@ -156,7 +156,7 @@ impl SplStakePoolRouterOwned {
             .try_validator_list()?
             .iter()
             .find(|v| v.vote_account_address() == vote_account)
-            .ok_or_else(|| generic_err(SplStakePoolError::ValidatorNotFound))?;
+            .ok_or_else(|| spl_err(SplStakePoolError::ValidatorNotFound))?;
         Ok(SplDepositStakeSufAccs {
             stake_pool_addr: &self.stake_pool_addr,
             stake_pool_program: &self.stake_pool_program,
@@ -197,7 +197,7 @@ impl SplStakePoolRouterOwned {
             .try_validator_list()?
             .iter()
             .find(|v| v.vote_account_address() == vote_account)
-            .ok_or_else(|| generic_err(SplStakePoolError::ValidatorNotFound))?;
+            .ok_or_else(|| spl_err(SplStakePoolError::ValidatorNotFound))?;
         Ok(SplWithdrawStakeSufAccs {
             stake_pool_addr: &self.stake_pool_addr,
             stake_pool_program: &self.stake_pool_program,

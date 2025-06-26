@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use const_format::formatcp;
 use sanctum_marinade_liquid_staking_core::MarinadeError;
+use sanctum_spl_stake_pool_core::SplStakePoolError;
 use wasm_bindgen::{intern, prelude::*};
 
 use crate::{interface::Bs58PkString, update::PoolUpdateType};
@@ -108,6 +109,23 @@ pub fn marinade_err(e: MarinadeError) -> JsError {
             format!("{POOL_ERR}{ERR_CODE_MSG_SEP}{e}")
         }
         MarinadeError::CalculationFailure => format!("{INTERNAL_ERR}{ERR_CODE_MSG_SEP}{e}"),
+    };
+    JsError::new(&s)
+}
+
+pub fn spl_err(e: SplStakePoolError) -> JsError {
+    let s = match e {
+        SplStakePoolError::IncorrectDepositVoteAddress
+        | SplStakePoolError::IncorrectWithdrawVoteAddress
+        | SplStakePoolError::InvalidSolDepositAuthority
+        | SplStakePoolError::InvalidStakeDepositAuthority
+        | SplStakePoolError::SolWithdrawalTooLarge
+        | SplStakePoolError::StakeLamportsNotEqualToMinimum
+        | SplStakePoolError::ValidatorNotFound => format!("{USER_ERR}{ERR_CODE_MSG_SEP}{e}"),
+        SplStakePoolError::InvalidState | SplStakePoolError::StakeListAndPoolOutOfDate => {
+            format!("{POOL_ERR}{ERR_CODE_MSG_SEP}{e}")
+        }
+        SplStakePoolError::CalculationFailure => format!("{INTERNAL_ERR}{ERR_CODE_MSG_SEP}{e}"),
     };
     JsError::new(&s)
 }

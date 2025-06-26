@@ -10,7 +10,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_pda_err},
+    err::{invalid_pda_err, spl_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::router::find_fee_token_account_pda_internal,
     router::{token_pair::TokenQuoteWithRouterFee, SanctumRouterHandle},
@@ -39,7 +39,7 @@ pub fn quote_withdraw_sol(
         .withdraw_sol_quoter(this.0.try_curr_epoch()?)?
         .quote_withdraw_sol(params.amt)
         .map(|q| TokenQuoteWithRouterFee(q.withdraw_sol_with_router_fee()))
-        .map_err(generic_err)
+        .map_err(spl_err)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
