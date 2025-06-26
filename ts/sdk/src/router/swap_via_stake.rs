@@ -56,7 +56,14 @@ pub struct SwapViaStakeQuote {
     /// Fee charged on deposit stake leg, in terms of output tokens
     pub out_fee: u64,
 
-    /// Info about the bridge stake account used
+    /// Info about the bridge stake account used.
+    ///
+    /// This is the state of the stake account right before it is deposited
+    /// to mint the out LST, not right after it is withdrawn from redeeming the inp LST.
+    ///
+    /// This means for PrefundSwapViaStake's case, the `StakeAccountLamports` of the
+    /// stake account that was withdrawn from redeeming the inp LST `= this.lamports
+    /// + prefund fee in active stake`
     pub bridge: ActiveStakeParams,
 }
 
@@ -101,7 +108,7 @@ fn map_quote(
                 inp:
                     sanctum_router_core::ActiveStakeParams {
                         vote: bridge_vote,
-                        lamports: bridge_lamports,
+                        lamports: bridge_lamports_bef_deposit,
                     },
                 out,
                 fee: out_fee,
@@ -122,7 +129,7 @@ fn map_quote(
                 out_fee,
                 bridge: ActiveStakeParams {
                     vote: B58PK::new(bridge_vote),
-                    lamports: bridge_lamports,
+                    lamports: bridge_lamports_bef_deposit,
                 },
             },
             router_fee,
