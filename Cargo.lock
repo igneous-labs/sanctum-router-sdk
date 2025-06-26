@@ -251,7 +251,7 @@ dependencies = [
 
 [[package]]
 name = "sanctum-router"
-version = "0.0.1-dev-2"
+version = "0.0.1-dev-3"
 dependencies = [
  "bs58-fixed",
  "bs58-fixed-wasm",
