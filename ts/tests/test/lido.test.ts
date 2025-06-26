@@ -1,8 +1,13 @@
-import { describe, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
+  localRpc,
+  parseRouterErr,
   prefundSwapViaStakeFixturesTest,
   prefundWithdrawStakeFixturesTest,
+  routerForSwaps,
+  STSOL_MINT,
 } from "../utils";
+import { quotePrefundWithdrawStake } from "@sanctumso/sanctum-router";
 
 const STSOL_TOKEN_ACC_NAME = "signer-stsol-token";
 
@@ -13,6 +18,26 @@ describe("Lido Test", async () => {
       1_000_000_000n,
       STSOL_TOKEN_ACC_NAME
     );
+  });
+
+  it("lido-prefund-withraw-stake-fails-withdrawal-too-large", async () => {
+    const rpc = localRpc();
+    const router = await routerForSwaps(rpc, [
+      { swap: "prefundWithdrawStake", inp: STSOL_MINT },
+    ]);
+    try {
+      quotePrefundWithdrawStake(router, {
+        // a very large amount
+        amt: 1_000_000_000_000_000_000n,
+        inp: STSOL_MINT,
+      });
+      expect.fail("should have thrown");
+    } catch (e) {
+      expect(e).toSatisfy((e) => {
+        const [code] = parseRouterErr(e);
+        return code === "PoolErr";
+      });
+    }
   });
 
   // PrefundSwapViaStake

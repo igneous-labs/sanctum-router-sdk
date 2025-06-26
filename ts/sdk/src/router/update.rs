@@ -4,7 +4,7 @@ use sanctum_router_core::SYSVAR_CLOCK;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::router_missing_err,
+    err::{router_missing_err, SanctumRouterError},
     interface::{get_account_data, AccountMap, B58PK},
     router::{clock::try_clock_acc_data_epoch, SanctumRouterHandle},
     routers::{LidoRouterOwned, MarinadeRouterOwned, ReserveRouterOwned},
@@ -19,7 +19,7 @@ pub fn accounts_to_update(
     this: &SanctumRouterHandle,
     // Clippy complains, needed for wasm_bindgen
     #[allow(clippy::boxed_local)] swap_mints: Box<[SwapMints]>,
-) -> Result<Box<[B58PK]>, JsError> {
+) -> Result<Box<[B58PK]>, SanctumRouterError> {
     // collect into HashSet to dedup PoolUpdates
     let pool_updates: HashSet<PoolUpdate> = swap_mints
         .iter()
@@ -60,7 +60,7 @@ pub fn update(
     // Clippy complains, needed for wasm_bindgen
     #[allow(clippy::boxed_local)] swap_mints: Box<[SwapMints]>,
     accounts: &AccountMap,
-) -> Result<(), JsError> {
+) -> Result<(), SanctumRouterError> {
     // collect into HashSet to dedup PoolUpdates
     let pool_updates: HashSet<PoolUpdate> = swap_mints
         .iter()
@@ -89,7 +89,7 @@ pub fn update(
                 this.0
                     .spl_routers
                     .get_mut(&mint)
-                    .ok_or_else(router_missing_err)?
+                    .ok_or_else(|| router_missing_err(&mint))?
                     .update(ty, accounts)?;
                 require_clock_update = true;
             }

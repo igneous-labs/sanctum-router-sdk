@@ -1,11 +1,16 @@
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   depositSolFixturesTest,
   depositStakeFixturesTest,
+  localRpc,
+  parseRouterErr,
+  PICOSOL_MINT,
   prefundSwapViaStakeFixturesTest,
   prefundWithdrawStakeFixturesTest,
+  routerForSwaps,
   withdrawSolFixturesTest,
 } from "../utils";
+import { quoteWithdrawSol } from "@sanctumso/sanctum-router";
 
 const PICOSOL_TOKEN_ACC_NAME = "signer-picosol-token";
 
@@ -24,6 +29,26 @@ describe("SPL Test", async () => {
       inp: PICOSOL_TOKEN_ACC_NAME,
       out: "signer-wsol-token",
     });
+  });
+
+  it("spl-picosol-withdraw-sol-fails-withdrawal-too-large", async () => {
+    const rpc = localRpc();
+    const router = await routerForSwaps(rpc, [
+      { swap: "withdrawSol", inp: PICOSOL_MINT },
+    ]);
+    try {
+      quoteWithdrawSol(router, {
+        // a very large amount
+        amt: 1_000_000_000_000_000_000n,
+        inp: PICOSOL_MINT,
+      });
+      expect.fail("should have thrown");
+    } catch (e) {
+      expect(e).toSatisfy((e) => {
+        const [code] = parseRouterErr(e);
+        return code === "PoolErr";
+      });
+    }
   });
 
   // DepositStake

@@ -7,9 +7,9 @@ use bs58_fixed_wasm::Bs58Array;
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
 use tsify_next::Tsify;
-use wasm_bindgen::{prelude::wasm_bindgen, JsError};
+use wasm_bindgen::prelude::wasm_bindgen;
 
-use crate::err::account_missing_err;
+use crate::err::{account_missing_err, SanctumRouterError};
 
 #[tsify_next::declare]
 pub type B58PK = Bs58Array<32, 44>;
@@ -93,7 +93,10 @@ pub struct Instruction {
 pub struct AccountMap(pub HashMap<B58PK, Account>);
 
 // pass pubkey by value instead of ref to accomodate B58PK::new
-pub(crate) fn get_account(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&Account, JsError> {
+pub(crate) fn get_account(
+    accounts: &AccountMap,
+    pubkey: [u8; 32],
+) -> Result<&Account, SanctumRouterError> {
     accounts
         .0
         .get(&B58PK::new(pubkey))
@@ -101,7 +104,10 @@ pub(crate) fn get_account(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&Ac
 }
 
 /// Basically HashMap.get(), but returns [`account_missing_err()`] if account missing instead of `None`
-pub(crate) fn get_account_data(accounts: &AccountMap, pubkey: [u8; 32]) -> Result<&[u8], JsError> {
+pub(crate) fn get_account_data(
+    accounts: &AccountMap,
+    pubkey: [u8; 32],
+) -> Result<&[u8], SanctumRouterError> {
     get_account(accounts, pubkey).map(|account| account.data.as_ref())
 }
 

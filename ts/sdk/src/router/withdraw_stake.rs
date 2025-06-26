@@ -12,7 +12,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_pda_err},
+    err::{invalid_pda_err, lido_err, prefund_wsq_err, spl_err, SanctumRouterError},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::{
         reserve::find_reserve_stake_account_record_pda_internal,
@@ -67,7 +67,7 @@ pub struct PrefundWithdrawStakeQuote(pub(crate) Prefund<WithdrawStakeQuote>);
 pub fn quote_prefund_withdraw_stake(
     this: &SanctumRouterHandle,
     params: WithdrawStakeQuoteParams,
-) -> Result<PrefundWithdrawStakeQuote, JsError> {
+) -> Result<PrefundWithdrawStakeQuote, SanctumRouterError> {
     let inp_mint = params.inp.0;
     let out_vote = params.out.map(|pk| pk.0);
     let out_vote = out_vote.as_ref();
@@ -78,13 +78,13 @@ pub fn quote_prefund_withdraw_stake(
             .lido_router
             .withdraw_stake_quoter(this.0.try_curr_epoch()?)?
             .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
-            .map_err(generic_err),
+            .map_err(|e| prefund_wsq_err(e, lido_err)),
         mint => {
             let router = this.0.try_find_spl_by_mint(&mint)?;
             router
                 .withdraw_stake_quoter(this.0.try_curr_epoch()?)?
                 .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
-                .map_err(generic_err)
+                .map_err(|e| prefund_wsq_err(e, spl_err))
         }
     }?;
     Ok(conv_prefund_quote(quote))
@@ -118,7 +118,7 @@ pub struct WithdrawStakeSwapParams {
 pub fn prefund_withdraw_stake_ix(
     this: &SanctumRouterHandle,
     params: WithdrawStakeSwapParams,
-) -> Result<Instruction, JsError> {
+) -> Result<Instruction, SanctumRouterError> {
     let inp_mint = params.inp.0;
     let vote = params.out.0;
     let (prefix_metas, data) = prefund_withdraw_stake_prefix_metas_and_data(&params)?;
@@ -128,7 +128,7 @@ pub fn prefund_withdraw_stake_ix(
             let router = this.0.lido_router.withdraw_stake_suf_accs()?;
 
             if *router.largest_stake_vote != vote {
-                return Err(LidoError::ValidatorWithMoreStakeExists.into());
+                return Err(lido_err(LidoError::ValidatorWithMoreStakeExists));
             }
 
             let suffix_accounts = keys_signer_writer_to_account_metas(
@@ -197,7 +197,7 @@ fn prefund_withdraw_stake_prefix_metas_and_data(
         [AccountMeta; PREFUND_WITHDRAW_STAKE_PREFIX_ACCS_LEN],
         PrefundWithdrawStakeIxData,
     ),
-    JsError,
+    SanctumRouterError,
 > {
     let (bridge_stake, _bump) =
         find_bridge_stake_acc_internal(&swap_params.signer.0, swap_params.bridge_stake_seed)

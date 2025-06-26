@@ -7,10 +7,9 @@ use sanctum_spl_stake_pool_core::{
     SplStakePoolError, StakePool, ValidatorList, ValidatorListHeader, ValidatorStakeInfo,
     SYSVAR_CLOCK,
 };
-use wasm_bindgen::JsError;
 
 use crate::{
-    err::{account_missing_err, generic_err, invalid_pda_err},
+    err::{account_missing_err, invalid_data_err, invalid_pda_err, spl_err, SanctumRouterError},
     init::{InitData, SplInitData},
     interface::{get_account, get_account_data, AccountMap},
     pda::spl::{
@@ -58,7 +57,7 @@ impl SplStakePoolRouterOwned {
             validator_list_addr: Bs58Array(validator_list_addr),
             reserve_stake_addr: Bs58Array(reserve_stake_addr),
         }): &InitData,
-    ) -> Result<Self, JsError> {
+    ) -> Result<Self, SanctumRouterError> {
         Ok(SplStakePoolRouterOwned {
             stake_pool_program: *stake_pool_program_addr,
             stake_pool_addr: *stake_pool_addr,
@@ -85,20 +84,20 @@ impl SplStakePoolRouterOwned {
 
 /// Getters
 impl SplStakePoolRouterOwned {
-    pub fn try_stake_pool(&self) -> Result<&StakePool, JsError> {
+    pub fn try_stake_pool(&self) -> Result<&StakePool, SanctumRouterError> {
         self.stake_pool
             .as_ref()
             .ok_or_else(|| account_missing_err(&self.stake_pool_addr))
     }
 
-    pub fn try_validator_list(&self) -> Result<&[ValidatorStakeInfo], JsError> {
+    pub fn try_validator_list(&self) -> Result<&[ValidatorStakeInfo], SanctumRouterError> {
         self.validator_list
             .as_ref()
             .ok_or_else(|| account_missing_err(&self.validator_list_addr))
             .map(|vl| vl.validators.as_slice())
     }
 
-    pub fn try_reserve_stake_lamports(&self) -> Result<u64, JsError> {
+    pub fn try_reserve_stake_lamports(&self) -> Result<u64, SanctumRouterError> {
         self.reserve_stake_lamports
             .ok_or_else(|| account_missing_err(&self.reserve_stake_addr))
     }
@@ -106,7 +105,7 @@ impl SplStakePoolRouterOwned {
 
 /// DepositSol + WithdrawSol common
 impl SplStakePoolRouterOwned {
-    pub fn sol_suf_accs(&self) -> Result<SplSolSufAccs, JsError> {
+    pub fn sol_suf_accs(&self) -> Result<SplSolSufAccs, SanctumRouterError> {
         Ok(SplSolSufAccs {
             stake_pool: self.try_stake_pool()?,
             stake_pool_program: &self.stake_pool_program,
@@ -118,7 +117,10 @@ impl SplStakePoolRouterOwned {
 
 /// DepositSol
 impl SplStakePoolRouterOwned {
-    pub fn deposit_sol_quoter(&self, curr_epoch: u64) -> Result<SplDepositSolQuoter, JsError> {
+    pub fn deposit_sol_quoter(
+        &self,
+        curr_epoch: u64,
+    ) -> Result<SplDepositSolQuoter, SanctumRouterError> {
         Ok(SplDepositSolQuoter {
             stake_pool: self.try_stake_pool()?,
             curr_epoch,
@@ -128,7 +130,10 @@ impl SplStakePoolRouterOwned {
 
 /// WithdrawSol
 impl SplStakePoolRouterOwned {
-    pub fn withdraw_sol_quoter(&self, curr_epoch: u64) -> Result<SplWithdrawSolQuoter, JsError> {
+    pub fn withdraw_sol_quoter(
+        &self,
+        curr_epoch: u64,
+    ) -> Result<SplWithdrawSolQuoter, SanctumRouterError> {
         Ok(SplWithdrawSolQuoter {
             stake_pool: self.try_stake_pool()?,
             reserve_stake_lamports: self.try_reserve_stake_lamports()?,
@@ -139,7 +144,10 @@ impl SplStakePoolRouterOwned {
 
 /// DepositStake
 impl SplStakePoolRouterOwned {
-    pub fn deposit_stake_quoter(&self, curr_epoch: u64) -> Result<SplDepositStakeQuoter, JsError> {
+    pub fn deposit_stake_quoter(
+        &self,
+        curr_epoch: u64,
+    ) -> Result<SplDepositStakeQuoter, SanctumRouterError> {
         Ok(SplDepositStakeQuoter {
             stake_pool: self.try_stake_pool()?,
             curr_epoch,
@@ -151,12 +159,12 @@ impl SplStakePoolRouterOwned {
     pub fn deposit_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],
-    ) -> Result<SplDepositStakeSufAccs, JsError> {
+    ) -> Result<SplDepositStakeSufAccs, SanctumRouterError> {
         let validator_stake_info = self
             .try_validator_list()?
             .iter()
             .find(|v| v.vote_account_address() == vote_account)
-            .ok_or_else(|| generic_err(SplStakePoolError::ValidatorNotFound))?;
+            .ok_or_else(|| spl_err(SplStakePoolError::ValidatorNotFound))?;
         Ok(SplDepositStakeSufAccs {
             stake_pool_addr: &self.stake_pool_addr,
             stake_pool_program: &self.stake_pool_program,
@@ -180,7 +188,7 @@ impl SplStakePoolRouterOwned {
     pub fn withdraw_stake_quoter(
         &self,
         curr_epoch: u64,
-    ) -> Result<SplWithdrawStakeQuoter, JsError> {
+    ) -> Result<SplWithdrawStakeQuoter, SanctumRouterError> {
         Ok(SplWithdrawStakeQuoter {
             stake_pool: self.try_stake_pool()?,
             curr_epoch,
@@ -192,12 +200,12 @@ impl SplStakePoolRouterOwned {
     pub fn withdraw_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],
-    ) -> Result<SplWithdrawStakeSufAccs, JsError> {
+    ) -> Result<SplWithdrawStakeSufAccs, SanctumRouterError> {
         let validator_stake_info = self
             .try_validator_list()?
             .iter()
             .find(|v| v.vote_account_address() == vote_account)
-            .ok_or_else(|| generic_err(SplStakePoolError::ValidatorNotFound))?;
+            .ok_or_else(|| spl_err(SplStakePoolError::ValidatorNotFound))?;
         Ok(SplWithdrawStakeSufAccs {
             stake_pool_addr: &self.stake_pool_addr,
             stake_pool_program: &self.stake_pool_program,
@@ -217,13 +225,18 @@ impl SplStakePoolRouterOwned {
 
 /// Update
 impl SplStakePoolRouterOwned {
-    pub fn update_stake_pool(&mut self, stake_pool_data: &[u8]) -> Result<(), JsError> {
-        self.stake_pool = Some(StakePool::borsh_de(stake_pool_data)?);
+    pub fn update_stake_pool(&mut self, stake_pool_data: &[u8]) -> Result<(), SanctumRouterError> {
+        self.stake_pool =
+            Some(StakePool::borsh_de(stake_pool_data).map_err(|_e| invalid_data_err())?);
         Ok(())
     }
 
-    pub fn update_validator_list(&mut self, validator_list_data: &[u8]) -> Result<(), JsError> {
-        let validator_list = ValidatorList::deserialize(validator_list_data)?;
+    pub fn update_validator_list(
+        &mut self,
+        validator_list_data: &[u8],
+    ) -> Result<(), SanctumRouterError> {
+        let validator_list =
+            ValidatorList::deserialize(validator_list_data).map_err(|_e| invalid_data_err())?;
         self.validator_list = Some(ValidatorListOwned {
             header: validator_list.header,
             validators: validator_list.validators.to_vec(),
@@ -253,7 +266,11 @@ impl SplStakePoolRouterOwned {
         .flatten()
     }
 
-    pub fn update(&mut self, ty: PoolUpdateType, accounts: &AccountMap) -> Result<(), JsError> {
+    pub fn update(
+        &mut self,
+        ty: PoolUpdateType,
+        accounts: &AccountMap,
+    ) -> Result<(), SanctumRouterError> {
         let stake_pool_data = get_account_data(accounts, self.stake_pool_addr)?;
         self.update_stake_pool(stake_pool_data)?;
 

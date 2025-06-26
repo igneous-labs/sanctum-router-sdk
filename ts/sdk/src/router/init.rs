@@ -9,7 +9,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::invalid_data_err,
+    err::{invalid_data_err, SanctumRouterError},
     init::InitData,
     interface::B58PK,
     router::{SanctumRouter, SanctumRouterHandle},
@@ -39,7 +39,7 @@ pub fn init(
     SanctumRouterHandle(this): &mut SanctumRouterHandle,
     // Clippy complains, needed for wasm_bindgen
     #[allow(clippy::boxed_local)] init_mints: Box<[InitMint]>,
-) -> Result<(), JsError> {
+) -> Result<(), SanctumRouterError> {
     init_mints.iter().try_for_each(
         |InitMint {
              mint: Bs58Array(mint),
@@ -92,6 +92,6 @@ pub fn is_init(
 /// init and updated for the specific swap
 /// before it can start operating for it.
 #[wasm_bindgen(js_name = newSanctumRouter)]
-pub fn new_sanctum_router() -> Result<SanctumRouterHandle, JsError> {
+pub fn new_sanctum_router() -> Result<SanctumRouterHandle, SanctumRouterError> {
     Ok(SanctumRouterHandle(SanctumRouter::default()))
 }
