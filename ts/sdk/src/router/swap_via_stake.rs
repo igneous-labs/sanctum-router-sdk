@@ -16,7 +16,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_pda_err},
+    err::{invalid_pda_err, lido_err, marinade_err, prefund_svsq_err, reserve_err, spl_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::{
         reserve::find_reserve_stake_account_record_pda_internal,
@@ -155,24 +155,27 @@ fn quote_prefund_swap_via_stake_inner(
     // number of total match arms (Withdraw + Deposit) from n^2 to n
     // but for now we have this macro in its place to reduce redundancy instead
     macro_rules! match_deposit_stake {
-        ($w_itr:expr) => {
+        ($w_itr:expr, $handle_w:expr) => {
             match *out_mint {
                 NATIVE_MINT => {
                     let d = this
                         .reserve_router
                         .deposit_stake_quoter()?
                         .after_prefund()?;
-                    core_quote($w_itr, d, amt, &reserves_balance, reserves_fee).map_err(generic_err)
+                    core_quote($w_itr, d, amt, &reserves_balance, reserves_fee)
+                        .map_err(|e| prefund_svsq_err(e, $handle_w, reserve_err))
                 }
                 MSOL_MINT_ADDR => {
                     let d = this.marinade_router.deposit_stake_quoter()?;
-                    core_quote($w_itr, d, amt, &reserves_balance, reserves_fee).map_err(generic_err)
+                    core_quote($w_itr, d, amt, &reserves_balance, reserves_fee)
+                        .map_err(|e| prefund_svsq_err(e, $handle_w, marinade_err))
                 }
                 out => {
                     let d = this
                         .try_find_spl_by_mint(&out)?
                         .deposit_stake_quoter(this.try_curr_epoch()?)?;
-                    core_quote($w_itr, d, amt, &reserves_balance, reserves_fee).map_err(generic_err)
+                    core_quote($w_itr, d, amt, &reserves_balance, reserves_fee)
+                        .map_err(|e| prefund_svsq_err(e, $handle_w, spl_err))
                 }
             }
         };
@@ -184,7 +187,7 @@ fn quote_prefund_swap_via_stake_inner(
                 this.lido_router
                     .withdraw_stake_quoter(this.try_curr_epoch()?)?,
             );
-            match_deposit_stake!(w_itr)
+            match_deposit_stake!(w_itr, lido_err)
         }
         inp => {
             let router = this.try_find_spl_by_mint(&inp)?;
@@ -193,7 +196,7 @@ fn quote_prefund_swap_via_stake_inner(
                 router.try_validator_list()?,
                 this.try_curr_epoch()?,
             )?;
-            match_deposit_stake!(w_itr)
+            match_deposit_stake!(w_itr, spl_err)
         }
     }
 }

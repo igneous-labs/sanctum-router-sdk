@@ -12,7 +12,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_pda_err},
+    err::{invalid_pda_err, lido_err, prefund_wsq_err, spl_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::{
         reserve::find_reserve_stake_account_record_pda_internal,
@@ -78,13 +78,13 @@ pub fn quote_prefund_withdraw_stake(
             .lido_router
             .withdraw_stake_quoter(this.0.try_curr_epoch()?)?
             .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
-            .map_err(generic_err),
+            .map_err(|e| prefund_wsq_err(e, lido_err)),
         mint => {
             let router = this.0.try_find_spl_by_mint(&mint)?;
             router
                 .withdraw_stake_quoter(this.0.try_curr_epoch()?)?
                 .quote_prefund_withdraw_stake(params.amt, out_vote, &reserves_balance, reserves_fee)
-                .map_err(generic_err)
+                .map_err(|e| prefund_wsq_err(e, spl_err))
         }
     }?;
     Ok(conv_prefund_quote(quote))

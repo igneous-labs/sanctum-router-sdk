@@ -10,7 +10,7 @@ use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    err::{generic_err, invalid_pda_err, marinade_err, spl_err},
+    err::{invalid_pda_err, marinade_err, reserve_err, spl_err},
     interface::{keys_signer_writer_to_account_metas, AccountMeta, Instruction, B58PK},
     pda::router::find_fee_token_account_pda_internal,
     router::SanctumRouterHandle,
@@ -77,7 +77,7 @@ pub fn quote_deposit_stake(
             .reserve_router
             .deposit_stake_quoter()?
             .quote_deposit_stake(active_stake_params)
-            .map_err(generic_err),
+            .map_err(reserve_err),
         sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => this
             .0
             .marinade_router
