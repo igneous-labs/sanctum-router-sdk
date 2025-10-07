@@ -27,12 +27,12 @@ services:
 
         "--upgradeable-program",
         "SP12tWFxD9oJsVWNavTTBZvMbA6gkAmxtVgxdqvyvhY",
-        "/test-fixtures/programs/single-validator-stake-pool.so",
+        "/test-fixtures/programs/stake-pool.so",
         "none",
 
         "--upgradeable-program",
         "SPMBzsVUuoHA4Jm6KunbsotaahvVikZs1JyTW6iJvbn",
-        "/test-fixtures/programs/multiple-validator-stake-pool.so",
+        "/test-fixtures/programs/stake-pool.so",
         "none",
 
         "--upgradeable-program",

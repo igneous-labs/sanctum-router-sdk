@@ -104,9 +104,9 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "generic-array-struct"
-version = "0.3.1-bc"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "165d494bef8e3d381c01c3ebae903c71757c4e2241201a7139cb79bcf161cec9"
+checksum = "fc508c7c6ae3639310b4c5523d488818280fd1808446c96db1ada5c41638966d"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -217,9 +217,9 @@ checksum = "8a0d197bd2c9dc6e53b84da9556a69ba4cdfab8619eb41a8bd1cc2027a0f6b1d"
 
 [[package]]
 name = "sanctum-fee-ratio"
-version = "1.0.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99dfee0bf22f2e18e9b28d2cc2984e4e6d02c135a8d3e137e77d6dea61961dac"
+checksum = "a1c2233e749deeeb7d7fb6d4350c8941eb8ec996933eb30c4db50a186d789c6d"
 dependencies = [
  "sanctum-u64-ratio",
 ]
@@ -227,7 +227,7 @@ dependencies = [
 [[package]]
 name = "sanctum-marinade-liquid-staking-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-marinade-liquid-staking-sdk.git?branch=main#f80137d176859bd9ab125f4214b6db40a32d42f5"
+source = "git+https://github.com/igneous-labs/sanctum-marinade-liquid-staking-sdk.git?branch=main#42811b2a2fa7fc35c24e298e06186ef263dbf706"
 dependencies = [
  "borsh",
  "const-crypto",
@@ -239,7 +239,7 @@ dependencies = [
 [[package]]
 name = "sanctum-reserve-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-reserve-sdk.git?branch=master#dea2fc38938280931d6080a2744d15057fd21138"
+source = "git+https://github.com/igneous-labs/sanctum-reserve-sdk.git?branch=master#85bc6d59e4b39396d04d0eeb672024e0dd5ab29c"
 dependencies = [
  "borsh",
  "const-crypto",
@@ -289,7 +289,7 @@ dependencies = [
 [[package]]
 name = "sanctum-spl-stake-pool-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#1a74b32a5df3853212bda2bd28cced0d2b7a8ead"
+source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#68b9ec7b406e2a5c0986c0cc8d359cf48285c96a"
 dependencies = [
  "borsh",
  "const-crypto",
@@ -300,9 +300,9 @@ dependencies = [
 
 [[package]]
 name = "sanctum-u64-ratio"
-version = "1.0.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d1ad689849ff8e180d7fd311efe21ed6bca2ca9709d1dffdc1a52faf393e812"
+checksum = "8e15bef5560539ed416f49fe8d5430b80699aa7279dcbe35e1f25800894c19b2"
 
 [[package]]
 name = "serde"
@@ -364,7 +364,7 @@ checksum = "5f179d4e11094a893b82fff208f74d448a7512f99f5a0acbd5c679b705f83ed9"
 [[package]]
 name = "solido-legacy-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/solido-legacy-sdk.git?branch=master#280d6fc5053cd58099a073a620a1b32fff1e8fc1"
+source = "git+https://github.com/igneous-labs/solido-legacy-sdk.git?branch=master#16e6658c4504cf59c8d0b9e375dd6f9faec7d663"
 dependencies = [
  "borsh",
  "const-crypto",

@@ -1,5 +1,9 @@
 # test-fixtures
 
+## Programs Notes
+
+All 3 deploys of SPL currently use the exact same binary, `programs/stake-pool.so`
+
 ## Notes
 
 - All stake accounts are active with activationEpoch=0, deactivationEpoch=u64::MAX
