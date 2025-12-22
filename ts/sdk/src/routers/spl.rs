@@ -105,7 +105,7 @@ impl SplStakePoolRouterOwned {
 
 /// DepositSol + WithdrawSol common
 impl SplStakePoolRouterOwned {
-    pub fn sol_suf_accs(&self) -> Result<SplSolSufAccs, SanctumRouterError> {
+    pub fn sol_suf_accs(&self) -> Result<SplSolSufAccs<'_>, SanctumRouterError> {
         Ok(SplSolSufAccs {
             stake_pool: self.try_stake_pool()?,
             stake_pool_program: &self.stake_pool_program,
@@ -120,7 +120,7 @@ impl SplStakePoolRouterOwned {
     pub fn deposit_sol_quoter(
         &self,
         curr_epoch: u64,
-    ) -> Result<SplDepositSolQuoter, SanctumRouterError> {
+    ) -> Result<SplDepositSolQuoter<'_>, SanctumRouterError> {
         Ok(SplDepositSolQuoter {
             stake_pool: self.try_stake_pool()?,
             curr_epoch,
@@ -133,7 +133,7 @@ impl SplStakePoolRouterOwned {
     pub fn withdraw_sol_quoter(
         &self,
         curr_epoch: u64,
-    ) -> Result<SplWithdrawSolQuoter, SanctumRouterError> {
+    ) -> Result<SplWithdrawSolQuoter<'_>, SanctumRouterError> {
         Ok(SplWithdrawSolQuoter {
             stake_pool: self.try_stake_pool()?,
             reserve_stake_lamports: self.try_reserve_stake_lamports()?,
@@ -147,7 +147,7 @@ impl SplStakePoolRouterOwned {
     pub fn deposit_stake_quoter(
         &self,
         curr_epoch: u64,
-    ) -> Result<SplDepositStakeQuoter, SanctumRouterError> {
+    ) -> Result<SplDepositStakeQuoter<'_>, SanctumRouterError> {
         Ok(SplDepositStakeQuoter {
             stake_pool: self.try_stake_pool()?,
             curr_epoch,
@@ -159,7 +159,7 @@ impl SplStakePoolRouterOwned {
     pub fn deposit_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],
-    ) -> Result<SplDepositStakeSufAccs, SanctumRouterError> {
+    ) -> Result<SplDepositStakeSufAccs<'_>, SanctumRouterError> {
         let validator_stake_info = self
             .try_validator_list()?
             .iter()
@@ -188,7 +188,7 @@ impl SplStakePoolRouterOwned {
     pub fn withdraw_stake_quoter(
         &self,
         curr_epoch: u64,
-    ) -> Result<SplWithdrawStakeQuoter, SanctumRouterError> {
+    ) -> Result<SplWithdrawStakeQuoter<'_>, SanctumRouterError> {
         Ok(SplWithdrawStakeQuoter {
             stake_pool: self.try_stake_pool()?,
             curr_epoch,
@@ -200,7 +200,7 @@ impl SplStakePoolRouterOwned {
     pub fn withdraw_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],
-    ) -> Result<SplWithdrawStakeSufAccs, SanctumRouterError> {
+    ) -> Result<SplWithdrawStakeSufAccs<'_>, SanctumRouterError> {
         let validator_stake_info = self
             .try_validator_list()?
             .iter()

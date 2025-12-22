@@ -33,7 +33,7 @@ pub trait WithdrawStakeQuoter {
     /// # Params
     /// - `tokens` LST tokens to redeem to stake, in atomics
     /// - `vote` vote account for the withdrawn stake to be delegated to.
-    ///    If `None`, the pool is allowed to choose any vote account
+    ///   If `None`, the pool is allowed to choose any vote account
     fn quote_withdraw_stake(
         &self,
         tokens: u64,

@@ -72,7 +72,7 @@ impl LidoRouterOwned {
     pub fn withdraw_stake_quoter(
         &self,
         curr_epoch: u64,
-    ) -> Result<LidoWithdrawStakeQuoter, SanctumRouterError> {
+    ) -> Result<LidoWithdrawStakeQuoter<'_>, SanctumRouterError> {
         let inner = self.try_inner()?;
         LidoWithdrawStakeQuoter::new(&inner.state, &inner.validator_list.validators, curr_epoch)
             .ok_or_else(invalid_data_err)
@@ -81,7 +81,9 @@ impl LidoRouterOwned {
     /// Lido only allows withdrawing from max stake validator
     ///
     /// Returns `None` if data missing or validator stake acc PDA invalid
-    pub fn withdraw_stake_suf_accs(&self) -> Result<LidoWithdrawStakeSufAccs, SanctumRouterError> {
+    pub fn withdraw_stake_suf_accs(
+        &self,
+    ) -> Result<LidoWithdrawStakeSufAccs<'_>, SanctumRouterError> {
         let inner = self.try_inner()?;
         let max_validator = inner
             .validator_list

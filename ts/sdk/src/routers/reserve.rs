@@ -71,7 +71,9 @@ impl ReserveRouterOwned {
 
 /// DepositStake
 impl ReserveRouterOwned {
-    pub fn deposit_stake_quoter(&self) -> Result<ReserveDepositStakeQuoter, SanctumRouterError> {
+    pub fn deposit_stake_quoter(
+        &self,
+    ) -> Result<ReserveDepositStakeQuoter<'_>, SanctumRouterError> {
         let inner = self.try_inner()?;
         Ok(ReserveDepositStakeQuoter {
             pool_incoming_stake: inner.pool.incoming_stake,

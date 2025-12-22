@@ -47,21 +47,25 @@ impl MarinadeRouterOwned {
 
 /// DepositSol
 impl MarinadeRouterOwned {
-    pub fn deposit_sol_quoter(&self) -> Result<MarinadeDepositSolQuoter, SanctumRouterError> {
+    pub fn deposit_sol_quoter(&self) -> Result<MarinadeDepositSolQuoter<'_>, SanctumRouterError> {
         Ok(MarinadeDepositSolQuoter {
             state: self.try_state()?,
             msol_leg_balance: self.try_msol_leg_balance()?,
         })
     }
 
-    pub fn deposit_sol_suf_accs(&self) -> Result<MarinadeDepositSolSufAccs, SanctumRouterError> {
+    pub fn deposit_sol_suf_accs(
+        &self,
+    ) -> Result<MarinadeDepositSolSufAccs<'_>, SanctumRouterError> {
         self.try_state().map(MarinadeDepositSolSufAccs::from_state)
     }
 }
 
 /// DepositStake
 impl MarinadeRouterOwned {
-    pub fn deposit_stake_quoter(&self) -> Result<MarinadeDepositStakeQuoter, SanctumRouterError> {
+    pub fn deposit_stake_quoter(
+        &self,
+    ) -> Result<MarinadeDepositStakeQuoter<'_>, SanctumRouterError> {
         Ok(MarinadeDepositStakeQuoter {
             state: self.try_state()?,
             msol_leg_balance: self.try_msol_leg_balance()?,
@@ -72,7 +76,7 @@ impl MarinadeRouterOwned {
     pub fn deposit_stake_suf_accs(
         &self,
         vote_account: &[u8; 32],
-    ) -> Result<MarinadeDepositStakeSufAccs, SanctumRouterError> {
+    ) -> Result<MarinadeDepositStakeSufAccs<'_>, SanctumRouterError> {
         Ok(MarinadeDepositStakeSufAccs {
             state: self.try_state()?,
             duplication_flag: find_marinade_duplication_flag_pda_internal(vote_account)
