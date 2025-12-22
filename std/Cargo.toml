@@ -12,5 +12,6 @@ std = ["sanctum-router-core/std"]
 wasm = ["sanctum-router-core/wasm"]
 
 [dependencies]
+sanctum-marinade-liquid-staking-core = { workspace = true }
 sanctum-router-core = { workspace = true, default-features = false }
 sanctum-spl-stake-pool-core = { workspace = true }

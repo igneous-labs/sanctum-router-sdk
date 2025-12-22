@@ -290,6 +290,7 @@ dependencies = [
 name = "sanctum-router-std"
 version = "0.1.0"
 dependencies = [
+ "sanctum-marinade-liquid-staking-core",
  "sanctum-router-core",
  "sanctum-spl-stake-pool-core",
 ]
