@@ -293,6 +293,7 @@ dependencies = [
  "sanctum-marinade-liquid-staking-core",
  "sanctum-router-core",
  "sanctum-spl-stake-pool-core",
+ "solido-legacy-core",
 ]
 
 [[package]]
