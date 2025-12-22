@@ -3,6 +3,7 @@ resolver = "2"
 
 members = [
     "core", 
+    "std",
     "ts/sdk",
 ]
 
@@ -35,4 +36,4 @@ solido-legacy-core = { git = "https://github.com/igneous-labs/solido-legacy-sdk.
 
 # workspace members
 sanctum-router-core = { path = "core" }
-sanctum-router-jupiter-amm = { path = "jupiter-amm" }
+sanctum-router-std = { path = "std" }

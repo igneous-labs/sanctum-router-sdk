@@ -287,6 +287,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sanctum-router-std"
+version = "0.1.0"
+dependencies = [
+ "sanctum-router-core",
+ "sanctum-spl-stake-pool-core",
+]
+
+[[package]]
 name = "sanctum-spl-stake-pool-core"
 version = "0.1.0"
 source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#58b744f6b5f318fb871da3d64ea7d39f329c78b0"
