@@ -1,6 +1,8 @@
 use std::num::NonZeroU32;
 
-use sanctum_spl_stake_pool_core::{deposit_auth_seeds, validator_stake_seeds, withdraw_auth_seeds};
+use sanctum_router_std::sanctum_spl_stake_pool_core::{
+    deposit_auth_seeds, validator_stake_seeds, withdraw_auth_seeds,
+};
 
 use crate::pda::find_pda;
 

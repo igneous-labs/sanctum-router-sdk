@@ -1,5 +1,6 @@
-use sanctum_router_core::{
-    ActiveStakeParams, Prefund, PrefundWithdrawStakeIxData, PrefundWithdrawStakePrefixAccsBuilder,
+use sanctum_router_std::{
+    sanctum_reserve_core, solido_legacy_core, solido_legacy_core::LidoError, ActiveStakeParams,
+    Prefund, PrefundWithdrawStakeIxData, PrefundWithdrawStakePrefixAccsBuilder,
     StakeAccountLamports, WithdrawStakeQuoter, WithdrawStakeSufAccs, PREFUNDER,
     PREFUND_WITHDRAW_STAKE_PREFIX_ACCS_LEN, PREFUND_WITHDRAW_STAKE_PREFIX_IS_SIGNER,
     PREFUND_WITHDRAW_STAKE_PREFIX_IS_WRITER, SANCTUM_ROUTER_PROGRAM, STAKE_PROGRAM, SYSTEM_PROGRAM,
@@ -7,7 +8,6 @@ use sanctum_router_core::{
 };
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
-use solido_legacy_core::LidoError;
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
@@ -171,13 +171,13 @@ pub fn prefund_withdraw_stake_ix(
 fn conv_prefund_quote(
     Prefund {
         quote:
-            sanctum_router_core::WithdrawStakeQuote {
+            sanctum_router_std::WithdrawStakeQuote {
                 inp,
                 out: ActiveStakeParams { vote, lamports },
                 fee,
             },
         prefund_fee,
-    }: Prefund<sanctum_router_core::WithdrawStakeQuote>,
+    }: Prefund<sanctum_router_std::WithdrawStakeQuote>,
 ) -> PrefundWithdrawStakeQuote {
     PrefundWithdrawStakeQuote(Prefund {
         quote: WithdrawStakeQuote {

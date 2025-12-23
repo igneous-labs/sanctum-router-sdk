@@ -1,5 +1,5 @@
 use bs58_fixed_wasm::Bs58Array;
-use sanctum_router_core::{
+use sanctum_router_std::{
     bridge_stake_seeds, fee_token_acc_seeds, SANCTUM_ROUTER_PROGRAM, SLUMDOG_SEED, STAKE_PROGRAM,
 };
 use wasm_bindgen::prelude::*;

@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use sanctum_router_core::SYSVAR_CLOCK;
+use sanctum_router_std::SYSVAR_CLOCK;
 use wasm_bindgen::prelude::*;
 
 use crate::{

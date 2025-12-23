@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use sanctum_router_core::SYSVAR_CLOCK;
+use sanctum_router_std::{sanctum_marinade_liquid_staking_core, solido_legacy_core, SYSVAR_CLOCK};
 use wasm_bindgen::prelude::*;
 
 use crate::{
@@ -30,7 +30,7 @@ pub fn accounts_to_update(
 
     for PoolUpdate { mint, ty } in pool_updates.into_iter() {
         match mint {
-            sanctum_router_core::NATIVE_MINT => {
+            sanctum_router_std::NATIVE_MINT => {
                 accounts.extend(ReserveRouterOwned::accounts_to_update(ty).map(B58PK::new));
             }
             sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {
@@ -75,7 +75,7 @@ pub fn update(
 
     for PoolUpdate { mint, ty } in pool_updates.into_iter() {
         match mint {
-            sanctum_router_core::NATIVE_MINT => {
+            sanctum_router_std::NATIVE_MINT => {
                 this.0.reserve_router.update(ty, accounts)?;
             }
             sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR => {

@@ -1,4 +1,4 @@
-use sanctum_reserve_core::stake_account_record_seeds;
+use sanctum_router_std::sanctum_reserve_core::{self, stake_account_record_seeds};
 
 use crate::pda::find_pda;
 

@@ -1,7 +1,8 @@
 use bs58_fixed_wasm::Bs58Array;
-use sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR;
-use sanctum_router_core::{
-    quote_prefund_swap_via_stake as core_quote, DepositStakeQuote, DepositStakeSufAccs, Prefund,
+use sanctum_router_std::{
+    quote_prefund_swap_via_stake as core_quote,
+    sanctum_marinade_liquid_staking_core::MSOL_MINT_ADDR, sanctum_reserve_core,
+    solido_legacy_core::STSOL_MINT_ADDR, DepositStakeQuote, DepositStakeSufAccs, Prefund,
     PrefundSwapViaStakeIxData, PrefundSwapViaStakePrefixAccsBuilder, SplWithdrawStakeValQuoter,
     StakeAccountLamports, WithRouterFee, WithdrawStakeQuote, WithdrawStakeSufAccs, NATIVE_MINT,
     PREFUNDER, PREFUND_SWAP_VIA_STAKE_PREFIX_ACCS_LEN, PREFUND_SWAP_VIA_STAKE_PREFIX_IS_SIGNER,
@@ -11,7 +12,6 @@ use sanctum_router_core::{
 };
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
-use solido_legacy_core::STSOL_MINT_ADDR;
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 
@@ -109,7 +109,7 @@ fn map_quote(
         quote:
             DepositStakeQuote {
                 inp:
-                    sanctum_router_core::ActiveStakeParams {
+                    sanctum_router_std::ActiveStakeParams {
                         vote: bridge_vote,
                         lamports: bridge_lamports_bef_deposit,
                     },
@@ -118,7 +118,7 @@ fn map_quote(
                 ..
             },
         router_fee,
-    } = if *out_mint != sanctum_router_core::NATIVE_MINT {
+    } = if *out_mint != sanctum_router_std::NATIVE_MINT {
         dsq.with_router_fee()
     } else {
         WithRouterFee::zero(dsq)

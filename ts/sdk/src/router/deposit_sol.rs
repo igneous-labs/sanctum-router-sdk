@@ -1,7 +1,8 @@
-use sanctum_router_core::{
-    DepositSolQuoter, DepositSolSufAccs, StakeWrappedSolIxData, StakeWrappedSolPrefixKeysOwned,
-    WithRouterFee, NATIVE_MINT, SANCTUM_ROUTER_PROGRAM, STAKE_WRAPPED_SOL_PREFIX_ACCS_LEN,
-    STAKE_WRAPPED_SOL_PREFIX_IS_SIGNER, STAKE_WRAPPED_SOL_PREFIX_IS_WRITER, TOKEN_PROGRAM,
+use sanctum_router_std::{
+    sanctum_marinade_liquid_staking_core, DepositSolQuoter, DepositSolSufAccs,
+    StakeWrappedSolIxData, StakeWrappedSolPrefixKeysOwned, WithRouterFee, NATIVE_MINT,
+    SANCTUM_ROUTER_PROGRAM, STAKE_WRAPPED_SOL_PREFIX_ACCS_LEN, STAKE_WRAPPED_SOL_PREFIX_IS_SIGNER,
+    STAKE_WRAPPED_SOL_PREFIX_IS_WRITER, TOKEN_PROGRAM,
 };
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;

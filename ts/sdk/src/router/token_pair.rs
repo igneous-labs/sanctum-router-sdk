@@ -1,4 +1,4 @@
-use sanctum_router_core::{TokenQuote, WithRouterFee};
+use sanctum_router_std::{TokenQuote, WithRouterFee};
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 

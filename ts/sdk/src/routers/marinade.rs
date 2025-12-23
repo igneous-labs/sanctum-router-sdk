@@ -1,8 +1,8 @@
-use sanctum_marinade_liquid_staking_core::{
-    State as MarinadeState, ValidatorList, ValidatorRecord, LIQ_POOL_MSOL_LEG_PUBKEY,
-    MSOL_MINT_ADDR, STATE_PUBKEY, VALIDATOR_LIST_PUBKEY,
-};
-use sanctum_router_core::{
+use sanctum_router_std::{
+    sanctum_marinade_liquid_staking_core::{
+        self, State as MarinadeState, ValidatorList, ValidatorRecord, LIQ_POOL_MSOL_LEG_PUBKEY,
+        MSOL_MINT_ADDR, STATE_PUBKEY, VALIDATOR_LIST_PUBKEY,
+    },
     MarinadeDepositSolQuoter, MarinadeDepositSolSufAccs, MarinadeDepositStakeQuoter,
     MarinadeDepositStakeSufAccs,
 };

@@ -1,8 +1,9 @@
-use sanctum_router_core::{
-    ActiveStakeParams, DepositStakeIxAccsBuilder, DepositStakeIxData, DepositStakeQuoter,
-    DepositStakeSufAccs, StakeAccountLamports, WithRouterFee, DEPOSIT_STAKE_IX_ACCS_LEN,
-    DEPOSIT_STAKE_IX_IS_SIGNER, DEPOSIT_STAKE_IX_IS_WRITER_NON_WSOL_OUT,
-    DEPOSIT_STAKE_IX_IS_WRITER_WSOL_OUT, NATIVE_MINT, SANCTUM_ROUTER_PROGRAM,
+use sanctum_router_std::{
+    sanctum_marinade_liquid_staking_core, ActiveStakeParams, DepositStakeIxAccsBuilder,
+    DepositStakeIxData, DepositStakeQuoter, DepositStakeSufAccs, StakeAccountLamports,
+    WithRouterFee, DEPOSIT_STAKE_IX_ACCS_LEN, DEPOSIT_STAKE_IX_IS_SIGNER,
+    DEPOSIT_STAKE_IX_IS_WRITER_NON_WSOL_OUT, DEPOSIT_STAKE_IX_IS_WRITER_WSOL_OUT, NATIVE_MINT,
+    SANCTUM_ROUTER_PROGRAM,
 };
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
@@ -72,7 +73,7 @@ pub fn quote_deposit_stake(
     let active_stake_params = params.to_active_stake_params();
     let out_mint = params.out.0;
     match out_mint {
-        sanctum_router_core::NATIVE_MINT => this
+        sanctum_router_std::NATIVE_MINT => this
             .0
             .reserve_router
             .deposit_stake_quoter()?
@@ -93,7 +94,7 @@ pub fn quote_deposit_stake(
         }
     }
     .map(|q| {
-        conv_quote(if params.out.0 != sanctum_router_core::NATIVE_MINT {
+        conv_quote(if params.out.0 != sanctum_router_std::NATIVE_MINT {
             q.with_router_fee()
         } else {
             WithRouterFee::zero(q)
@@ -136,7 +137,7 @@ pub fn deposit_stake_ix(
     let (prefix_metas, data) = deposit_stake_prefix_metas_and_data(&params)?;
 
     let metas: Box<[AccountMeta]> = match out_mint {
-        sanctum_router_core::NATIVE_MINT => {
+        sanctum_router_std::NATIVE_MINT => {
             let router = this
                 .0
                 .reserve_router
@@ -197,9 +198,9 @@ pub fn deposit_stake_ix(
 
 fn conv_quote(
     WithRouterFee {
-        quote: sanctum_router_core::DepositStakeQuote { inp, out, fee },
+        quote: sanctum_router_std::DepositStakeQuote { inp, out, fee },
         router_fee,
-    }: WithRouterFee<sanctum_router_core::DepositStakeQuote>,
+    }: WithRouterFee<sanctum_router_std::DepositStakeQuote>,
 ) -> DepositStakeQuoteWithRouterFee {
     DepositStakeQuoteWithRouterFee(WithRouterFee {
         quote: DepositStakeQuote {

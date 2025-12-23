@@ -1,4 +1,6 @@
-use sanctum_marinade_liquid_staking_core::{duplication_flag_seeds, MARINADE_STAKING_PROGRAM};
+use sanctum_router_std::sanctum_marinade_liquid_staking_core::{
+    self, duplication_flag_seeds, MARINADE_STAKING_PROGRAM,
+};
 
 use crate::pda::find_pda;
 

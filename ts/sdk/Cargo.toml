@@ -16,13 +16,8 @@ bs58-fixed = { workspace = true }
 bs58-fixed-wasm = { workspace = true, features = ["js"] }
 ed25519-compact = { workspace = true }
 hmac-sha256 = { workspace = true }
-sanctum-router-core = { workspace = true , features = ["wasm"] }
+sanctum-router-std = { workspace = true , features = ["wasm"] }
 serde = { workspace = true }
 serde_bytes = { workspace = true, features = ["alloc"] }
 tsify-next = { workspace = true, features = ["js"] }
 wasm-bindgen = { workspace = true }
-
-sanctum-marinade-liquid-staking-core = { workspace = true }
-sanctum-reserve-core = { workspace = true }
-sanctum-spl-stake-pool-core = { workspace = true }
-solido-legacy-core = { workspace = true }

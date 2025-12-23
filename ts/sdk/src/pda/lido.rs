@@ -1,4 +1,4 @@
-use solido_legacy_core::validator_stake_seeds;
+use sanctum_router_std::solido_legacy_core::{self, validator_stake_seeds};
 
 use crate::pda::find_pda;
 

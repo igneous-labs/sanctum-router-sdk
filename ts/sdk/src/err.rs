@@ -1,9 +1,9 @@
-use sanctum_marinade_liquid_staking_core::MarinadeError;
-use sanctum_reserve_core::ReserveError;
-use sanctum_router_core::{PrefundSwapViaStakeQuoteErr, PrefundWithdrawStakeQuoteErr};
-use sanctum_spl_stake_pool_core::SplStakePoolError;
+use sanctum_router_std::{
+    sanctum_marinade_liquid_staking_core::MarinadeError, sanctum_reserve_core::ReserveError,
+    sanctum_spl_stake_pool_core::SplStakePoolError, solido_legacy_core::LidoError,
+    PrefundSwapViaStakeQuoteErr, PrefundWithdrawStakeQuoteErr,
+};
 use serde::{Deserialize, Serialize};
-use solido_legacy_core::LidoError;
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::*;
 

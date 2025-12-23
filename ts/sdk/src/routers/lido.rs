@@ -1,6 +1,8 @@
-use sanctum_router_core::{LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs};
-use solido_legacy_core::{
-    Lido, ListHeader, Validator, ValidatorList, STSOL_MINT_ADDR, SYSVAR_CLOCK,
+use sanctum_router_std::{
+    solido_legacy_core::{
+        self, Lido, ListHeader, Validator, ValidatorList, STSOL_MINT_ADDR, SYSVAR_CLOCK,
+    },
+    LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs,
 };
 
 use crate::{

@@ -1,4 +1,4 @@
-use sanctum_router_core::NATIVE_MINT;
+use sanctum_router_std::NATIVE_MINT;
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 
