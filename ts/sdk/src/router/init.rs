@@ -14,7 +14,7 @@ use crate::{
     init::InitData,
     interface::B58PK,
     router::{SanctumRouter, SanctumRouterHandle},
-    routers::SplStakePoolRouterOwned,
+    routers::SplRouterOwned,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Tsify)]
@@ -54,7 +54,7 @@ pub fn init(
                     match this.spl_routers.entry(spl_mint) {
                         Entry::Occupied(_already_init) => Ok(()),
                         Entry::Vacant(v) => {
-                            v.insert(SplStakePoolRouterOwned::init(&init_data)?);
+                            v.insert(SplRouterOwned::init(&init_data)?);
                             Ok(())
                         }
                     }

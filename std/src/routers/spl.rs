@@ -7,16 +7,15 @@ use sanctum_router_core::{
 use crate::{DepositSol, DepositStake, DepositStakeParams, WithdrawSol, WithdrawStake};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SplStakePoolRouterSol {
+pub struct SplRouterDepositSol {
     pub stake_pool_program: [u8; 32],
     pub stake_pool_addr: [u8; 32],
     pub withdraw_authority_program_address: [u8; 32],
     pub stake_pool: StakePool,
-    pub reserve_stake_lamports: u64,
     pub curr_epoch: u64,
 }
 
-macro_rules! impl_sol_router {
+macro_rules! impl_deposit_sol_quoter {
     () => {
         #[inline]
         pub const fn spl_deposit_sol_quoter(&self) -> SplDepositSolQuoter<'_> {
@@ -25,16 +24,11 @@ macro_rules! impl_sol_router {
                 curr_epoch: self.curr_epoch,
             }
         }
+    };
+}
 
-        #[inline]
-        pub const fn spl_withdraw_sol_quoter(&self) -> SplWithdrawSolQuoter<'_> {
-            SplWithdrawSolQuoter {
-                stake_pool: &self.stake_pool,
-                curr_epoch: self.curr_epoch,
-                reserve_stake_lamports: self.reserve_stake_lamports,
-            }
-        }
-
+macro_rules! impl_sol_suf_accs {
+    () => {
         #[inline]
         pub const fn spl_sol_suf_accs(&self) -> SplSolSufAccs<'_> {
             SplSolSufAccs {
@@ -47,8 +41,9 @@ macro_rules! impl_sol_router {
     };
 }
 
-impl SplStakePoolRouterSol {
-    impl_sol_router!();
+impl SplRouterDepositSol {
+    impl_deposit_sol_quoter!();
+    impl_sol_suf_accs!();
 }
 
 macro_rules! impl_deposit_sol {
@@ -65,7 +60,50 @@ macro_rules! impl_deposit_sol {
     };
 }
 
-impl DepositSol for SplStakePoolRouterSol {
+impl DepositSol for SplRouterDepositSol {
+    type Quoter<'a> = SplDepositSolQuoter<'a>;
+    type SufAccs<'a> = SplSolSufAccs<'a>;
+
+    impl_deposit_sol!();
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SplRouterSol {
+    pub stake_pool_program: [u8; 32],
+    pub stake_pool_addr: [u8; 32],
+    pub withdraw_authority_program_address: [u8; 32],
+    pub stake_pool: StakePool,
+    pub curr_epoch: u64,
+
+    pub reserve_stake_lamports: u64,
+}
+
+macro_rules! impl_withdraw_sol_quoter {
+    () => {
+        #[inline]
+        pub const fn spl_withdraw_sol_quoter(&self) -> SplWithdrawSolQuoter<'_> {
+            SplWithdrawSolQuoter {
+                stake_pool: &self.stake_pool,
+                curr_epoch: self.curr_epoch,
+                reserve_stake_lamports: self.reserve_stake_lamports,
+            }
+        }
+    };
+}
+
+macro_rules! impl_sol_router {
+    () => {
+        impl_deposit_sol_quoter!();
+        impl_withdraw_sol_quoter!();
+        impl_sol_suf_accs!();
+    };
+}
+
+impl SplRouterSol {
+    impl_sol_router!();
+}
+
+impl DepositSol for SplRouterSol {
     type Quoter<'a> = SplDepositSolQuoter<'a>;
     type SufAccs<'a> = SplSolSufAccs<'a>;
 
@@ -86,7 +124,7 @@ macro_rules! impl_withdraw_sol {
     };
 }
 
-impl WithdrawSol for SplStakePoolRouterSol {
+impl WithdrawSol for SplRouterSol {
     type Quoter<'a> = SplWithdrawSolQuoter<'a>;
     type SufAccs<'a> = SplSolSufAccs<'a>;
 
@@ -94,13 +132,14 @@ impl WithdrawSol for SplStakePoolRouterSol {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SplStakePoolRouterStake<V, F> {
+pub struct SplRouterStake<V, F> {
     pub stake_pool_program: [u8; 32],
     pub stake_pool_addr: [u8; 32],
     pub withdraw_authority_program_address: [u8; 32],
-    pub default_stake_deposit_authority: [u8; 32],
     pub stake_pool: StakePool,
     pub curr_epoch: u64,
+
+    pub default_stake_deposit_authority: [u8; 32],
     pub validator_list: V,
     pub find_pda: F,
 }
@@ -128,7 +167,7 @@ macro_rules! impl_stake_quoter {
     };
 }
 
-impl<V: AsRef<[ValidatorStakeInfo]>, F> SplStakePoolRouterStake<V, F> {
+impl<V: AsRef<[ValidatorStakeInfo]>, F> SplRouterStake<V, F> {
     impl_stake_quoter!();
 }
 
@@ -183,7 +222,7 @@ macro_rules! impl_stake_accs {
 }
 
 impl<V: AsRef<[ValidatorStakeInfo]>, F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>
-    SplStakePoolRouterStake<V, F>
+    SplRouterStake<V, F>
 {
     impl_stake_accs!();
 }
@@ -218,7 +257,7 @@ macro_rules! impl_deposit_stake {
 }
 
 impl<V: AsRef<[ValidatorStakeInfo]>, F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>
-    DepositStake for SplStakePoolRouterStake<V, F>
+    DepositStake for SplRouterStake<V, F>
 {
     impl_deposit_stake!();
 }
@@ -250,39 +289,17 @@ macro_rules! impl_withdraw_stake {
 }
 
 impl<V: AsRef<[ValidatorStakeInfo]>, F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>
-    WithdrawStake for SplStakePoolRouterStake<V, F>
+    WithdrawStake for SplRouterStake<V, F>
 {
     impl_withdraw_stake!();
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct SplStakePoolRouter<V, F> {
-    pub stake_pool_program: [u8; 32],
-    pub stake_pool_addr: [u8; 32],
-    pub withdraw_authority_program_address: [u8; 32],
-    pub default_stake_deposit_authority: [u8; 32],
-    pub stake_pool: StakePool,
-    pub curr_epoch: u64,
-    pub reserve_stake_lamports: u64,
-    pub validator_list: V,
-    pub find_pda: F,
+impl<V, F> SplRouterStake<V, F> {
+    impl_deposit_sol_quoter!();
+    impl_sol_suf_accs!();
 }
 
-impl<V, F> SplStakePoolRouter<V, F> {
-    impl_sol_router!();
-}
-
-impl<V: AsRef<[ValidatorStakeInfo]>, F> SplStakePoolRouter<V, F> {
-    impl_stake_quoter!();
-}
-
-impl<V: AsRef<[ValidatorStakeInfo]>, F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>
-    SplStakePoolRouter<V, F>
-{
-    impl_stake_accs!();
-}
-
-impl<V, F> DepositSol for SplStakePoolRouter<V, F> {
+impl<V, F> DepositSol for SplRouterStake<V, F> {
     type Quoter<'a>
         = SplDepositSolQuoter<'a>
     where
@@ -297,7 +314,51 @@ impl<V, F> DepositSol for SplStakePoolRouter<V, F> {
     impl_deposit_sol!();
 }
 
-impl<V, F> WithdrawSol for SplStakePoolRouter<V, F> {
+#[derive(Debug, Clone, PartialEq)]
+pub struct SplRouter<V, F> {
+    pub stake_pool_program: [u8; 32],
+    pub stake_pool_addr: [u8; 32],
+    pub withdraw_authority_program_address: [u8; 32],
+    pub stake_pool: StakePool,
+    pub curr_epoch: u64,
+
+    pub reserve_stake_lamports: u64,
+
+    pub default_stake_deposit_authority: [u8; 32],
+    pub validator_list: V,
+    pub find_pda: F,
+}
+
+impl<V, F> SplRouter<V, F> {
+    impl_sol_router!();
+}
+
+impl<V: AsRef<[ValidatorStakeInfo]>, F> SplRouter<V, F> {
+    impl_stake_quoter!();
+}
+
+impl<V: AsRef<[ValidatorStakeInfo]>, F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>
+    SplRouter<V, F>
+{
+    impl_stake_accs!();
+}
+
+impl<V, F> DepositSol for SplRouter<V, F> {
+    type Quoter<'a>
+        = SplDepositSolQuoter<'a>
+    where
+        F: 'a,
+        V: 'a;
+    type SufAccs<'a>
+        = SplSolSufAccs<'a>
+    where
+        F: 'a,
+        V: 'a;
+
+    impl_deposit_sol!();
+}
+
+impl<V, F> WithdrawSol for SplRouter<V, F> {
     type Quoter<'a>
         = SplWithdrawSolQuoter<'a>
     where
@@ -313,13 +374,13 @@ impl<V, F> WithdrawSol for SplStakePoolRouter<V, F> {
 }
 
 impl<V: AsRef<[ValidatorStakeInfo]>, F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>
-    DepositStake for SplStakePoolRouter<V, F>
+    DepositStake for SplRouter<V, F>
 {
     impl_deposit_stake!();
 }
 
 impl<V: AsRef<[ValidatorStakeInfo]>, F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>
-    WithdrawStake for SplStakePoolRouter<V, F>
+    WithdrawStake for SplRouter<V, F>
 {
     impl_withdraw_stake!();
 }

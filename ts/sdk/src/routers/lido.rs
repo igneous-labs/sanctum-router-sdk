@@ -10,12 +10,12 @@ use crate::{
     update::PoolUpdateType,
 };
 
-/// Notes
-/// - `curr_epoch` field in this struct is not used, but patched with the shared one in
-///   [`crate::router::SanctumRouter`] at quoting time
 pub type LidoRouter =
     sanctum_router_std::LidoRouter<fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>;
 
+/// Notes
+/// - `curr_epoch` field in this struct is not used, but patched with the shared one in
+///   [`crate::router::SanctumRouter`] at quoting time
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LidoRouterOwned(pub Option<LidoRouter>);
 
