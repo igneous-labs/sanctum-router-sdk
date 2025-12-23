@@ -6,7 +6,7 @@ use sanctum_router_core::{
     ReserveDepositStakeQuoter, ReserveDepositStakeSufAccs,
 };
 
-use crate::{DepositStake, DepositStakeParams};
+use crate::{DepositStake, DepositStakeAddrs};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReserveRouter<F> {
@@ -112,7 +112,9 @@ impl<F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>> DepositStake for Rese
     #[inline]
     fn deposit_stake_suf_accs(
         &self,
-        DepositStakeParams { stake_addr, .. }: &DepositStakeParams,
+        DepositStakeAddrs {
+            stake: stake_addr, ..
+        }: &DepositStakeAddrs,
     ) -> Option<Self::SufAccs<'_>> {
         self.reserve_deposit_stake_suf_accs(stake_addr)
     }

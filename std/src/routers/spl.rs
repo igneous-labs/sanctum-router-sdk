@@ -4,7 +4,7 @@ use sanctum_router_core::{
     SplWithdrawSolQuoter, SplWithdrawStakeQuoter, SplWithdrawStakeSufAccs,
 };
 
-use crate::{DepositSol, DepositStake, DepositStakeParams, WithdrawSol, WithdrawStake};
+use crate::{DepositSol, DepositStake, DepositStakeAddrs, WithdrawSol, WithdrawStake};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SplRouterDepositSol {
@@ -249,9 +249,9 @@ macro_rules! impl_deposit_stake {
         #[inline]
         fn deposit_stake_suf_accs(
             &self,
-            DepositStakeParams { vote_addr, .. }: &DepositStakeParams,
+            DepositStakeAddrs { vote, .. }: &DepositStakeAddrs,
         ) -> Option<Self::SufAccs<'_>> {
-            self.spl_deposit_stake_suf_accs(vote_addr)
+            self.spl_deposit_stake_suf_accs(vote)
         }
     };
 }

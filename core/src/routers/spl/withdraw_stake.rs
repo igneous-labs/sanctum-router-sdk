@@ -118,10 +118,8 @@ impl WithdrawStakeQuoter for SplWithdrawStakeValQuoter<'_> {
     }
 }
 
-pub type SplWithdrawStakeValQuoterSliceItr<'a, F> = Map<slice::Iter<'a, ValidatorStakeInfo>, F>;
-
 pub type SplWithdrawStakeValQuoterItr<'a, F> =
-    Chain<SplWithdrawStakeValQuoterSliceItr<'a, F>, SplWithdrawStakeValQuoterSliceItr<'a, F>>;
+    Map<Chain<slice::Iter<'a, ValidatorStakeInfo>, slice::Iter<'a, ValidatorStakeInfo>>, F>;
 
 impl<'a> SplWithdrawStakeValQuoter<'a> {
     /// Returns an iterator of withdraw stake quoters for each validator on the list.
@@ -130,42 +128,42 @@ impl<'a> SplWithdrawStakeValQuoter<'a> {
     /// - if preferred withdraw validator is exhausted, an iterator over all other validators is returned
     /// - otherwise, a iterator yielding a single entry of the preferred withdraw validator is returned
     ///
-    /// Returns Err if preferred withdraw validator is set but not on list.
+    /// If preferred withdraw validator is set but not on list, treats it as if there is no
+    /// preferred withdraw validator
     #[inline]
     pub fn all<'parent: 'a>(
         stake_pool: &'parent StakePool,
         validator_list: &'parent [ValidatorStakeInfo],
         curr_epoch: u64,
-    ) -> Result<
-        SplWithdrawStakeValQuoterItr<'a, impl Fn(&'a ValidatorStakeInfo) -> Self>,
-        SplStakePoolError,
-    > {
+    ) -> SplWithdrawStakeValQuoterItr<'a, impl Fn(&'a ValidatorStakeInfo) -> Self> {
         // use 2 slices to accomodate preferred exhausted case
         let (s1, s2) = match stake_pool.preferred_withdraw_validator_vote_address {
             None => (validator_list, [].as_slice()),
-            Some(p) => {
-                let (i, preferred) = validator_list
-                    .iter()
-                    .enumerate()
-                    .find(|(_i, vsi)| *vsi.vote_account_address() == p)
-                    .ok_or(SplStakePoolError::ValidatorNotFound)?;
-                if preferred.active_stake_lamports() <= MIN_ACTIVE_STAKE {
-                    // preferred exhausted: return everything excluding preferred
-                    // unchecked-index: i is in range [0, len-1],
-                    // [i + 1..] will not panic even if i = len-1
-                    (&validator_list[..i], &validator_list[i + 1..])
-                } else {
-                    // preferred not exhausted: return just preferred
-                    (&validator_list[i..i + 1], [].as_slice())
+            Some(p) => match validator_list
+                .iter()
+                .enumerate()
+                .find(|(_i, vsi)| *vsi.vote_account_address() == p)
+            {
+                None => (validator_list, [].as_slice()),
+                Some((i, preferred)) => {
+                    if preferred.active_stake_lamports() <= MIN_ACTIVE_STAKE {
+                        // preferred exhausted: return everything excluding preferred.
+                        // unchecked-index: i is in range [0, len-1],
+                        // [i + 1..] will not panic even if i = len-1
+                        (&validator_list[..i], &validator_list[i + 1..])
+                    } else {
+                        // preferred not exhausted: return just preferred
+                        (&validator_list[i..i + 1], [].as_slice())
+                    }
                 }
-            }
+            },
         };
         let ctor = move |validator| Self {
             validator,
             stake_pool,
             curr_epoch,
         };
-        Ok(s1.iter().map(ctor).chain(s2.iter().map(ctor)))
+        s1.iter().chain(s2.iter()).map(ctor)
     }
 }
 

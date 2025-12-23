@@ -30,12 +30,12 @@ pub trait WithdrawSol {
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct DepositStakeParams {
+pub struct DepositStakeAddrs {
     /// address of stake account to be deposited
-    pub stake_addr: [u8; 32],
+    pub stake: [u8; 32],
 
     /// vote account address that `stake` is delegated to
-    pub vote_addr: [u8; 32],
+    pub vote: [u8; 32],
 }
 
 pub trait DepositStake {
@@ -49,7 +49,7 @@ pub trait DepositStake {
     fn deposit_stake_quoter(&self) -> Self::Quoter<'_>;
 
     /// Returns `None` if pool unable to service deposit of this validator vote acc
-    fn deposit_stake_suf_accs(&self, params: &DepositStakeParams) -> Option<Self::SufAccs<'_>>;
+    fn deposit_stake_suf_accs(&self, params: &DepositStakeAddrs) -> Option<Self::SufAccs<'_>>;
 }
 
 pub trait WithdrawStake {

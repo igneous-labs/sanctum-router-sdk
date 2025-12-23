@@ -199,8 +199,7 @@ fn quote_prefund_swap_via_stake_inner(
                 router.try_stake_pool()?,
                 router.try_validator_list()?,
                 this.try_curr_epoch()?,
-            )
-            .map_err(spl_err)?;
+            );
             match_deposit_stake!(w_itr, spl_err)
         }
     }
