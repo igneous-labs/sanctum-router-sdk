@@ -6,7 +6,7 @@ use sanctum_router_core::{
     MarinadeDepositStakeSufAccs,
 };
 
-use crate::{DepositSol, DepositStake};
+use crate::{DepositSol, DepositStake, DepositStakeParams};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MarinadeRouterSol {
@@ -134,7 +134,10 @@ impl<V: AsRef<[ValidatorRecord]>, F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32]
     }
 
     #[inline]
-    fn deposit_stake_suf_accs(&self, vote: &[u8; 32]) -> Option<Self::SufAccs<'_>> {
-        self.marinade_deposit_stake_suf_accs(vote)
+    fn deposit_stake_suf_accs(
+        &self,
+        DepositStakeParams { vote_addr, .. }: &DepositStakeParams,
+    ) -> Option<Self::SufAccs<'_>> {
+        self.marinade_deposit_stake_suf_accs(vote_addr)
     }
 }

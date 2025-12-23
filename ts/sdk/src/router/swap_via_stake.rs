@@ -369,6 +369,7 @@ fn prefund_swap_via_stake_prefix(
             .with_unstake_fee(sanctum_reserve_core::FEE)
             .with_unstake_pool_sol_reserves(sanctum_reserve_core::POOL_SOL_RESERVES)
             .with_unstake_protocol_fee(sanctum_reserve_core::PROTOCOL_FEE)
+            // TODO: replace with dest read from protocol fee account
             .with_unstake_protocol_fee_dest(sanctum_reserve_core::PROTOCOL_FEE_VAULT)
             .with_clock(SYSVAR_CLOCK)
             .with_stake_program(STAKE_PROGRAM)

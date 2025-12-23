@@ -74,13 +74,15 @@ impl ReserveRouterOwned {
     pub fn deposit_stake_quoter(
         &self,
     ) -> Result<ReserveDepositStakeQuoter<'_>, SanctumRouterError> {
-        let inner = self.try_inner()?;
-        Ok(ReserveDepositStakeQuoter {
-            pool_incoming_stake: inner.pool.incoming_stake,
-            fee_account: &inner.fee_account.0,
-            protocol_fee_account: &inner.protocol_fee_account,
-            pool_sol_reserves: inner.pool_sol_reserves,
-        })
+        todo!()
+        // TODO: replace with new ReserveRouter struct
+        // let inner = self.try_inner()?;
+        // Ok(ReserveDepositStakeQuoter {
+        //     pool_incoming_stake: inner.pool.incoming_stake,
+        //     fee_account: &inner.fee_account.0,
+        //     protocol_fee: &inner.protocol_fee_account.fee_ratios(),
+        //     pool_sol_reserves: inner.pool_sol_reserves,
+        // })
     }
 
     /// Returns `None` if stake acc record PDA invalid
@@ -88,12 +90,14 @@ impl ReserveRouterOwned {
         &self,
         stake_account_addr: &[u8; 32],
     ) -> Result<ReserveDepositStakeSufAccs, SanctumRouterError> {
+        let inner = self.try_inner()?;
         Ok(ReserveDepositStakeSufAccs {
             stake_acc_record_addr: find_reserve_stake_account_record_pda_internal(
                 stake_account_addr,
             )
             .ok_or_else(invalid_pda_err)?
             .0,
+            protocol_fee_dest: inner.protocol_fee_account.destination,
         })
     }
 }

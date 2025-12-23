@@ -35,5 +35,5 @@ sanctum-spl-stake-pool-core = { git = "https://github.com/igneous-labs/sanctum-s
 solido-legacy-core = { git = "https://github.com/igneous-labs/solido-legacy-sdk.git", branch = "master", default-features = false }
 
 # workspace members
-sanctum-router-core = { path = "core" }
-sanctum-router-std = { path = "std" }
+sanctum-router-core = { path = "core", default-features = false }
+sanctum-router-std = { path = "std", default-features = false }

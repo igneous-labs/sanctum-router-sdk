@@ -1,6 +1,6 @@
 use generic_array_struct::generic_array_struct;
 use sanctum_reserve_core::{
-    quote_unstake, FeeEnum, PoolUnstakeParams, ProtocolFee, QuoteUnstakeOpts, ReserveError,
+    quote_unstake, FeeEnum, PoolUnstakeParams, ProtocolFeeRatios, QuoteUnstakeOpts, ReserveError,
     UnstakeQuote,
 };
 
@@ -12,7 +12,7 @@ use crate::{
 #[derive(Debug, Clone, Copy)]
 pub struct ReserveDepositStakeQuoter<'a> {
     pub fee_account: &'a FeeEnum,
-    pub protocol_fee_account: &'a ProtocolFee,
+    pub protocol_fee: &'a ProtocolFeeRatios,
     pub pool_incoming_stake: u64,
     pub pool_sol_reserves: u64,
 }
@@ -50,7 +50,7 @@ impl ReserveDepositStakeQuoter<'_> {
         quote_unstake(
             &self.pool_balance(),
             self.fee_account,
-            &self.protocol_fee_account.fee_ratios(),
+            self.protocol_fee,
             deposit_stake_total_lamports,
             &QuoteUnstakeOpts::DEFAULT,
         )
@@ -71,13 +71,13 @@ impl ReserveDepositStakeQuoter<'_> {
         let quote = self.quote_deposit_stake_inner(stake)?;
         let Self {
             fee_account,
-            protocol_fee_account,
+            protocol_fee: protocol_fee_account,
             pool_incoming_stake,
             pool_sol_reserves,
         } = self;
         Ok(Self {
             fee_account,
-            protocol_fee_account,
+            protocol_fee: protocol_fee_account,
             // unchecked-arith: SOL supply is nowhere near u64::MAX
             pool_incoming_stake: pool_incoming_stake + quote.stake_account_lamports,
             // unchecked-arith: quote_deposit_stake_inner() passed means pool has enough liquidity
@@ -89,6 +89,7 @@ impl ReserveDepositStakeQuoter<'_> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ReserveDepositStakeSufAccs {
     pub stake_acc_record_addr: [u8; 32],
+    pub protocol_fee_dest: [u8; 32],
 }
 
 impl DepositStakeSufAccs for ReserveDepositStakeSufAccs {
@@ -102,12 +103,12 @@ impl DepositStakeSufAccs for ReserveDepositStakeSufAccs {
             .with_pool_sol_reserves(sanctum_reserve_core::POOL_SOL_RESERVES)
             .with_reserve_fee(sanctum_reserve_core::FEE)
             .with_reserve_pool(sanctum_reserve_core::POOL)
-            .with_protocol_fee_dest(sanctum_reserve_core::PROTOCOL_FEE_VAULT)
-            .with_stake_acc_record(self.stake_acc_record_addr)
             .with_clock(SYSVAR_CLOCK)
             .with_system_program(SYSTEM_PROGRAM)
             .with_stake_program(STAKE_PROGRAM)
             .with_token_program(TOKEN_PROGRAM)
+            .with_protocol_fee_dest(self.protocol_fee_dest)
+            .with_stake_acc_record(self.stake_acc_record_addr)
             .build()
     }
 
