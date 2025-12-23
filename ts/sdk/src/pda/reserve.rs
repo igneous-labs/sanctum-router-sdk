@@ -2,7 +2,9 @@ use sanctum_router_std::sanctum_reserve_core::{self, stake_account_record_seeds}
 
 use crate::pda::find_pda;
 
-/// Reserve Stake Account Record
+/// Reserve Stake Account Record.
+///
+/// Needed to find slumdog stake record PDA
 pub fn find_reserve_stake_account_record_pda_internal(
     stake_account_addr: &[u8; 32],
 ) -> Option<([u8; 32], u8)> {

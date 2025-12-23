@@ -9,20 +9,15 @@ use crate::{
         SanctumRouterError,
     },
     interface::{get_account, get_account_data, AccountMap},
-    pda::reserve::find_reserve_stake_account_record_pda_internal,
+    pda::find_pda,
     update::PoolUpdateType,
 };
 
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct ReserveRouterOwned(pub Option<ReserveRouterInner>);
+pub type ReserveRouter =
+    sanctum_router_std::ReserveRouter<fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct ReserveRouterInner {
-    pub pool: Pool,
-    pub fee_account: Fee,
-    pub protocol_fee_account: ProtocolFee,
-    pub pool_sol_reserves: u64,
-}
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ReserveRouterOwned(pub Option<ReserveRouter>);
 
 /// Init
 impl ReserveRouterOwned {
@@ -47,24 +42,25 @@ impl ReserveRouterOwned {
         let protocol_fee_data = pf?;
 
         let pool = Pool::anchor_de(pool_data).map_err(|_e| invalid_data_err())?;
-        let fee_account = Fee::anchor_de(fee_data).map_err(|_e| invalid_data_err())?;
-        let protocol_fee_account =
+        let fee = Fee::anchor_de(fee_data).map_err(|_e| invalid_data_err())?;
+        let protocol_fee =
             ProtocolFee::anchor_de(protocol_fee_data).map_err(|_e| invalid_data_err())?;
         let pool_sol_reserves =
             get_account(accounts, sanctum_reserve_core::POOL_SOL_RESERVES)?.lamports;
 
-        Ok(Self(Some(ReserveRouterInner {
-            pool,
-            fee_account,
-            protocol_fee_account,
+        Ok(Self(Some(ReserveRouter::new(
+            fee,
+            &protocol_fee,
+            &pool,
             pool_sol_reserves,
-        })))
+            find_pda,
+        ))))
     }
 }
 
 /// Getters
 impl ReserveRouterOwned {
-    pub fn try_inner(&self) -> Result<&ReserveRouterInner, SanctumRouterError> {
+    pub fn try_inner(&self) -> Result<&ReserveRouter, SanctumRouterError> {
         self.0
             .as_ref()
             .ok_or_else(|| account_missing_err(&sanctum_reserve_core::POOL))
@@ -76,15 +72,8 @@ impl ReserveRouterOwned {
     pub fn deposit_stake_quoter(
         &self,
     ) -> Result<ReserveDepositStakeQuoter<'_>, SanctumRouterError> {
-        todo!()
-        // TODO: replace with new ReserveRouter struct
-        // let inner = self.try_inner()?;
-        // Ok(ReserveDepositStakeQuoter {
-        //     pool_incoming_stake: inner.pool.incoming_stake,
-        //     fee_account: &inner.fee_account.0,
-        //     protocol_fee: &inner.protocol_fee_account.fee_ratios(),
-        //     pool_sol_reserves: inner.pool_sol_reserves,
-        // })
+        let inner = self.try_inner()?;
+        Ok(inner.reserve_deposit_stake_quoter())
     }
 
     /// Returns `None` if stake acc record PDA invalid
@@ -93,14 +82,9 @@ impl ReserveRouterOwned {
         stake_account_addr: &[u8; 32],
     ) -> Result<ReserveDepositStakeSufAccs, SanctumRouterError> {
         let inner = self.try_inner()?;
-        Ok(ReserveDepositStakeSufAccs {
-            stake_acc_record_addr: find_reserve_stake_account_record_pda_internal(
-                stake_account_addr,
-            )
-            .ok_or_else(invalid_pda_err)?
-            .0,
-            protocol_fee_dest: inner.protocol_fee_account.destination,
-        })
+        inner
+            .reserve_deposit_stake_suf_accs(stake_account_addr)
+            .ok_or_else(invalid_pda_err)
     }
 }
 
@@ -110,10 +94,10 @@ impl ReserveRouterOwned {
         let inner = self.try_inner()?;
         Ok((
             PoolUnstakeParams {
-                pool_incoming_stake: inner.pool.incoming_stake,
+                pool_incoming_stake: inner.pool_incoming_stake,
                 sol_reserves_lamports: inner.pool_sol_reserves,
             },
-            &inner.fee_account.0,
+            &inner.fee_account,
         ))
     }
 }
