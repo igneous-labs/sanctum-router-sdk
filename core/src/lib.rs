@@ -6,6 +6,14 @@
 
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 
+// crate re-exports
+pub use sanctum_fee_ratio;
+pub use sanctum_marinade_liquid_staking_core;
+pub use sanctum_reserve_core;
+pub use sanctum_spl_stake_pool_core;
+pub use sanctum_u64_ratio;
+pub use solido_legacy_core;
+
 mod consts;
 mod instructions;
 mod internal_utils;

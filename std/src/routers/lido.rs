@@ -1,5 +1,7 @@
-use sanctum_router_core::{LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs};
-use solido_legacy_core::{validator_stake_seeds, ExchangeRate, Lido, Validator};
+use sanctum_router_core::{
+    solido_legacy_core::{self, validator_stake_seeds, ExchangeRate, Lido, Validator},
+    LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs,
+};
 
 use crate::WithdrawStake;
 

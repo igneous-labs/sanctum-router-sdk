@@ -1,7 +1,7 @@
-use sanctum_marinade_liquid_staking_core::{
-    duplication_flag_seeds, State, ValidatorRecord, MARINADE_STAKING_PROGRAM,
-};
 use sanctum_router_core::{
+    sanctum_marinade_liquid_staking_core::{
+        self, duplication_flag_seeds, State, ValidatorRecord, MARINADE_STAKING_PROGRAM,
+    },
     MarinadeDepositSolQuoter, MarinadeDepositSolSufAccs, MarinadeDepositStakeQuoter,
     MarinadeDepositStakeSufAccs,
 };

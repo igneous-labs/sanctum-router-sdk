@@ -1,7 +1,10 @@
-use sanctum_reserve_core::{
-    stake_account_record_seeds, Fee, FeeEnum, Pool, ProtocolFee, ProtocolFeeRatios, Rational,
+use sanctum_router_core::{
+    sanctum_reserve_core::{
+        self, stake_account_record_seeds, Fee, FeeEnum, Pool, ProtocolFee, ProtocolFeeRatios,
+        Rational,
+    },
+    ReserveDepositStakeQuoter, ReserveDepositStakeSufAccs,
 };
-use sanctum_router_core::{ReserveDepositStakeQuoter, ReserveDepositStakeSufAccs};
 
 use crate::{DepositStake, DepositStakeParams};
 
