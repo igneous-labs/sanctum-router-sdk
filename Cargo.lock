@@ -217,9 +217,9 @@ checksum = "8a0d197bd2c9dc6e53b84da9556a69ba4cdfab8619eb41a8bd1cc2027a0f6b1d"
 
 [[package]]
 name = "sanctum-fee-ratio"
-version = "2.0.0"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1c2233e749deeeb7d7fb6d4350c8941eb8ec996933eb30c4db50a186d789c6d"
+checksum = "0ecccdd19e355529a37c58376efff70673d748447b085c1e7d788ba51c2c0ddd"
 dependencies = [
  "sanctum-u64-ratio",
 ]
@@ -292,7 +292,7 @@ dependencies = [
 [[package]]
 name = "sanctum-spl-stake-pool-core"
 version = "0.1.0"
-source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#58b744f6b5f318fb871da3d64ea7d39f329c78b0"
+source = "git+https://github.com/igneous-labs/sanctum-spl-stake-pool-sdk.git?branch=master#4157a223f2b4f0a6484375f16d468225fa48482f"
 dependencies = [
  "borsh",
  "const-crypto",
@@ -303,9 +303,9 @@ dependencies = [
 
 [[package]]
 name = "sanctum-u64-ratio"
-version = "2.0.0"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e15bef5560539ed416f49fe8d5430b80699aa7279dcbe35e1f25800894c19b2"
+checksum = "399670a93a811c1eb179b3d0e2953ab93bef325333272c1ed40efd0732c31225"
 
 [[package]]
 name = "serde"

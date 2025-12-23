@@ -18,12 +18,19 @@ impl WithdrawSolQuoter for SplWithdrawSolQuoter<'_> {
 
     #[inline]
     fn quote_withdraw_sol(&self, lamports: u64) -> Result<TokenQuote, Self::Error> {
+        // we do not handle pools with permissioned SOL withdrawals
+        if self.stake_pool.sol_withdraw_authority.is_some() {
+            return Err(SplStakePoolError::InvalidSolWithdrawAuthority);
+        }
+
         self.stake_pool
             .quote_withdraw_sol(
                 lamports,
-                WithdrawSolQuoteArgs {
+                &WithdrawSolQuoteArgs {
                     current_epoch: self.curr_epoch,
                     reserve_stake_lamports: self.reserve_stake_lamports,
+                    // filler
+                    withdrawer: &[0; 32],
                 },
             )
             .map(Into::into)

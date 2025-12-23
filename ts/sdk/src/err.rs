@@ -154,6 +154,7 @@ pub fn spl_err(e: SplStakePoolError) -> SanctumRouterError {
         SplStakePoolError::IncorrectDepositVoteAddress
         | SplStakePoolError::IncorrectWithdrawVoteAddress
         | SplStakePoolError::InvalidSolDepositAuthority
+        | SplStakePoolError::InvalidSolWithdrawAuthority
         | SplStakePoolError::InvalidStakeDepositAuthority
         | SplStakePoolError::ValidatorNotFound => {
             (SanctumRouterErr::UserErr, format!("{SPL_ERR_PREFIX}{e}"))

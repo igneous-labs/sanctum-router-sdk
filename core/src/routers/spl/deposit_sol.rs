@@ -14,15 +14,18 @@ impl DepositSolQuoter for SplDepositSolQuoter<'_> {
 
     #[inline]
     fn quote_deposit_sol(&self, lamports: u64) -> Result<TokenQuote, Self::Error> {
+        // we do not handle pools with permissioned SOL deposits
+        if self.stake_pool.sol_deposit_authority.is_some() {
+            return Err(SplStakePoolError::InvalidSolDepositAuthority);
+        }
+
         self.stake_pool
             .quote_deposit_sol(
                 lamports,
-                DepositSolQuoteArgs {
-                    // This automatically filters out permissioned pools with SOL deposit auth,
-                    // since these pools will have Some(sol_deposit_auth) that
-                    // does not match system program
-                    depositor: [0; 32],
+                &DepositSolQuoteArgs {
                     current_epoch: self.curr_epoch,
+                    // filler
+                    depositor: &[0; 32],
                 },
             )
             .map(Into::into)

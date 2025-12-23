@@ -43,7 +43,7 @@ impl DepositStakeQuoter for SplDepositStakeQuoter<'_> {
                     staked: stake.lamports.staked,
                     unstaked: stake.lamports.unstaked,
                 },
-                &DepositStakeQuoteArgs::new(vsi, self.curr_epoch),
+                &DepositStakeQuoteArgs::permissionless(vsi, self.curr_epoch),
             )
             .map(
                 |sanctum_spl_stake_pool_core::DepositStakeQuote {
