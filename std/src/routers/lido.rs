@@ -33,7 +33,10 @@ pub struct LidoRouter<F> {
     pub exchange_rate: ExchangeRate,
     pub curr_epoch: u64,
 
-    /// None if lido pool no longer has any validators
+    /// None if lido pool no longer has any validators.
+    ///
+    /// Lido only allows withdrawing from max stake validator,
+    /// so we only need to store max stake validator's data
     pub largest_stake: Option<LidoRouterValData>,
 
     pub find_pda: F,
@@ -89,15 +92,10 @@ impl<F> LidoRouter<F> {
 
 impl<F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>> LidoRouter<F> {
     #[inline]
-    pub fn lido_withdraw_stake_suf_accs(
-        &self,
-        vote: &[u8; 32],
-    ) -> Option<LidoWithdrawStakeSufAccs<'_>> {
+    pub fn lido_withdraw_stake_suf_accs(&self) -> Option<LidoWithdrawStakeSufAccs<'_>> {
         let largest_stake = self.largest_stake.as_ref()?;
-        if *vote != largest_stake.vote {
-            return None;
-        }
-        let (s1, s2, s3, s4) = validator_stake_seeds(vote, largest_stake.stake_seeds_begin);
+        let (s1, s2, s3, s4) =
+            validator_stake_seeds(&largest_stake.vote, largest_stake.stake_seeds_begin);
         let find_pda = &self.find_pda;
         let (stake_to_split, _) = find_pda(
             &[s1.as_slice(), s2.as_slice(), s3.as_slice(), s4.as_slice()],
@@ -128,7 +126,7 @@ impl<F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>> WithdrawStake for Lid
     }
 
     #[inline]
-    fn withdraw_stake_suf_accs(&self, vote: &[u8; 32]) -> Option<Self::SufAccs<'_>> {
-        self.lido_withdraw_stake_suf_accs(vote)
+    fn withdraw_stake_suf_accs(&self, _vote: &[u8; 32]) -> Option<Self::SufAccs<'_>> {
+        self.lido_withdraw_stake_suf_accs()
     }
 }

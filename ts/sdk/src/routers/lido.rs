@@ -1,34 +1,23 @@
 use sanctum_router_std::{
-    solido_legacy_core::{
-        self, Lido, ListHeader, Validator, ValidatorList, STSOL_MINT_ADDR, SYSVAR_CLOCK,
-    },
+    solido_legacy_core::{self, Lido, ValidatorList, STSOL_MINT_ADDR, SYSVAR_CLOCK},
     LidoWithdrawStakeQuoter, LidoWithdrawStakeSufAccs,
 };
 
 use crate::{
-    err::{
-        account_missing_err, invalid_data_err, invalid_pda_err, unsupported_update_err,
-        SanctumRouterError,
-    },
+    err::{account_missing_err, invalid_data_err, unsupported_update_err, SanctumRouterError},
     interface::{get_account_data, AccountMap},
-    pda::lido::find_lido_validator_stake_account_pda_internal,
+    pda::find_pda,
     update::PoolUpdateType,
 };
 
+/// Notes
+/// - `curr_epoch` field in this struct is not used, but patched with the shared one in
+///   [`crate::router::SanctumRouter`] at quoting time
+pub type LidoRouter =
+    sanctum_router_std::LidoRouter<fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>>;
+
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct LidoRouterOwned(pub Option<LidoRouterInner>);
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct LidoRouterInner {
-    pub state: Lido,
-    pub validator_list: LidoValidatorListOwned,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct LidoValidatorListOwned {
-    pub header: ListHeader,
-    pub validators: Vec<Validator>,
-}
+pub struct LidoRouterOwned(pub Option<LidoRouter>);
 
 /// Init
 impl LidoRouterOwned {
@@ -45,23 +34,16 @@ impl LidoRouterOwned {
         let validator_list_data = v?;
 
         let state = Lido::borsh_de(state_data).map_err(|_e| invalid_data_err())?;
-        let ValidatorList { header, entries } =
+        let ValidatorList { entries, .. } =
             ValidatorList::deserialize(validator_list_data).map_err(|_e| invalid_data_err())?;
-        let validator_list = LidoValidatorListOwned {
-            header,
-            validators: entries.to_vec(),
-        };
 
-        Ok(Self(Some(LidoRouterInner {
-            state,
-            validator_list,
-        })))
+        Ok(Self(Some(LidoRouter::new(&state, entries, 0, find_pda))))
     }
 }
 
 /// Getters
 impl LidoRouterOwned {
-    pub fn try_inner(&self) -> Result<&LidoRouterInner, SanctumRouterError> {
+    pub fn try_inner(&self) -> Result<&LidoRouter, SanctumRouterError> {
         self.0
             .as_ref()
             .ok_or_else(|| account_missing_err(&solido_legacy_core::LIDO_STATE_ADDR))
@@ -70,39 +52,24 @@ impl LidoRouterOwned {
 
 /// WithdrawStake
 impl LidoRouterOwned {
-    /// Lido only allows withdrawing from max stake validator
     pub fn withdraw_stake_quoter(
         &self,
         curr_epoch: u64,
     ) -> Result<LidoWithdrawStakeQuoter<'_>, SanctumRouterError> {
-        let inner = self.try_inner()?;
-        LidoWithdrawStakeQuoter::new(&inner.state, &inner.validator_list.validators, curr_epoch)
-            .ok_or_else(invalid_data_err)
+        let quoter = self.try_inner()?.lido_withdraw_stake_quoter();
+        Ok(LidoWithdrawStakeQuoter {
+            curr_epoch,
+            ..quoter
+        })
     }
 
-    /// Lido only allows withdrawing from max stake validator
-    ///
-    /// Returns `None` if data missing or validator stake acc PDA invalid
     pub fn withdraw_stake_suf_accs(
         &self,
     ) -> Result<LidoWithdrawStakeSufAccs<'_>, SanctumRouterError> {
-        let inner = self.try_inner()?;
-        let max_validator = inner
-            .validator_list
-            .validators
-            .iter()
-            .max_by_key(|v| v.effective_stake_balance())
-            .ok_or_else(invalid_data_err)?;
-        let largest_stake_vote = max_validator.vote_account_address();
-        Ok(LidoWithdrawStakeSufAccs {
-            validator_list_addr: &inner.state.validator_list,
-            largest_stake_vote,
-            stake_to_split: find_lido_validator_stake_account_pda_internal(
-                largest_stake_vote,
-                max_validator.stake_seeds().begin(),
-            )
-            .ok_or_else(invalid_pda_err)?
-            .0,
+        self.try_inner().and_then(|inner| {
+            inner
+                .lido_withdraw_stake_suf_accs()
+                .ok_or_else(invalid_data_err)
         })
     }
 }

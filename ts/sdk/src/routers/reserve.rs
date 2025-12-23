@@ -72,8 +72,8 @@ impl ReserveRouterOwned {
     pub fn deposit_stake_quoter(
         &self,
     ) -> Result<ReserveDepositStakeQuoter<'_>, SanctumRouterError> {
-        let inner = self.try_inner()?;
-        Ok(inner.reserve_deposit_stake_quoter())
+        self.try_inner()
+            .map(|inner| inner.reserve_deposit_stake_quoter())
     }
 
     /// Returns `None` if stake acc record PDA invalid
@@ -81,10 +81,11 @@ impl ReserveRouterOwned {
         &self,
         stake_account_addr: &[u8; 32],
     ) -> Result<ReserveDepositStakeSufAccs, SanctumRouterError> {
-        let inner = self.try_inner()?;
-        inner
-            .reserve_deposit_stake_suf_accs(stake_account_addr)
-            .ok_or_else(invalid_pda_err)
+        self.try_inner().and_then(|inner| {
+            inner
+                .reserve_deposit_stake_suf_accs(stake_account_addr)
+                .ok_or_else(invalid_pda_err)
+        })
     }
 }
 
