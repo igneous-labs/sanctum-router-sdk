@@ -249,7 +249,8 @@ pub fn prefund_swap_via_stake_ix(
     let inp_mint = params.inp.0;
     let out_mint = params.out.0;
 
-    let (prefix_metas, data, bridge_stake) = prefund_swap_via_stake_prefix(&params)?;
+    let (prefix_metas, data, bridge_stake) =
+        prefund_swap_via_stake_prefix(&params, this.0.try_unstake_protocol_fee_dest()?)?;
     let vote = match params.bridge_vote {
         Some(Bs58Array(vote)) => vote,
         None => {
@@ -333,6 +334,7 @@ pub fn prefund_swap_via_stake_ix(
 /// Returns `(meta, ix_data, bridge_stake_addr)`
 fn prefund_swap_via_stake_prefix(
     swap_params: &SwapViaStakeSwapParams,
+    unstake_protocol_fee_dest: [u8; 32],
 ) -> Result<
     (
         [AccountMeta; PREFUND_SWAP_VIA_STAKE_PREFIX_ACCS_LEN],
@@ -369,8 +371,7 @@ fn prefund_swap_via_stake_prefix(
             .with_unstake_fee(sanctum_reserve_core::FEE)
             .with_unstake_pool_sol_reserves(sanctum_reserve_core::POOL_SOL_RESERVES)
             .with_unstake_protocol_fee(sanctum_reserve_core::PROTOCOL_FEE)
-            // TODO: replace with dest read from protocol fee account
-            .with_unstake_protocol_fee_dest(sanctum_reserve_core::PROTOCOL_FEE_VAULT)
+            .with_unstake_protocol_fee_dest(unstake_protocol_fee_dest)
             .with_clock(SYSVAR_CLOCK)
             .with_stake_program(STAKE_PROGRAM)
             .with_system_program(SYSTEM_PROGRAM)

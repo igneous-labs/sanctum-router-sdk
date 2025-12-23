@@ -121,7 +121,10 @@ pub fn prefund_withdraw_stake_ix(
 ) -> Result<Instruction, SanctumRouterError> {
     let inp_mint = params.inp.0;
     let vote = params.out.0;
-    let (prefix_metas, data) = prefund_withdraw_stake_prefix_metas_and_data(&params)?;
+    let (prefix_metas, data) = prefund_withdraw_stake_prefix_metas_and_data(
+        &params,
+        this.0.try_unstake_protocol_fee_dest()?,
+    )?;
 
     let metas: Box<[AccountMeta]> = match inp_mint {
         solido_legacy_core::STSOL_MINT_ADDR => {
@@ -192,6 +195,7 @@ fn conv_prefund_quote(
 
 fn prefund_withdraw_stake_prefix_metas_and_data(
     swap_params: &WithdrawStakeSwapParams,
+    unstake_protocol_fee_dest: [u8; 32],
 ) -> Result<
     (
         [AccountMeta; PREFUND_WITHDRAW_STAKE_PREFIX_ACCS_LEN],
@@ -223,8 +227,7 @@ fn prefund_withdraw_stake_prefix_metas_and_data(
             .with_unstake_fee(sanctum_reserve_core::FEE)
             .with_unstake_pool_sol_reserves(sanctum_reserve_core::POOL_SOL_RESERVES)
             .with_unstake_protocol_fee(sanctum_reserve_core::PROTOCOL_FEE)
-            // TODO: replace with dest read from protocol fee account
-            .with_unstake_protocol_fee_dest(sanctum_reserve_core::PROTOCOL_FEE_VAULT)
+            .with_unstake_protocol_fee_dest(unstake_protocol_fee_dest)
             .build()
             .as_borrowed()
             .0,

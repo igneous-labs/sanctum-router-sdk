@@ -55,4 +55,8 @@ impl SanctumRouter {
         self.curr_epoch
             .ok_or_else(|| account_missing_err(&SYSVAR_CLOCK))
     }
+
+    pub(crate) fn try_unstake_protocol_fee_dest(&self) -> Result<[u8; 32], SanctumRouterError> {
+        self.reserve_router.try_inner().map(|x| x.protocol_fee_dest)
+    }
 }
