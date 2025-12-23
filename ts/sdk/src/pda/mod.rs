@@ -6,7 +6,6 @@ use tsify_next::Tsify;
 
 use crate::interface::B58PK;
 
-pub mod marinade;
 pub mod reserve;
 pub mod router;
 pub mod spl;
