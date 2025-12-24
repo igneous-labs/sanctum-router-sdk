@@ -2,7 +2,7 @@ use generic_array_struct::generic_array_struct;
 
 use super::INSTRUCTION_IDX_WITHDRAW_WRAPPED_SOL;
 
-#[generic_array_struct(builder pub)]
+#[generic_array_struct(builder destr trymap pub)]
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct WithdrawWrappedSolPrefixAccs<T> {

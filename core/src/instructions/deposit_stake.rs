@@ -2,7 +2,7 @@ use generic_array_struct::generic_array_struct;
 
 use super::INSTRUCTION_IDX_DEPOSIT_STAKE;
 
-#[generic_array_struct(builder pub)]
+#[generic_array_struct(builder destr trymap pub)]
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DepositStakeIxAccs<T> {

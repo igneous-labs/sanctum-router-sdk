@@ -4,7 +4,7 @@ use crate::{SOL_BRIDGE_OUT, SYSTEM_PROGRAM, WSOL_BRIDGE_IN};
 
 use super::INSTRUCTION_IDX_STAKE_WRAPPED_SOL;
 
-#[generic_array_struct(pub)]
+#[generic_array_struct(builder destr trymap pub)]
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct StakeWrappedSolPrefixAccs<T> {

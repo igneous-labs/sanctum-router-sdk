@@ -104,9 +104,9 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "generic-array-struct"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc508c7c6ae3639310b4c5523d488818280fd1808446c96db1ada5c41638966d"
+checksum = "a110495b7878dc5d64496e8b596e2f4b2452cc48b5f179a5577e34c49d08248f"
 dependencies = [
  "heck",
  "proc-macro2",

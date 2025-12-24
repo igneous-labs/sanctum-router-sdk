@@ -116,7 +116,7 @@ impl WithdrawStakeSufAccs for LidoWithdrawStakeSufAccs<'_> {
     }
 }
 
-#[generic_array_struct(builder pub)]
+#[generic_array_struct(builder destr trymap pub)]
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
