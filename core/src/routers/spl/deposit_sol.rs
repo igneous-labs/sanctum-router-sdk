@@ -28,6 +28,12 @@ impl DepositSolQuoter for SplDepositSolQuoter<'_> {
                     depositor: &[0; 32],
                 },
             )
+            .map(|mut quote| {
+                // we set referral destination = out token acc, so the user gets the referral fee
+                quote.out_amount = quote.out_amount.saturating_add(quote.referral_fee);
+                quote.referral_fee = 0;
+                quote
+            })
             .map(Into::into)
     }
 }
