@@ -59,9 +59,19 @@ pub trait WithdrawStake {
     type SufAccs<'a>: WithdrawStakeSufAccs
     where
         Self: 'a;
+    type ValQuoter<'a>: WithdrawStakeQuoter
+    where
+        Self: 'a;
 
     fn withdraw_stake_quoter(&self) -> Self::Quoter<'_>;
 
     /// Returns `None` if pool unable to service withdrawal of this validator vote acc
     fn withdraw_stake_suf_accs(&self, vote: &[u8; 32]) -> Option<Self::SufAccs<'_>>;
+
+    /// Instead of returning a single [`WithdrawStakeQuoter`] that quotes for an arbitrary
+    /// single validator like [`WithdrawStake::withdraw_stake_quoter`], returns a sequence
+    /// of quoters that quotes for each individual validator.
+    ///
+    /// Used for SwapViaStake
+    fn withdraw_stake_val_quoters(&self) -> impl IntoIterator<Item = Self::ValQuoter<'_>>;
 }

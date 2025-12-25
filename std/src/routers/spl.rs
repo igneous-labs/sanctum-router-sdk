@@ -2,6 +2,7 @@ use sanctum_router_core::{
     sanctum_spl_stake_pool_core::{validator_stake_seeds, StakePool, ValidatorStakeInfo},
     SplDepositSolQuoter, SplDepositStakeQuoter, SplDepositStakeSufAccs, SplSolSufAccs,
     SplWithdrawSolQuoter, SplWithdrawStakeQuoter, SplWithdrawStakeSufAccs,
+    SplWithdrawStakeValQuoter, SplWithdrawStakeValQuoterItr,
 };
 
 use crate::{DepositSol, DepositStake, DepositStakeAddrs, WithdrawSol, WithdrawStake};
@@ -164,6 +165,20 @@ macro_rules! impl_stake_quoter {
                 validator_list: self.validator_list.as_ref(),
             }
         }
+
+        #[inline]
+        pub fn spl_withdraw_stake_val_quoters<'a>(
+            &'a self,
+        ) -> SplWithdrawStakeValQuoterItr<
+            'a,
+            impl Fn(&'a ValidatorStakeInfo) -> SplWithdrawStakeValQuoter<'a>,
+        > {
+            SplWithdrawStakeValQuoter::all(
+                &self.stake_pool,
+                self.validator_list.as_ref(),
+                self.curr_epoch,
+            )
+        }
     };
 }
 
@@ -276,6 +291,12 @@ macro_rules! impl_withdraw_stake {
             F: 'a,
             V: 'a;
 
+        type ValQuoter<'a>
+            = SplWithdrawStakeValQuoter<'a>
+        where
+            F: 'a,
+            V: 'a;
+
         #[inline]
         fn withdraw_stake_quoter(&self) -> Self::Quoter<'_> {
             self.spl_withdraw_stake_quoter()
@@ -284,6 +305,11 @@ macro_rules! impl_withdraw_stake {
         #[inline]
         fn withdraw_stake_suf_accs(&self, vote: &[u8; 32]) -> Option<Self::SufAccs<'_>> {
             self.spl_withdraw_stake_suf_accs(vote)
+        }
+
+        #[inline]
+        fn withdraw_stake_val_quoters(&self) -> impl IntoIterator<Item = Self::ValQuoter<'_>> {
+            self.spl_withdraw_stake_val_quoters()
         }
     };
 }

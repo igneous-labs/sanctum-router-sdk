@@ -120,6 +120,11 @@ impl<F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>> WithdrawStake for Lid
     where
         F: 'a;
 
+    type ValQuoter<'a>
+        = LidoWithdrawStakeQuoter<'a>
+    where
+        F: 'a;
+
     #[inline]
     fn withdraw_stake_quoter(&self) -> Self::Quoter<'_> {
         self.lido_withdraw_stake_quoter()
@@ -128,5 +133,10 @@ impl<F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>> WithdrawStake for Lid
     #[inline]
     fn withdraw_stake_suf_accs(&self, _vote: &[u8; 32]) -> Option<Self::SufAccs<'_>> {
         self.lido_withdraw_stake_suf_accs()
+    }
+
+    #[inline]
+    fn withdraw_stake_val_quoters(&self) -> impl IntoIterator<Item = Self::ValQuoter<'_>> {
+        core::iter::once(self.withdraw_stake_quoter())
     }
 }
