@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use sanctum_router_core::{
     sanctum_reserve_core::{
         self, stake_account_record_seeds, Fee, FeeEnum, Pool, ProtocolFee, ProtocolFeeRatios,
@@ -117,5 +119,50 @@ impl<F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>> DepositStake for Rese
         }: &DepositStakeAddrs,
     ) -> Option<Self::SufAccs<'_>> {
         self.reserve_deposit_stake_suf_accs(stake_addr)
+    }
+}
+
+/// [`ReserveRouter`] post-prefund.
+///
+/// Quotes based on state of reserve after
+/// a stake-acc exemption prefund operation
+#[derive(Debug, Clone, PartialEq)]
+pub struct ReserveRouterPpf<F>(pub ReserveRouter<F>);
+
+impl<F> Deref for ReserveRouterPpf<F> {
+    type Target = ReserveRouter<F>;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<F: Fn(&[&[u8]], &[u8; 32]) -> Option<([u8; 32], u8)>> DepositStake for ReserveRouterPpf<F> {
+    type Quoter<'a>
+        = ReserveDepositStakeQuoter<'a>
+    where
+        F: 'a;
+
+    type SufAccs<'a>
+        = ReserveDepositStakeSufAccs
+    where
+        F: 'a;
+
+    #[inline]
+    fn deposit_stake_quoter(&self) -> Self::Quoter<'_> {
+        let quoter = self.0.deposit_stake_quoter();
+        quoter.after_prefund().unwrap_or(ReserveDepositStakeQuoter {
+            // if reserve is unable to service a prefund op
+            // then it shouldnt be able to service any other
+            // stake deposits
+            pool_sol_reserves: 0,
+            ..quoter
+        })
+    }
+
+    #[inline]
+    fn deposit_stake_suf_accs(&self, dsa: &DepositStakeAddrs) -> Option<Self::SufAccs<'_>> {
+        self.0.deposit_stake_suf_accs(dsa)
     }
 }
