@@ -171,7 +171,7 @@ macro_rules! impl_stake_quoter {
             &'a self,
         ) -> SplWithdrawStakeValQuoterItr<
             'a,
-            impl Fn(&'a ValidatorStakeInfo) -> SplWithdrawStakeValQuoter<'a>,
+            impl Fn(&'a ValidatorStakeInfo) -> Option<SplWithdrawStakeValQuoter<'a>>,
         > {
             SplWithdrawStakeValQuoter::all(
                 &self.stake_pool,

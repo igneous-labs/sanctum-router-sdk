@@ -1,11 +1,10 @@
-use core::{
-    iter::{Chain, Map},
-    slice,
-};
+use core::{iter::Chain, slice};
+use std::iter::FilterMap;
 
 use generic_array_struct::generic_array_struct;
 use sanctum_spl_stake_pool_core::{
-    SplStakePoolError, StakePool, ValidatorStakeInfo, WithdrawStakeQuoteArgs, MIN_ACTIVE_STAKE,
+    SplStakePoolError, StakePool, StakeStatus, ValidatorStakeInfo, WithdrawStakeQuoteArgs,
+    MIN_ACTIVE_STAKE,
 };
 
 use crate::{
@@ -80,6 +79,7 @@ impl WithdrawStakeQuoter for SplWithdrawStakeQuoter<'_> {
         conv_quote(quote, vsi)
     }
 }
+
 // Q: why not just use `SplWithdrawStakeQuoter` but with a single elem slice for
 // `validator_list`?
 // A: need to handle preferred withdraw validator case a bit differently,
@@ -119,7 +119,7 @@ impl WithdrawStakeQuoter for SplWithdrawStakeValQuoter<'_> {
 }
 
 pub type SplWithdrawStakeValQuoterItr<'a, F> =
-    Map<Chain<slice::Iter<'a, ValidatorStakeInfo>, slice::Iter<'a, ValidatorStakeInfo>>, F>;
+    FilterMap<Chain<slice::Iter<'a, ValidatorStakeInfo>, slice::Iter<'a, ValidatorStakeInfo>>, F>;
 
 impl<'a> SplWithdrawStakeValQuoter<'a> {
     /// Returns an iterator of withdraw stake quoters for each validator on the list.
@@ -135,7 +135,7 @@ impl<'a> SplWithdrawStakeValQuoter<'a> {
         stake_pool: &'parent StakePool,
         validator_list: &'parent [ValidatorStakeInfo],
         curr_epoch: u64,
-    ) -> SplWithdrawStakeValQuoterItr<'a, impl Fn(&'a ValidatorStakeInfo) -> Self> {
+    ) -> SplWithdrawStakeValQuoterItr<'a, impl Fn(&'a ValidatorStakeInfo) -> Option<Self>> {
         // use 2 slices to accomodate preferred exhausted case
         let (s1, s2) = match stake_pool.preferred_withdraw_validator_vote_address {
             None => (validator_list, [].as_slice()),
@@ -158,12 +158,17 @@ impl<'a> SplWithdrawStakeValQuoter<'a> {
                 }
             },
         };
-        let ctor = move |validator| Self {
-            validator,
-            stake_pool,
-            curr_epoch,
+        let fm = move |validator: &'a ValidatorStakeInfo| match validator.status() {
+            StakeStatus::Active => Some(Self {
+                validator,
+                stake_pool,
+                curr_epoch,
+            }),
+            // spl stake pool only allows stake withdrawals from active validators
+            // https://github.com/solana-program/stake-pool/blob/d8d4131575940a6462d051e47d7ed5ed1f3a1414/program/src/processor.rs#L3011-L3014
+            _ => None,
         };
-        s1.iter().chain(s2.iter()).map(ctor)
+        s1.iter().chain(s2.iter()).filter_map(fm)
     }
 }
 

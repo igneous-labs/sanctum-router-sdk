@@ -39,7 +39,7 @@ pub fn quote_prefund_swap_via_stake<W: WithdrawStakeQuoter, D: DepositStakeQuote
             Some(Ok((wsq, dsq)))
         })
         .next()
-        .map_or_else(|| Err(PrefundSwapViaStakeQuoteErr::NoMatch), |r| r)
+        .unwrap_or_else(|| Err(PrefundSwapViaStakeQuoteErr::NoMatch))
 }
 
 /// Converts `Result<T, E>` to `Option<Result<T, E>>`
