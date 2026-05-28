@@ -19,11 +19,14 @@ pub struct SplWithdrawStakeQuoter<'a> {
     pub validator_list: &'a [ValidatorStakeInfo],
 }
 
+// spl stake pool only allows stake withdrawals from active validators
+// https://github.com/solana-program/stake-pool/blob/d8d4131575940a6462d051e47d7ed5ed1f3a1414/program/src/processor.rs#L3011-L3014
 impl SplWithdrawStakeQuoter<'_> {
     #[inline]
     pub fn find_max_validator(&self) -> Option<&ValidatorStakeInfo> {
         self.validator_list
             .iter()
+            .filter(|vsi| vsi.status() == StakeStatus::Active)
             .max_by_key(|vsi| vsi.active_stake_lamports())
     }
 
@@ -31,6 +34,7 @@ impl SplWithdrawStakeQuoter<'_> {
     pub fn find_validator_by_vote(&self, vote: &[u8; 32]) -> Option<&ValidatorStakeInfo> {
         self.validator_list
             .iter()
+            .filter(|vsi| vsi.status() == StakeStatus::Active)
             .find(|vsi| vsi.vote_account_address() == vote)
     }
 }
@@ -164,8 +168,6 @@ impl<'a> SplWithdrawStakeValQuoter<'a> {
                 stake_pool,
                 curr_epoch,
             }),
-            // spl stake pool only allows stake withdrawals from active validators
-            // https://github.com/solana-program/stake-pool/blob/d8d4131575940a6462d051e47d7ed5ed1f3a1414/program/src/processor.rs#L3011-L3014
             _ => None,
         };
         s1.iter().chain(s2.iter()).filter_map(fm)
