@@ -31,18 +31,17 @@ describe("Reserve Test", async () => {
     const router = await routerForSwaps(rpc, [
       { swap: "depositStake", out: NATIVE_MINT },
     ]);
-    expectRouterErr(
+    await expectRouterErr(
       () =>
         quoteDepositStake(router, {
           vote: PICO_VOTE_ACC,
           inp: {
-            // a very large amount
             staked: 1_000_000_000_000_000_000n,
             unstaked: STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS,
           },
           out: NATIVE_MINT,
         }),
-      "SizeTooLargeErr:ReserveError::NotEnoughLiquidity"
+      "SizeTooLargeErr:ReserveError::NotEnoughLiquidity",
     );
   });
 });

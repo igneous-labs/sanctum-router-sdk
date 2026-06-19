@@ -18,10 +18,11 @@ const STSOL_EXCEED_WITHDRAW_LAMPORTS_IN_STSOL = 310_355_474_592n;
 
 describe("Lido Test", async () => {
   // PrefundWithdrawStake
+
   it("lido-prefund-withraw-stake", async () => {
     await prefundWithdrawStakeFixturesTest(
-      1_000_000_000n,
-      STSOL_TOKEN_ACC_NAME
+      10_000_000_000n,
+      STSOL_TOKEN_ACC_NAME,
     );
   });
 
@@ -30,35 +31,46 @@ describe("Lido Test", async () => {
     const router = await routerForSwaps(rpc, [
       { swap: "prefundWithdrawStake", inp: STSOL_MINT },
     ]);
-    expectRouterErr(
+    await expectRouterErr(
       () =>
         quotePrefundWithdrawStake(router, {
           amt: STSOL_EXCEED_WITHDRAW_LAMPORTS_IN_STSOL,
           inp: STSOL_MINT,
         }),
-      "SizeTooLargeErr:LidoError::InvalidAmount"
+      "SizeTooLargeErr:LidoError::InvalidAmount",
     );
   });
 
-  it("lido-prefund-withdraw-stake-fails-withdrawal-too-small-for-prefund", async () => {
-    const rpc = localRpc();
-    const router = await routerForSwaps(rpc, [
-      { swap: "prefundWithdrawStake", inp: STSOL_MINT },
-    ]);
-    expectRouterErr(
-      () =>
-        quotePrefundWithdrawStake(router, {
-          amt: 1_000n,
-          inp: STSOL_MINT,
-        }),
-      "SizeTooSmallErr:withdrawn stake too small"
-    );
-  });
+  it.each([
+    { suf: "prefund", amt: 1_000n },
+    {
+      suf: "splitting-slumdog",
+      // more than too-small-for-prefund, but less than what's required for slumdog split
+      // and both stakes to be more than stake prog min delegation
+      amt: 1_000_000_000n,
+    },
+  ])(
+    "lido-prefund-withdraw-stake-fails-withdrawal-too-small-for-$suf",
+    async ({ amt }) => {
+      const rpc = localRpc();
+      const router = await routerForSwaps(rpc, [
+        { swap: "prefundWithdrawStake", inp: STSOL_MINT },
+      ]);
+      await expectRouterErr(
+        () =>
+          quotePrefundWithdrawStake(router, {
+            amt,
+            inp: STSOL_MINT,
+          }),
+        "SizeTooSmallErr:withdrawn stake too small",
+      );
+    },
+  );
 
   // PrefundSwapViaStake
 
   it("lido-prefund-swap-via-stake-into-reserve", async () => {
-    await prefundSwapViaStakeFixturesTest(1_000_000_000n, {
+    await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
       inp: STSOL_TOKEN_ACC_NAME,
       out: "signer-wsol-token",
     });
@@ -66,19 +78,19 @@ describe("Lido Test", async () => {
 
   it("lido-prefund-swap-via-stake-into-reserve-use-bridge-vote", async () => {
     await prefundSwapViaStakeFixturesTest(
-      1_000_000_000n,
+      10_000_000_000n,
       {
         inp: STSOL_TOKEN_ACC_NAME,
         out: "signer-wsol-token",
       },
       {
         useBridgeVote: true,
-      }
+      },
     );
   });
 
   it("lido-prefund-swap-via-stake-into-marinade", async () => {
-    await prefundSwapViaStakeFixturesTest(1_000_000_000n, {
+    await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
       inp: STSOL_TOKEN_ACC_NAME,
       out: "signer-msol-token",
     });
@@ -86,19 +98,19 @@ describe("Lido Test", async () => {
 
   it("lido-prefund-swap-via-stake-into-marinade-use-bridge-vote", async () => {
     await prefundSwapViaStakeFixturesTest(
-      1_000_000_000n,
+      10_000_000_000n,
       {
         inp: STSOL_TOKEN_ACC_NAME,
         out: "signer-msol-token",
       },
       {
         useBridgeVote: true,
-      }
+      },
     );
   });
 
   it("lido-prefund-swap-via-stake-into-spl-bsol", async () => {
-    await prefundSwapViaStakeFixturesTest(1_000_000_000n, {
+    await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
       inp: STSOL_TOKEN_ACC_NAME,
       out: "signer-bsol-token",
     });
@@ -106,12 +118,12 @@ describe("Lido Test", async () => {
 
   it("lido-prefund-swap-via-stake-into-spl-bsol-use-bridge-vote", async () => {
     await prefundSwapViaStakeFixturesTest(
-      1_000_000_000n,
+      10_000_000_000n,
       {
         inp: STSOL_TOKEN_ACC_NAME,
         out: "signer-bsol-token",
       },
-      { useBridgeVote: true }
+      { useBridgeVote: true },
     );
   });
 
@@ -120,30 +132,41 @@ describe("Lido Test", async () => {
     const router = await routerForSwaps(rpc, [
       { swap: "prefundSwapViaStake", inp: STSOL_MINT, out: BSOL_MINT },
     ]);
-    expectRouterErr(
+    await expectRouterErr(
       () =>
         quotePrefundSwapViaStake(router, {
           amt: STSOL_EXCEED_WITHDRAW_LAMPORTS_IN_STSOL,
           inp: STSOL_MINT,
           out: BSOL_MINT,
         }),
-      "SizeTooLargeErr:LidoError::InvalidAmount"
+      "SizeTooLargeErr:LidoError::InvalidAmount",
     );
   });
 
-  it("lido-prefund-swap-via-stake-fails-withdrawal-too-small-for-prefund", async () => {
-    const rpc = localRpc();
-    const router = await routerForSwaps(rpc, [
-      { swap: "prefundSwapViaStake", inp: STSOL_MINT, out: BSOL_MINT },
-    ]);
-    expectRouterErr(
-      () =>
-        quotePrefundSwapViaStake(router, {
-          amt: 1_000n,
-          inp: STSOL_MINT,
-          out: BSOL_MINT,
-        }),
-      "SizeTooSmallErr:withdrawn stake too small"
-    );
-  });
+  it.each([
+    { suf: "prefund", amt: 1_000n },
+    {
+      suf: "splitting-slumdog",
+      // more than too-small-for-prefund, but less than what's required for slumdog split
+      // and both stakes to be more than stake prog min delegation
+      amt: 1_000_000_000n,
+    },
+  ])(
+    "lido-prefund-swap-via-stake-fails-withdrawal-too-small-for-$suf",
+    async ({ amt }) => {
+      const rpc = localRpc();
+      const router = await routerForSwaps(rpc, [
+        { swap: "prefundSwapViaStake", inp: STSOL_MINT, out: BSOL_MINT },
+      ]);
+      await expectRouterErr(
+        () =>
+          quotePrefundSwapViaStake(router, {
+            amt,
+            inp: STSOL_MINT,
+            out: BSOL_MINT,
+          }),
+        "SizeTooSmallErr:withdrawn stake too small",
+      );
+    },
+  );
 });

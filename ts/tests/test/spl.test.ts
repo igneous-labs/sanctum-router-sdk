@@ -48,13 +48,13 @@ describe("SPL Test", async () => {
     const router = await routerForSwaps(rpc, [
       { swap: "withdrawSol", inp: PICOSOL_MINT },
     ]);
-    expectRouterErr(
+    await expectRouterErr(
       () =>
         quoteWithdrawSol(router, {
           amt: PICOSOL_EXCEED_SOL_WITHDRAW,
           inp: PICOSOL_MINT,
         }),
-      "SizeTooLargeErr:SplStakePoolError::SolWithdrawalTooLarge"
+      "SizeTooLargeErr:SplStakePoolError::SolWithdrawalTooLarge",
     );
   });
 
@@ -69,15 +69,15 @@ describe("SPL Test", async () => {
   // PrefundWithdrawStake
   it("spl-picosol-prefund-withdraw-stake-small", async () => {
     await prefundWithdrawStakeFixturesTest(
-      1_000_000_000n,
-      PICOSOL_TOKEN_ACC_NAME
+      10_000_000_000n,
+      PICOSOL_TOKEN_ACC_NAME,
     );
   });
 
   it("spl-picosol-prefund-withdraw-stake-large", async () => {
     await prefundWithdrawStakeFixturesTest(
       750_000_000_000n,
-      PICOSOL_TOKEN_ACC_NAME
+      PICOSOL_TOKEN_ACC_NAME,
     );
   });
 
@@ -86,20 +86,20 @@ describe("SPL Test", async () => {
     const router = await routerForSwaps(rpc, [
       { swap: "prefundWithdrawStake", inp: PICOSOL_MINT },
     ]);
-    expectRouterErr(
+    await expectRouterErr(
       () =>
         quotePrefundWithdrawStake(router, {
           amt: PICOSOL_EXCEED_STAKE_WITHDRAW,
           inp: PICOSOL_MINT,
         }),
-      "SizeTooLargeErr:SplStakePoolError::StakeLamportsNotEqualToMinimum"
+      "SizeTooLargeErr:SplStakePoolError::StakeLamportsNotEqualToMinimum",
     );
   });
 
   // PrefundSwapViaStake
 
   it("spl-picosol-prefund-swap-via-stake-into-reserve-small", async () => {
-    await prefundSwapViaStakeFixturesTest(1_000_000_000n, {
+    await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
       inp: PICOSOL_TOKEN_ACC_NAME,
       out: "signer-wsol-token",
     });
@@ -114,17 +114,17 @@ describe("SPL Test", async () => {
 
   it("spl-picosol-prefund-swap-via-stake-into-reserve-use-bridge-vote", async () => {
     await prefundSwapViaStakeFixturesTest(
-      1_000_000_000n,
+      10_000_000_000n,
       {
         inp: PICOSOL_TOKEN_ACC_NAME,
         out: "signer-wsol-token",
       },
-      { useBridgeVote: true }
+      { useBridgeVote: true },
     );
   });
 
   it("spl-picosol-prefund-swap-via-stake-into-marinade-small", async () => {
-    await prefundSwapViaStakeFixturesTest(1_000_000_000n, {
+    await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
       inp: PICOSOL_TOKEN_ACC_NAME,
       out: "signer-msol-token",
     });
@@ -139,17 +139,17 @@ describe("SPL Test", async () => {
 
   it("spl-picosol-prefund-swap-via-stake-into-marinade-use-bridge-vote", async () => {
     await prefundSwapViaStakeFixturesTest(
-      1_000_000_000n,
+      10_000_000_000n,
       {
         inp: PICOSOL_TOKEN_ACC_NAME,
         out: "signer-msol-token",
       },
-      { useBridgeVote: true }
+      { useBridgeVote: true },
     );
   });
 
   it("spl-picosol-prefund-swap-via-stake-into-spl-bsol-small", async () => {
-    await prefundSwapViaStakeFixturesTest(1_000_000_000n, {
+    await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
       inp: PICOSOL_TOKEN_ACC_NAME,
       out: "signer-bsol-token",
     });
@@ -164,12 +164,12 @@ describe("SPL Test", async () => {
 
   it("spl-picosol-prefund-swap-via-stake-into-spl-bsol-use-bridge-vote", async () => {
     await prefundSwapViaStakeFixturesTest(
-      1_000_000_000n,
+      10_000_000_000n,
       {
         inp: PICOSOL_TOKEN_ACC_NAME,
         out: "signer-bsol-token",
       },
-      { useBridgeVote: true }
+      { useBridgeVote: true },
     );
   });
 });
