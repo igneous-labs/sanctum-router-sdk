@@ -1,5 +1,7 @@
-use core::{iter::Chain, slice};
-use std::iter::FilterMap;
+use core::{
+    iter::{Chain, FilterMap},
+    slice,
+};
 
 use generic_array_struct::generic_array_struct;
 use sanctum_spl_stake_pool_core::{
