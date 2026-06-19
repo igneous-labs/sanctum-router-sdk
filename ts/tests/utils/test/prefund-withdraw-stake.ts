@@ -31,8 +31,8 @@ const BRIDGE_STAKE_SEED = 0;
 export async function prefundWithdrawStakeFixturesTest(
   amt: bigint,
   inpTokenAccName: string,
-  outVote?: string | undefined
-) {
+  outVote?: string | undefined,
+): Promise<PrefundWithdrawStakeQuote> {
   const {
     addr: inpTokenAcc,
     owner: signer,
@@ -44,7 +44,7 @@ export async function prefundWithdrawStakeFixturesTest(
     { swap: "prefundWithdrawStake", inp: inpMint },
   ]);
 
-  const quote = quotePrefundWithdrawStake(router, {
+  const res = quotePrefundWithdrawStake(router, {
     amt,
     inp: inpMint,
     out: outVote,
@@ -52,7 +52,7 @@ export async function prefundWithdrawStakeFixturesTest(
   const params: WithdrawStakeSwapParams = {
     amt,
     inp: inpMint,
-    out: quote.quote.vote,
+    out: res.quote.vote,
     signerInp: inpTokenAcc,
     bridgeStakeSeed: BRIDGE_STAKE_SEED,
     signer,
@@ -60,7 +60,9 @@ export async function prefundWithdrawStakeFixturesTest(
 
   const ix = prefundWithdrawStakeIx(router, params);
 
-  await simPrefundWithdrawStakeAssertQuoteMatches(rpc, quote, params, ix);
+  await simPrefundWithdrawStakeAssertQuoteMatches(rpc, res, params, ix);
+
+  return res;
 }
 
 async function simPrefundWithdrawStakeAssertQuoteMatches(
@@ -78,10 +80,10 @@ async function simPrefundWithdrawStakeAssertQuoteMatches(
     prefundFee,
   }: PrefundWithdrawStakeQuote,
   { signerInp, signer }: WithdrawStakeSwapParams,
-  ix: Instruction
+  ix: Instruction,
 ) {
   const bridgeStakeAddr = address(
-    findBridgeStakeAccPda(signer, BRIDGE_STAKE_SEED)[0]
+    findBridgeStakeAccPda(signer, BRIDGE_STAKE_SEED)[0],
   );
   // `addresses` layout:
   // - signer input token acc
@@ -107,7 +109,7 @@ async function simPrefundWithdrawStakeAssertQuoteMatches(
   expect(err, debugMsg).toBeNull();
 
   const inpTokenAccBalAft = tokenAccBalance(
-    new Uint8Array(getBase64Encoder().encode(aftSwap[0]!.data[0]))
+    new Uint8Array(getBase64Encoder().encode(aftSwap[0]!.data[0])),
   );
   expect(inpTokenAccBalBef - inpTokenAccBalAft).toEqual(inp);
 
@@ -129,7 +131,7 @@ async function simPrefundWithdrawStakeAssertQuoteMatches(
   expect(bridgeStakeAccLamportsAft).toEqual(staked + unstaked);
 
   expect(
-    slumdogStakeAccLamportsAft - STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS
+    slumdogStakeAccLamportsAft - STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS,
   ).toEqual(prefundFee);
   expect(stakeAccStake(slumdogStakeAccDataAft)).toEqual(prefundFee);
 }

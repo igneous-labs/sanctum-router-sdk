@@ -26,7 +26,7 @@ export async function depositStakeFixturesTest({
 }: {
   inp: string;
   out: string;
-}) {
+}): Promise<DepositStakeQuoteWithRouterFee> {
   const { addr: outTokenAcc, mint: outMint } =
     testFixturesTokenAcc(outTokenAccName);
   const {
@@ -45,7 +45,7 @@ export async function depositStakeFixturesTest({
     staked: stakedLamports,
     unstaked: unstakedLamports,
   };
-  const quote = quoteDepositStake(router, {
+  const res = quoteDepositStake(router, {
     vote,
     out: outMint,
     inp: inpStake,
@@ -60,7 +60,9 @@ export async function depositStakeFixturesTest({
 
   const ix = depositStakeIx(router, params);
 
-  await simDepositStakeAssertQuoteMatches(rpc, quote, params, ix);
+  await simDepositStakeAssertQuoteMatches(rpc, res, params, ix);
+
+  return res;
 }
 
 async function simDepositStakeAssertQuoteMatches(
@@ -76,7 +78,7 @@ async function simDepositStakeAssertQuoteMatches(
     routerFee,
   }: DepositStakeQuoteWithRouterFee,
   { out: outMint, signerOut, signer }: DepositStakeSwapParams,
-  ix: Instruction
+  ix: Instruction,
 ) {
   // `addresses` layout:
   // - signerOut
@@ -88,7 +90,7 @@ async function simDepositStakeAssertQuoteMatches(
 
   const befSwap = await fetchAccountMap(rpc, addresses);
   const [outTokenAccBalBef, feeTokenAccBalBef] = mapTup(addresses, (addr) =>
-    tokenAccBalance(befSwap.get(addr)!.data)
+    tokenAccBalance(befSwap.get(addr)!.data),
   );
 
   const tx = ixToSimTx(address(signer), ix);
@@ -101,8 +103,8 @@ async function simDepositStakeAssertQuoteMatches(
 
   const [outTokenAccBalAft, feeTokenAccBalAft] = mapTup([0, 1], (i) =>
     tokenAccBalance(
-      new Uint8Array(getBase64Encoder().encode(aftSwap[i]!.data[0]))
-    )
+      new Uint8Array(getBase64Encoder().encode(aftSwap[i]!.data[0])),
+    ),
   );
 
   expect(outTokenAccBalAft - outTokenAccBalBef).toEqual(out);

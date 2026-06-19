@@ -2,6 +2,7 @@ import {
   depositSolIx,
   quoteDepositSol,
   type DepositSolSwapParams,
+  type TokenQuoteWithRouterFee,
 } from "@sanctumso/sanctum-router";
 import { mapTup } from "../ops";
 import { routerForSwaps } from "../router";
@@ -11,8 +12,8 @@ import { simTokenSwapAssertQuoteMatches } from "./swap";
 
 export async function depositSolFixturesTest(
   amt: bigint,
-  tokenAccFixtures: { inp: string; out: string }
-) {
+  tokenAccFixtures: { inp: string; out: string },
+): Promise<TokenQuoteWithRouterFee> {
   const { inp: inpTokenAccName, out: outTokenAccName } = tokenAccFixtures;
   const [
     { addr: inpTokenAcc, owner: inpTokenAccOwner },
@@ -23,7 +24,7 @@ export async function depositSolFixturesTest(
     { swap: "depositSol", out: outMint },
   ]);
 
-  const quote = quoteDepositSol(router, {
+  const res = quoteDepositSol(router, {
     amt,
     out: outMint,
   });
@@ -38,8 +39,10 @@ export async function depositSolFixturesTest(
 
   await simTokenSwapAssertQuoteMatches(
     rpc,
-    quote,
+    res,
     { ...params, inp: NATIVE_MINT },
-    ix
+    ix,
   );
+
+  return res;
 }

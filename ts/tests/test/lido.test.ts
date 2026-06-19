@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   BSOL_MINT,
   expectRouterErr,
@@ -20,10 +20,24 @@ describe("Lido Test", async () => {
   // PrefundWithdrawStake
 
   it("lido-prefund-withraw-stake", async () => {
-    await prefundWithdrawStakeFixturesTest(
+    const q = await prefundWithdrawStakeFixturesTest(
       10_000_000_000n,
       STSOL_TOKEN_ACC_NAME,
     );
+    expect(q).toMatchInlineSnapshot(`
+      {
+        "prefundFee": 1000000000n,
+        "quote": {
+          "fee": 0n,
+          "inp": 10000000000n,
+          "out": {
+            "staked": 11124056414n,
+            "unstaked": 2282880n,
+          },
+          "vote": "8jxSHbS4qAnh5yueFp4D9ABXubKqMwXqF3HtdzQGuphp",
+        },
+      }
+    `);
   });
 
   it("lido-prefund-withraw-stake-fails-withdrawal-too-large", async () => {
@@ -70,14 +84,35 @@ describe("Lido Test", async () => {
   // PrefundSwapViaStake
 
   it("lido-prefund-swap-via-stake-into-reserve", async () => {
-    await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
+    const q = await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
       inp: STSOL_TOKEN_ACC_NAME,
       out: "signer-wsol-token",
     });
+    expect(q).toMatchInlineSnapshot(`
+      {
+        "prefundFee": 1000000000n,
+        "quote": {
+          "quote": {
+            "bridge": {
+              "lamports": {
+                "staked": 11124056414n,
+                "unstaked": 2282880n,
+              },
+              "vote": "8jxSHbS4qAnh5yueFp4D9ABXubKqMwXqF3HtdzQGuphp",
+            },
+            "inp": 10000000000n,
+            "inpFee": 0n,
+            "out": 11115070700n,
+            "outFee": 11268594n,
+          },
+          "routerFee": 0n,
+        },
+      }
+    `);
   });
 
   it("lido-prefund-swap-via-stake-into-reserve-use-bridge-vote", async () => {
-    await prefundSwapViaStakeFixturesTest(
+    const q = await prefundSwapViaStakeFixturesTest(
       10_000_000_000n,
       {
         inp: STSOL_TOKEN_ACC_NAME,
@@ -87,17 +122,59 @@ describe("Lido Test", async () => {
         useBridgeVote: true,
       },
     );
+    expect(q).toMatchInlineSnapshot(`
+      {
+        "prefundFee": 1000000000n,
+        "quote": {
+          "quote": {
+            "bridge": {
+              "lamports": {
+                "staked": 11124056414n,
+                "unstaked": 2282880n,
+              },
+              "vote": "8jxSHbS4qAnh5yueFp4D9ABXubKqMwXqF3HtdzQGuphp",
+            },
+            "inp": 10000000000n,
+            "inpFee": 0n,
+            "out": 11115070700n,
+            "outFee": 11268594n,
+          },
+          "routerFee": 0n,
+        },
+      }
+    `);
   });
 
   it("lido-prefund-swap-via-stake-into-marinade", async () => {
-    await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
+    const q = await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
       inp: STSOL_TOKEN_ACC_NAME,
       out: "signer-msol-token",
     });
+    expect(q).toMatchInlineSnapshot(`
+      {
+        "prefundFee": 1000000000n,
+        "quote": {
+          "quote": {
+            "bridge": {
+              "lamports": {
+                "staked": 11124056414n,
+                "unstaked": 2282880n,
+              },
+              "vote": "8jxSHbS4qAnh5yueFp4D9ABXubKqMwXqF3HtdzQGuphp",
+            },
+            "inp": 10000000000n,
+            "inpFee": 0n,
+            "out": 8624331770n,
+            "outFee": 0n,
+          },
+          "routerFee": 8632964n,
+        },
+      }
+    `);
   });
 
   it("lido-prefund-swap-via-stake-into-marinade-use-bridge-vote", async () => {
-    await prefundSwapViaStakeFixturesTest(
+    const q = await prefundSwapViaStakeFixturesTest(
       10_000_000_000n,
       {
         inp: STSOL_TOKEN_ACC_NAME,
@@ -107,17 +184,59 @@ describe("Lido Test", async () => {
         useBridgeVote: true,
       },
     );
+    expect(q).toMatchInlineSnapshot(`
+      {
+        "prefundFee": 1000000000n,
+        "quote": {
+          "quote": {
+            "bridge": {
+              "lamports": {
+                "staked": 11124056414n,
+                "unstaked": 2282880n,
+              },
+              "vote": "8jxSHbS4qAnh5yueFp4D9ABXubKqMwXqF3HtdzQGuphp",
+            },
+            "inp": 10000000000n,
+            "inpFee": 0n,
+            "out": 8624331770n,
+            "outFee": 0n,
+          },
+          "routerFee": 8632964n,
+        },
+      }
+    `);
   });
 
   it("lido-prefund-swap-via-stake-into-spl-bsol", async () => {
-    await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
+    const q = await prefundSwapViaStakeFixturesTest(10_000_000_000n, {
       inp: STSOL_TOKEN_ACC_NAME,
       out: "signer-bsol-token",
     });
+    expect(q).toMatchInlineSnapshot(`
+      {
+        "prefundFee": 1000000000n,
+        "quote": {
+          "quote": {
+            "bridge": {
+              "lamports": {
+                "staked": 11124056414n,
+                "unstaked": 2282880n,
+              },
+              "vote": "8jxSHbS4qAnh5yueFp4D9ABXubKqMwXqF3HtdzQGuphp",
+            },
+            "inp": 10000000000n,
+            "inpFee": 0n,
+            "out": 9069043074n,
+            "outFee": 9086836n,
+          },
+          "routerFee": 9078121n,
+        },
+      }
+    `);
   });
 
   it("lido-prefund-swap-via-stake-into-spl-bsol-use-bridge-vote", async () => {
-    await prefundSwapViaStakeFixturesTest(
+    const q = await prefundSwapViaStakeFixturesTest(
       10_000_000_000n,
       {
         inp: STSOL_TOKEN_ACC_NAME,
@@ -125,6 +244,27 @@ describe("Lido Test", async () => {
       },
       { useBridgeVote: true },
     );
+    expect(q).toMatchInlineSnapshot(`
+      {
+        "prefundFee": 1000000000n,
+        "quote": {
+          "quote": {
+            "bridge": {
+              "lamports": {
+                "staked": 11124056414n,
+                "unstaked": 2282880n,
+              },
+              "vote": "8jxSHbS4qAnh5yueFp4D9ABXubKqMwXqF3HtdzQGuphp",
+            },
+            "inp": 10000000000n,
+            "inpFee": 0n,
+            "out": 9069043074n,
+            "outFee": 9086836n,
+          },
+          "routerFee": 9078121n,
+        },
+      }
+    `);
   });
 
   it("lido-prefund-swap-via-stake-fails-withdrawal-too-large", async () => {
