@@ -1,6 +1,10 @@
-use sanctum_reserve_core::{FeeEnum, PoolUnstakeParams};
+use sanctum_reserve_core::{FeeEnum, PoolUnstakeParams, ProtocolFeeRatios, Rational, ReserveError};
+use sanctum_spl_stake_pool_core::STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS;
 
-use crate::{PREFUND_FLASH_LOAN_LAMPORTS, ZERO_DATA_ACC_RENT_EXEMPT_LAMPORTS};
+use crate::{
+    ActiveStakeParams, DepositStakeQuoter, ReserveDepositStakeQuoter, StakeAccountLamports,
+    PREFUND_FLASH_LOAN_LAMPORTS, STAKE_PROG_MIN_DELEGATION_LAMPORTS,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(
@@ -21,18 +25,38 @@ pub struct Prefund<Q> {
     pub prefund_fee: u64,
 }
 
-/// Computes the total lamports (including rent) that the slumdog stake account
+/// total lamports (including rent) that the slumdog stake account
 /// should consist of when it gets instant unstaked in order to repay the prefund flash loan
-#[inline]
-pub fn slumdog_target_lamports(
-    reserves_balance: &PoolUnstakeParams,
-    reserves_fee: &FeeEnum,
-) -> Option<u64> {
-    reserves_fee.reverse_from_rem(reserves_balance, PREFUND_FLASH_LOAN_LAMPORTS)
-}
+pub const SLUMDOG_TARGET_LAMPORTS: u64 = {
+    // because of this >, slumdog target is min this value instead
+    assert!(STAKE_PROG_MIN_DELEGATION_LAMPORTS > PREFUND_FLASH_LOAN_LAMPORTS);
+
+    STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS + STAKE_PROG_MIN_DELEGATION_LAMPORTS
+};
 
 #[inline]
-pub const fn reserves_has_enough_for_slumdog(reserves_unstake_params: &PoolUnstakeParams) -> bool {
-    reserves_unstake_params.sol_reserves_lamports
-        >= PREFUND_FLASH_LOAN_LAMPORTS + ZERO_DATA_ACC_RENT_EXEMPT_LAMPORTS
+pub fn reserves_has_enough_for_slumdog(
+    reserves_unstake_params: &PoolUnstakeParams,
+    reserves_fee: &FeeEnum,
+) -> Result<(), ReserveError> {
+    (ReserveDepositStakeQuoter {
+        fee_account: reserves_fee,
+        pool_incoming_stake: reserves_unstake_params.pool_incoming_stake,
+        pool_sol_reserves: reserves_unstake_params.sol_reserves_lamports,
+        // dontcare, protocol fee values do not affect
+        // outflow amount, only who the outflow goes to
+        protocol_fee: &ProtocolFeeRatios {
+            // NB: Rational::ZERO results in InternalError due to change in sanctum-u64-ratio behaviour
+            fee_ratio: Rational { num: 0, denom: 1 },
+            referrer_fee_ratio: Rational { num: 0, denom: 1 },
+        },
+    })
+    .quote_deposit_stake(ActiveStakeParams {
+        lamports: StakeAccountLamports {
+            staked: SLUMDOG_TARGET_LAMPORTS - STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS,
+            unstaked: STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS,
+        },
+        vote: Default::default(), // dontcare
+    })
+    .map(|_| ())
 }

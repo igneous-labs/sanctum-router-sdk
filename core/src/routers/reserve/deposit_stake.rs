@@ -5,8 +5,8 @@ use sanctum_reserve_core::{
 };
 
 use crate::{
-    slumdog_target_lamports, ActiveStakeParams, DepositStakeQuote, DepositStakeQuoter,
-    DepositStakeSufAccs, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM,
+    ActiveStakeParams, DepositStakeQuote, DepositStakeQuoter, DepositStakeSufAccs,
+    SLUMDOG_TARGET_LAMPORTS, STAKE_PROGRAM, SYSTEM_PROGRAM, SYSVAR_CLOCK, TOKEN_PROGRAM,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -66,9 +66,7 @@ impl ReserveDepositStakeQuoter<'_> {
 
     #[inline]
     pub fn after_prefund(self) -> Result<Self, ReserveError> {
-        let stake = slumdog_target_lamports(&self.pool_balance(), self.fee_account)
-            .ok_or(ReserveError::InternalError)?;
-        let quote = self.quote_deposit_stake_inner(stake)?;
+        let quote = self.quote_deposit_stake_inner(SLUMDOG_TARGET_LAMPORTS)?;
         let Self {
             fee_account,
             protocol_fee: protocol_fee_account,

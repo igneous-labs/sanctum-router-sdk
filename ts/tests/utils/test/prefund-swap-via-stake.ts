@@ -1,6 +1,7 @@
 import {
   prefundSwapViaStakeIx,
   quotePrefundSwapViaStake,
+  type PrefundSwapViaStakeQuoteWithRouterFee,
   type SwapViaStakeSwapParams,
 } from "@sanctumso/sanctum-router";
 import { mapTup } from "../ops";
@@ -19,8 +20,8 @@ interface PrefundSwapViaStakeFixturesTestOpts {
 export async function prefundSwapViaStakeFixturesTest(
   amt: bigint,
   tokenAccFixtures: { inp: string; out: string },
-  opts: PrefundSwapViaStakeFixturesTestOpts = { useBridgeVote: false }
-) {
+  opts: PrefundSwapViaStakeFixturesTestOpts = { useBridgeVote: false },
+): Promise<PrefundSwapViaStakeQuoteWithRouterFee> {
   const { useBridgeVote } = opts;
   const { inp: inpTokenAccName, out: outTokenAccName } = tokenAccFixtures;
   const [
@@ -33,13 +34,14 @@ export async function prefundSwapViaStakeFixturesTest(
     { swap: "prefundSwapViaStake", inp: inpMint, out: outMint },
   ]);
 
-  const {
-    quote: { quote, routerFee },
-  } = quotePrefundSwapViaStake(router, {
+  const res = quotePrefundSwapViaStake(router, {
     amt,
     out: outMint,
     inp: inpMint,
   });
+  const {
+    quote: { quote, routerFee },
+  } = res;
   const params: SwapViaStakeSwapParams = {
     amt,
     inp: inpMint,
@@ -60,6 +62,8 @@ export async function prefundSwapViaStakeFixturesTest(
     rpc,
     { quote: { ...quote, fee: quote.outFee }, routerFee },
     params,
-    ix
+    ix,
   );
+
+  return res;
 }

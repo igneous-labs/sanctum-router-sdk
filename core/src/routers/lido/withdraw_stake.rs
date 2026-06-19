@@ -62,6 +62,7 @@ impl WithdrawStakeQuoter for LidoWithdrawStakeQuoter<'_> {
             // StakeWithdrawalTooLarge
             return Err(LidoError::InvalidAmount);
         }
+        // TODO: augment upstream error with case for below STAKE_PROG_MIN_DELEGATION_LAMPORTS
         Ok(WithdrawStakeQuote {
             inp: tokens,
             out: ActiveStakeParams {

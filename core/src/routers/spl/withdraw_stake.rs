@@ -186,6 +186,7 @@ fn conv_quote(
         // StakeWithdrawalTooLarge
         return Err(SplStakePoolError::StakeLamportsNotEqualToMinimum);
     }
+    // TODO: augment upstream error with case for below STAKE_PROG_MIN_DELEGATION_LAMPORTS
     Ok(WithdrawStakeQuote {
         inp: tokens_in,
         out: ActiveStakeParams {

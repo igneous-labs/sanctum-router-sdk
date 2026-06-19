@@ -1,5 +1,9 @@
 services:
   validator:
+    ulimits:
+      nofile:
+        soft: 1000000
+        hard: 1000000
     image: docker.io/lifeofpavs/solana-test-validator:latest
     command: [
         "solana-test-validator",
@@ -54,9 +58,6 @@ services:
         "stkitrT1Uoy18Dk1fTrgPw8W6MVzoCfYoAFT4MLsmhq",
         "/test-fixtures/programs/stakedex.so",
         "none",
-
-        "--deactivate-feature",
-        "9onWzzvCzNC2jfhxxeqRgs5q7nFAAKpCUvkj6T6GJK9i", # deactivate 1 SOL minimum delegation stake
       ]
     volumes:
       - ./test-fixtures:/test-fixtures

@@ -4,8 +4,9 @@ use sanctum_reserve_core::{FeeEnum, PoolUnstakeParams, ReserveError};
 use sanctum_spl_stake_pool_core::STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS;
 
 use crate::{
-    reserves_has_enough_for_slumdog, slumdog_target_lamports, ActiveStakeParams, Prefund,
-    StakeAccountLamports, StakeQuoteError, WithdrawStakeQuote,
+    reserves_has_enough_for_slumdog, ActiveStakeParams, Prefund, StakeAccountLamports,
+    StakeQuoteError, WithdrawStakeQuote, SLUMDOG_TARGET_LAMPORTS,
+    STAKE_PROG_MIN_DELEGATION_LAMPORTS,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -54,6 +55,10 @@ pub trait WithdrawStakeQuoter {
         reserves_unstake_params: &PoolUnstakeParams,
         reserves_fee: &FeeEnum,
     ) -> Result<Prefund<WithdrawStakeQuote>, PrefundWithdrawStakeQuoteErr<Self::Error>> {
+        // amount of active stake that will be split
+        // from the withdrawn stake account to slumdog
+        const PREFUND_FEE: u64 = SLUMDOG_TARGET_LAMPORTS - STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS;
+
         let WithdrawStakeQuote {
             inp,
             out: ActiveStakeParams { vote, lamports },
@@ -61,36 +66,33 @@ pub trait WithdrawStakeQuoter {
         } = self
             .quote_withdraw_stake(tokens, vote)
             .map_err(PrefundWithdrawStakeQuoteErr::Pool)?;
-        if !reserves_has_enough_for_slumdog(reserves_unstake_params) {
-            return Err(PrefundWithdrawStakeQuoteErr::Reserve(
-                ReserveError::NotEnoughLiquidity,
-            ));
-        }
+        reserves_has_enough_for_slumdog(reserves_unstake_params, reserves_fee)
+            .map_err(PrefundWithdrawStakeQuoteErr::Reserve)?;
+
         // doc-comment precondition
         assert!(lamports.unstaked == 0);
-        // amount of active stake that will be split
-        // from the withdrawn stake account to slumdog
-        let prefund_fee = slumdog_target_lamports(reserves_unstake_params, reserves_fee)
-            .ok_or(PrefundWithdrawStakeQuoteErr::Reserve(
-                ReserveError::InternalError,
-            ))?
-            .saturating_sub(STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS);
+
+        let lamports_staked = lamports
+            .staked
+            .checked_sub(PREFUND_FEE)
+            .ok_or(PrefundWithdrawStakeQuoteErr::TooSmall)?;
+        if lamports_staked < STAKE_PROG_MIN_DELEGATION_LAMPORTS {
+            return Err(PrefundWithdrawStakeQuoteErr::TooSmall);
+        }
+
         Ok(Prefund {
             quote: WithdrawStakeQuote {
                 inp,
                 out: ActiveStakeParams {
                     vote,
                     lamports: StakeAccountLamports {
-                        staked: lamports
-                            .staked
-                            .checked_sub(prefund_fee)
-                            .ok_or(PrefundWithdrawStakeQuoteErr::TooSmall)?,
+                        staked: lamports_staked,
                         unstaked: STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS,
                     },
                 },
                 fee,
             },
-            prefund_fee,
+            prefund_fee: PREFUND_FEE,
         })
     }
 }

@@ -45,12 +45,14 @@ pub const NATIVE_MINT: [u8; 32] =
 
 pub const PREFUNDER: [u8; 32] = bs58::decode_pubkey("ALpzvhALRr35nH8mw9SXk2WvmwEYjfw1dvmpFG9Kosu6");
 
-// TODO: STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS will change with:
-// - dynamic rent
-// - SOL minimum delegation feature
+/// TODO: STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS will change with dynamic rent
+///
 /// The flash loan amount given out by the router program to make the slumdog stake and withdrawn stake rent-exempt.
-/// This amount is repaid by instant unstaking the slumdog stake
-pub const PREFUND_FLASH_LOAN_LAMPORTS: u64 = 2 * STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS;
+/// This amount is repaid by instant unstaking the slumdog stake.
+pub(crate) const PREFUND_FLASH_LOAN_LAMPORTS: u64 = 2 * STAKE_ACCOUNT_RENT_EXEMPT_LAMPORTS;
 
-// hardcode for simplicity. Need to refactor when rent becomes variable.
-pub const ZERO_DATA_ACC_RENT_EXEMPT_LAMPORTS: u64 = 890_880;
+/// As of feature bpf stake program v5 `STk5Xj8hdAx3sTzmtJ3QysKkq6X2A3yj73JtxttiRyk`
+/// solana_program::stake::tools::get_minimum_delegation()
+/// hardcode for simplicity and to avoid pulling in stake_program dep
+/// TODO: update me if network updates params
+pub const STAKE_PROG_MIN_DELEGATION_LAMPORTS: u64 = 1_000_000_000;
